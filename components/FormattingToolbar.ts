@@ -2,6 +2,7 @@
 import { setIcon } from 'obsidian';
 import { EditorView } from '@codemirror/view';
 import { undo, redo } from '@codemirror/commands';
+import { legacyUi } from '../i18n';
 
 /**
  * Shared formatting toolbar used in both ManuscriptView (embedded editors)
@@ -46,7 +47,7 @@ export function buildFormattingToolbar(
     // Hn dropdown (hover to reveal H1, H4, H5, H6)
     const hWrap = el.createDiv('sl-fmt-submenu');
     const hTrigger = hWrap.createDiv({ cls: 'sl-fmt-btn sl-fmt-text sl-fmt-has-sub', attr: { 'aria-label': 'More headings', title: 'More headings' } });
-    hTrigger.setText('Hn');
+    hTrigger.setText(legacyUi('Hn', 'Hn'));
     const hPanel = hWrap.createDiv('sl-fmt-subpanel');
     for (const level of [1, 4, 5, 6]) {
         const item = hPanel.createDiv({ cls: 'sl-fmt-btn', attr: { 'aria-label': `Heading ${level}`, title: `Heading ${level}` } });

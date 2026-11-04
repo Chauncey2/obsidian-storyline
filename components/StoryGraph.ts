@@ -14,11 +14,11 @@
  *
  * Uses the same spring-physics layout pattern as RelationshipMap.
  */
-
 import * as obsidian from 'obsidian';
 import type { Scene } from '../models/Scene';
 import type { Character } from '../models/Character';
 import { RELATION_BASE_TYPE_BY_CATEGORY, extractCharacterProps, extractCharacterLocationTags } from '../models/Character';
+import { tr } from '../i18n';
 import type { LinkScanResult } from '../services/LinkScanner';
 
 // ── Types ─────────────────────────────────────────────
@@ -144,7 +144,7 @@ export class StoryGraph {
 
         if (this.nodes.length === 0) {
             const empty = this.container.createDiv('story-graph-empty');
-            empty.createEl('p', { text: 'No wikilinks detected in scene text. Write [[character]] or [[location]] in your scenes to see connections here.' });
+            empty.createEl('p', { text: tr('common.noWikilinks') });
             return;
         }
 

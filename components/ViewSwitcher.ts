@@ -17,6 +17,7 @@ import {
     MANUSCRIPT_VIEW_TYPE,
 } from '../constants';
 import { getBuiltinCodexCategory, makeCustomCodexCategory } from '../models/Codex';
+import { tr, trValue } from '../i18n';
 
 export interface ViewSwitcherEntry {
     type: string;
@@ -65,10 +66,11 @@ export function renderViewSwitcher(
         const tab = switcher.createEl('button', {
             cls: `story-line-view-tab ${isActive ? 'active' : ''}`,
         });
-        attachTooltip(tab, entry.label);
+        const displayLabel = trValue('viewName', entry.label);
+        attachTooltip(tab, displayLabel);
         const iconSpan = tab.createSpan({ cls: 'view-tab-icon' });
         obsidian.setIcon(iconSpan, entry.icon);
-        tab.createSpan({ cls: 'view-tab-label', text: entry.label });
+        tab.createSpan({ cls: 'view-tab-label', text: displayLabel });
 
         if (isCodexEntry) {
             // Dropdown chevron
@@ -104,8 +106,8 @@ export function renderViewSwitcher(
     });
     const exportIcon = exportBtn.createSpan({ cls: 'view-tab-icon' });
     obsidian.setIcon(exportIcon, 'download');
-    exportBtn.createSpan({ cls: 'view-tab-label', text: 'Export' });
-    attachTooltip(exportBtn, 'Export');
+    exportBtn.createSpan({ cls: 'view-tab-label', text: tr('common.export') });
+    attachTooltip(exportBtn, tr('common.export'));
     exportBtn.addEventListener('click', (e) => {
         e.preventDefault();
         new ExportModal(plugin).open();

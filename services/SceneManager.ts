@@ -9,6 +9,7 @@ import type SceneCardsPlugin from '../main';
 import { App, Notice, TFile, TFolder, normalizePath, parseYaml, stringifyYaml } from 'obsidian';
 import { BeatSheetTemplate, FilterPreset, Scene, SceneFilter, SceneStatus, SortConfig, getStatusOrder } from '../models/Scene';
 import { getVaultMarkdownFiles } from '../utils/vault';
+import { getContentLocale, trContent, tr } from '../i18n';
 
 /**
  * Normalize a frontmatter `acts` / `chapters` value into a clean sorted
@@ -537,7 +538,7 @@ export class SceneManager implements ISceneStore {
             };
 
             this.projects.set(filePath, project);
-            new Notice(`Project "${title}" created`);
+            new Notice(tr('project.created', { name: title }));
             return project;
         } catch (err) {
             new Notice('Failed to create project file or folders: ' + String(err));
@@ -678,7 +679,7 @@ export class SceneManager implements ISceneStore {
     async deleteProject(project: StoryLineProject): Promise<boolean> {
         const filePath = normalizePath(project.filePath);
         if (!this.projects.has(filePath)) {
-            new Notice(`Project "${project.title}" was not found. It may have already been deleted.`);
+            new Notice(tr('project.notFound', { name: project.title }));
             return false;
         }
 
@@ -733,7 +734,7 @@ export class SceneManager implements ISceneStore {
         // any stray files that may have been left behind).
         await this.scanProjects();
 
-        new Notice(`Project "${project.title}" deleted.`);
+        new Notice(tr('project.deleted', { name: project.title }));
         return true;
     }
 
@@ -780,7 +781,7 @@ export class SceneManager implements ISceneStore {
         }
 
         const sceneCount = sourceFolder instanceof TFolder ? sourceFolder.children.filter(c => c instanceof TFile).length : 0;
-        new Notice(`Forked "${source.title}" → "${newTitle}" (${sceneCount} scenes copied)`);
+        new Notice(tr('project.forked', { source: source.title, target: newTitle, count: sceneCount }));
         return newProject;
     }
     /**
@@ -1122,7 +1123,7 @@ export class SceneManager implements ISceneStore {
     ): Promise<string | void> {
         const file = this.app.vault.getAbstractFileByPath(filePath);
         if (!file || !(file instanceof TFile)) {
-            new Notice('Scene file not found');
+            new Notice(tr('scene.fileNotFound'));
             return;
         }
 
@@ -1441,7 +1442,7 @@ export class SceneManager implements ISceneStore {
     async moveNoteToSceneFolder(filePath: string): Promise<string> {
         const file = this.app.vault.getAbstractFileByPath(filePath);
         if (!file || !(file instanceof TFile)) {
-            new Notice('Note file not found');
+            new Notice(tr('scene.noteNotFound'));
             return filePath;
         }
 
@@ -1496,19 +1497,19 @@ export class SceneManager implements ISceneStore {
      */
     async convertFileToScene(filePath: string): Promise<string | null> {
         if (!this._activeProject) {
-            new Notice('No active StoryLine project. Open one first.');
+            new Notice(tr('project.noActive'));
             return null;
         }
         const file = this.app.vault.getAbstractFileByPath(filePath);
         if (!file || !(file instanceof TFile) || file.extension !== 'md') {
-            new Notice('Selected file is not a Markdown note.');
+            new Notice(tr('scene.notMarkdown'));
             return null;
         }
 
         // Refuse if it's already indexed as a real (non-corkboard) scene.
         const existing = this.scenes.get(filePath);
         if (existing && existing.type === 'scene' && !existing.corkboardNote) {
-            new Notice('This file is already a scene.');
+            new Notice(tr('scene.alreadyScene'));
             return filePath;
         }
 
@@ -1540,14 +1541,14 @@ export class SceneManager implements ISceneStore {
 
         // Now move it into Scenes/<Act N> if needed (reuses existing logic).
         const newPath = await this.moveNoteToSceneFolder(filePath);
-        new Notice(`Converted "${file.basename}" to a scene.`);
+        new Notice(tr('scene.converted', { name: file.basename }));
         return newPath;
     }
 
     async archiveScene(filePath: string): Promise<string> {
         const file = this.app.vault.getAbstractFileByPath(filePath);
         if (!file || !(file instanceof TFile)) {
-            new Notice('Scene file not found');
+            new Notice(tr('scene.fileNotFound'));
             return filePath;
         }
 
@@ -1564,7 +1565,7 @@ export class SceneManager implements ISceneStore {
         // Move the file
         await this.app.fileManager.renameFile(file, newPath);
 
-        new Notice(`"${scene?.title || file.basename}" archived`);
+        new Notice(tr('scene.archived', { name: scene?.title || file.basename }));
         return newPath;
     }
 
@@ -1576,7 +1577,7 @@ export class SceneManager implements ISceneStore {
     async restoreScene(filePath: string): Promise<string> {
         const file = this.app.vault.getAbstractFileByPath(filePath);
         if (!file || !(file instanceof TFile)) {
-            new Notice('Archived file not found');
+            new Notice(tr('scene.archiveNotFound'));
             return filePath;
         }
 
@@ -1612,7 +1613,7 @@ export class SceneManager implements ISceneStore {
             }
         }
 
-        new Notice(`"${file.basename}" restored from archive (sequence renumbered)`);
+        new Notice(tr('scene.restored', { name: file.basename }));
         return newPath;
     }
 
@@ -2280,7 +2281,6 @@ export class SceneManager implements ISceneStore {
             .map(s => s.sequence ?? 0)
             .sort((a, b) => a - b);
         let nextSeq = allSequences.length > 0 ? allSequences[allSequences.length - 1] + 1 : 1;
-
         for (let i = 0; i < template.beats.length; i++) {
             const beat = template.beats[i];
 
@@ -2346,6 +2346,7 @@ export class SceneManager implements ISceneStore {
             .map(s => s.sequence ?? 0)
             .sort((a, b) => a - b);
         let nextSeq = allSequences.length > 0 ? allSequences[allSequences.length - 1] + 1 : 1;
+        const contentLocale = getContentLocale(this.getEffectiveLocale());
 
         for (let a = 1; a <= numActs; a++) {
             acts.push(a);
@@ -2357,8 +2358,8 @@ export class SceneManager implements ISceneStore {
                     for (let s = 1; s <= scenesPerChapter; s++) {
                         const chLabel = this._activeProject.chapterLabels[chapterNum];
                         const title = chLabel
-                            ? `Chapter ${chapterNum} — ${chLabel}`
-                            : `Chapter ${chapterNum}`;
+                            ? trContent(contentLocale, 'structure.chapterSceneTitle', { n: chapterNum, label: chLabel })
+                            : trContent(contentLocale, 'chapter.numbered', { n: String(chapterNum) });
                         await this.createScene({
                             title,
                             act: a,
@@ -2915,7 +2916,7 @@ export class SceneManager implements ISceneStore {
 
         // Scene A: update existing file with first half
         const file = this.app.vault.getAbstractFileByPath(filePath);
-        if (!file || !(file instanceof TFile)) throw new Error('Scene file not found');
+        if (!file || !(file instanceof TFile)) throw new Error(tr('scene.fileNotFound'));
 
         const updatesA: Partial<Scene> = { body: bodyA };
         if (titleA) updatesA.title = titleA;
@@ -2949,7 +2950,7 @@ export class SceneManager implements ISceneStore {
         };
 
         const fileB = await this.createScene(sceneB);
-        new Notice(`Split "${scene.title}" into two scenes`);
+        new Notice(tr('scene.split', { name: scene.title }));
         return [file, fileB];
     }
 
@@ -3044,7 +3045,7 @@ export class SceneManager implements ISceneStore {
             .map(s => s.filePath);
         await this.resequenceScenes(ordered);
 
-        new Notice(`Merged ${scenes.length} scenes into "${updates.title}"`);
+        new Notice(tr('scene.merged', { count: scenes.length, name: updates.title }));
         return primaryFile;
     }
 }

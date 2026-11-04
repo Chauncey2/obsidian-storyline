@@ -3,6 +3,9 @@ import { ItemView, WorkspaceLeaf, MarkdownRenderer, Component, Notice, TFile } f
 import type SceneCardsPlugin from '../main';
 import { HELP_VIEW_TYPE } from '../constants';
 import HELP_MARKDOWN from '../HELP.md';
+import HELP_MARKDOWN_ZH_CN from '../HELP.zh-CN.md';
+import { getInterfaceLocale, tr } from '../i18n';
+import { fragmentToAnchorKey, headingToAnchorKey, slugifyHeading } from '../utils/helpAnchors';
 
 /**
  * HelpView — displays the HELP.md documentation in a dedicated
@@ -23,7 +26,7 @@ export class HelpView extends ItemView {
     }
 
     getDisplayText(): string {
-        return 'StoryLine help';
+        return tr('common.help');
     }
 
     getIcon(): string {
@@ -57,11 +60,11 @@ export class HelpView extends ItemView {
      * build time (esbuild text loader), so no separate file needs to ship.
      */
     private async renderHelp(container: HTMLElement): Promise<void> {
-        const markdown = HELP_MARKDOWN;
+        const markdown = getInterfaceLocale() === 'zh-CN' ? HELP_MARKDOWN_ZH_CN : HELP_MARKDOWN;
 
         if (!markdown) {
             container.createEl('p', {
-                text: 'Help content is unavailable.',
+                text: tr('common.helpUnavailable'),
                 cls: 'storyline-help-error',
             });
             return;
@@ -73,9 +76,9 @@ export class HelpView extends ItemView {
             attr: { 'aria-live': 'polite' },
         });
         const pdfButton = toolbar.createEl('button', {
-            text: 'PDF',
+            text: tr('common.pdf'),
             cls: 'storyline-help-pdf-button',
-            attr: { 'aria-label': 'Export help as PDF' },
+            attr: { 'aria-label': tr('common.exportHelpPdf') },
         });
         // Wrapper for rendered content
         const content = container.createDiv('storyline-help-content markdown-rendered');
@@ -99,9 +102,9 @@ export class HelpView extends ItemView {
                 e.preventDefault();
                 const href = link.getAttribute('href');
                 if (!href) return;
-                const targetId = href.slice(1);
-                // Obsidian's renderer creates heading IDs from the heading text
-                const target = content.querySelector(`[data-heading="${this.headingToDataAttr(targetId)}"]`)
+                const targetId = fragmentToAnchorKey(href);
+                const target = Array.from(content.querySelectorAll<HTMLElement>('h1,h2,h3,h4,h5,h6'))
+                    .find((heading) => headingToAnchorKey(heading.textContent ?? '') === targetId)
                     || content.querySelector(`#${CSS.escape(targetId)}`);
                 if (target) {
                     target.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -112,28 +115,28 @@ export class HelpView extends ItemView {
 
     private async exportPdf(content: HTMLElement, button: HTMLButtonElement, status: HTMLSpanElement): Promise<void> {
         button.disabled = true;
-        status.setText('Preparing PDF...');
-        new Notice('Preparing help PDF...');
+        status.setText(tr('common.preparingPdf'));
+        new Notice(tr('common.preparingHelpPdf'));
 
         try {
             await new Promise<void>((resolve) => window.setTimeout(resolve, 0));
             const version = this.plugin.manifest.version;
             const generatedAt = new Date().toLocaleString();
-            status.setText('Preparing print layout...');
+            status.setText(tr('common.preparingPrintLayout'));
             const printableContent = content.cloneNode(true) as HTMLElement;
             printableContent.querySelectorAll('h1, h2, h3, h4, h5, h6').forEach((heading) => {
                 const element = heading as HTMLElement;
-                const id = this.headingToSlug(element.textContent || '');
+                const id = slugifyHeading(element.textContent || '');
                 if (id) element.id = id;
             });
             const html = `<!DOCTYPE html>
-<html lang="en">
+<html lang="${getInterfaceLocale()}">
 <head>
 <meta charset="UTF-8">
 <title>StoryLine Help - v${version}</title>
 <style>
     @page { size: A4; margin: 18mm; }
-    body { font-family: Arial, Helvetica, sans-serif; font-size: 11pt; line-height: 1.5; color: #222; }
+    body { font-family: ${getInterfaceLocale() === 'zh-CN' ? '"PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", ' : ''}Arial, Helvetica, sans-serif; font-size: 11pt; line-height: 1.5; color: #222; }
     h1 { font-size: 22pt; margin: 0 0 0.6em; border-bottom: 1px solid #888; padding-bottom: 0.25em; }
     h2 { font-size: 16pt; margin-top: 1.4em; page-break-after: avoid; }
     h3 { font-size: 13pt; margin-top: 1.1em; page-break-after: avoid; }
@@ -154,15 +157,15 @@ ${printableContent.innerHTML}
 </body>
 </html>`;
 
-            status.setText('Generating PDF...');
+            status.setText(tr('common.generatingPdf'));
             const pdfBytes = await this.printHtmlToPdf(html, status);
             if (!pdfBytes) {
-                status.setText('Desktop PDF unavailable');
-                new Notice('Direct help PDF export requires desktop Obsidian.');
+                status.setText(tr('common.desktopPdfUnavailable'));
+                new Notice(tr('common.desktopPdfRequired'));
                 return;
             }
 
-            status.setText('Saving PDF...');
+            status.setText(tr('common.savingPdf'));
             const filename = `StoryLine Help (v${version}).pdf`;
             const pdfBuffer = this.toArrayBuffer(pdfBytes);
             const existing = this.app.vault.getAbstractFileByPath(filename);
@@ -171,12 +174,12 @@ ${printableContent.innerHTML}
             } else {
                 await this.app.vault.createBinary(filename, pdfBuffer);
             }
-            status.setText('PDF ready');
-            new Notice(`Created ${filename}`);
+            status.setText(tr('common.pdfReady'));
+            new Notice(tr('common.createdFile', { path: filename }));
         } catch (error) {
             console.error('StoryLine: failed to create Help PDF', error);
-            status.setText('PDF export failed');
-            new Notice('Could not create the help PDF.');
+            status.setText(tr('common.pdfExportFailed'));
+            new Notice(tr('common.couldNotCreatePdf'));
         } finally {
             button.disabled = false;
         }
@@ -216,7 +219,7 @@ ${printableContent.innerHTML}
                 webview.addEventListener('dom-ready', () => {
                     void (async () => {
                         try {
-                            status.setText('Rendering PDF...');
+                            status.setText(tr('common.renderingPdf'));
                             await new Promise<void>((resolveDelay) => window.setTimeout(resolveDelay, 500));
                             const pdfBuffer = await webview.printToPDF({
                                 pageSize: 'A4',
@@ -261,18 +264,5 @@ ${printableContent.innerHTML}
      * Obsidian uses for data-heading attributes.
      * e.g. "board-view" → "Board View"
      */
-    private headingToDataAttr(slug: string): string {
-        return slug
-            .replace(/-/g, ' ')
-            .replace(/\b\w/g, (c) => c.toUpperCase());
-    }
-
-    private headingToSlug(text: string): string {
-        return text
-            .trim()
-            .toLowerCase()
-            .replace(/[^\w\s-]/g, '')
-            .replace(/\s+/g, '-');
-    }
 }
  

@@ -1,2 +1,5 @@
 .codegraph
 .plan/
+node_modules/
+.test-build/
+tests/

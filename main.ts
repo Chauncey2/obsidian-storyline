@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-floating-promises, @typescript-eslint/no-misused-promises, @typescript-eslint/no-unnecessary-type-assertion, no-useless-escape -- Obsidian's API surface and several untyped third-party libraries force dynamic dispatch; floating promises are intentional in DOM/event handlers; matching enable at end of file */
-import { addIcon, App, ButtonComponent, DropdownComponent, FuzzySuggestModal, ItemView, Modal, Notice, Platform, Plugin, Setting, TFile, TextComponent, ToggleComponent, WorkspaceLeaf, normalizePath, parseYaml, setIcon } from 'obsidian';
+import { addIcon, App, ButtonComponent, DropdownComponent, FuzzySuggestModal, ItemView, Modal, Notice, Platform, Plugin, Setting, TFile, TextComponent, ToggleComponent, WorkspaceLeaf, getLanguage, normalizePath, parseYaml, setIcon, setTooltip, type Command } from 'obsidian';
 import { SceneCardsSettings, SceneCardsSettingTab, DEFAULT_SETTINGS, migrateSectionStateKeys } from './settings';
 import { asRecord, isRecord } from './utils/narrow';
 import type { FilterPreset } from './models/Scene';
@@ -25,7 +25,9 @@ import {
     NOTES_VIEW_TYPE,
     SYNOPSIS_VIEW_TYPE,
     DETAILS_VIEW_TYPE,
+    ALL_STORYLINE_VIEW_TYPES,
 } from './constants';
+import { normalizeInterfaceLanguage, setInterfaceLocale, tr, legacyUi, type PlainKey } from './i18n';
 import { PlotgridView } from './views/PlotgridView';
 import type { PlotGridData } from './models/PlotGridData';
 import type { SeriesMetadata, StoryLineProject } from './models/StoryLineProject';
@@ -108,6 +110,8 @@ export default class SceneCardsPlugin extends Plugin {
     private queuedOpenViewsRefreshRequested = false;
     private queuedOpenViewsRefreshReloadScenes = false;
     private queuedOpenViewsRefreshPaths = new Set<string>();
+    private localizedCommands: Array<{ nameKey: PlainKey; command: Omit<Command, 'name'> }> = [];
+    private ribbonIconEl: HTMLElement | null = null;
 
     isAutomaticQuoteReplacementEnabled(): boolean {
         return this.automaticQuoteReplacement;
@@ -379,126 +383,118 @@ export default class SceneCardsPlugin extends Plugin {
         `);
 
         // Ribbon icon — open project chooser (load/create) so users can switch projects
-        this.addRibbonIcon('storyline-logo', 'StoryLine projects', () => {
+        this.ribbonIconEl = this.addRibbonIcon('storyline-logo', tr('ribbon.projects'), () => {
             const modal = new ProjectSelectModal(this.app, this);
             modal.open();
         });
 
         // Commands
-        this.addCommand({
+        this.addLocalizedCommand('commands.openBoardView', {
             id: 'open-board-view',
-            name: 'Open board view',            callback: () => this.activateView(BOARD_VIEW_TYPE),
+            callback: () => this.activateView(BOARD_VIEW_TYPE),
         });
 
-        this.addCommand({
+        this.addLocalizedCommand('commands.openTimelineView', {
             id: 'open-timeline-view',
-            name: 'Open timeline view',            callback: () => this.activateView(TIMELINE_VIEW_TYPE),
+            callback: () => this.activateView(TIMELINE_VIEW_TYPE),
         });
 
-        this.addCommand({
+        this.addLocalizedCommand('commands.openPlotgridView', {
             id: 'open-plotgrid-view',
-            name: 'Open plotgrid view',            callback: () => this.activateView(PLOTGRID_VIEW_TYPE),
+            callback: () => this.activateView(PLOTGRID_VIEW_TYPE),
         });
 
-        this.addCommand({
+        this.addLocalizedCommand('commands.openPlotlinesView', {
             id: 'open-plotlines-view',
-            name: 'Open plotlines view',
             callback: () => this.activateView(STORYLINE_VIEW_TYPE),
         });
 
-        this.addCommand({
+        this.addLocalizedCommand('commands.openCharacterView', {
             id: 'open-character-view',
-            name: 'Open character view',            callback: () => this.activateView(CHARACTER_VIEW_TYPE),
+            callback: () => this.activateView(CHARACTER_VIEW_TYPE),
         });
 
-        this.addCommand({
+        this.addLocalizedCommand('commands.openStatsView', {
             id: 'open-stats-view',
-            name: 'Open statistics dashboard',            callback: () => this.activateView(STATS_VIEW_TYPE),
+            callback: () => this.activateView(STATS_VIEW_TYPE),
         });
 
-        this.addCommand({
+        this.addLocalizedCommand('commands.openLocationView', {
             id: 'open-location-view',
-            name: 'Open location view',            callback: () => this.activateView(LOCATION_VIEW_TYPE),
+            callback: () => this.activateView(LOCATION_VIEW_TYPE),
         });
 
-        this.addCommand({
+        this.addLocalizedCommand('commands.openCodexView', {
             id: 'open-codex-view',
-            name: 'Open Codex',            callback: () => this.activateView(CODEX_VIEW_TYPE),
+            callback: () => this.activateView(CODEX_VIEW_TYPE),
         });
 
-        this.addCommand({
+        this.addLocalizedCommand('commands.createNewScene', {
             id: 'create-new-scene',
-            name: 'Create new scene',            callback: () => this.openQuickAdd(),
+            callback: () => this.openQuickAdd(),
         });
 
-        this.addCommand({
+        this.addLocalizedCommand('commands.synchronizeSceneFilenames', {
             id: 'synchronize-scene-filenames',
-            name: 'Synchronize scene filenames from metadata',
             checkCallback: (checking: boolean) => {
                 if (!this.sceneManager.activeProject) return false;
                 if (!checking) {
                     const changes = this.sceneManager.getSceneFilenameSyncPreview();
                     if (changes.length === 0) {
-                        new Notice('Scene filenames are already synchronized.');
+                        new Notice(tr('main.noProjects'));
                         return true;
                     }
                     new SceneFilenameSyncModal(this.app, changes, async () => {
                         const count = await this.sceneManager.synchronizeSceneFileNames();
                         this.refreshOpenViews();
-                        new Notice(`Synchronized ${count} scene filename${count === 1 ? '' : 's'}.`);
+                        new Notice(legacyUi(`Synchronized ${count} scene filename${count === 1 ? '' : 's'}.`, `Synchronized ${count} scene filename${count === 1 ? '' : 's'}.`));
                     }).open();
                 }
                 return true;
             },
         });
 
-        this.addCommand({
+        this.addLocalizedCommand('commands.createNewProject', {
             id: 'create-new-project',
-            name: 'Create new project',
             callback: () => this.openNewProjectModal(),
         });
 
-        this.addCommand({
+        this.addLocalizedCommand('commands.switchProject', {
             id: 'switch-project',
-            name: 'Open or switch project',
             callback: () => {
                 const projects = this.sceneManager.getProjects();
                 if (projects.length <= 1) {
-                    new Notice(projects.length === 0 ? 'No projects found.' : 'Only one project exists.');
+                    new Notice(projects.length === 0 ? tr('main.noProjects') : tr('main.onlyOneProject'));
                     return;
                 }
                 const modal = new ProjectSwitcherModal(this.app, projects, async (project) => {
                     await this.sceneManager.setActiveProject(project);
                     this.refreshOpenViews();
-                    new Notice(`Switched to "${project.title}"`);
+                    new Notice(legacyUi(`Switched to "${project.title}"`, `Switched to "${project.title}"`));
                 });
                 modal.open();
             },
         });
 
-        this.addCommand({
+        this.addLocalizedCommand('commands.forkProject', {
             id: 'fork-project',
-            name: 'Fork current project',
             callback: () => this.openForkProjectModal(),
         });
 
-        this.addCommand({
+        this.addLocalizedCommand('commands.deleteProject', {
             id: 'delete-project',
-            name: 'Delete current project',
             callback: () => this.openDeleteProjectModal(),
         });
 
-        this.addCommand({
+        this.addLocalizedCommand('commands.undo', {
             id: 'undo',
-            name: 'Undo last scene change',
             callback: async () => {
                 await this.sceneManager.undoManager.undo();
             },
         });
 
-        this.addCommand({
+        this.addLocalizedCommand('commands.redo', {
             id: 'redo',
-            name: 'Redo last scene change',
             callback: async () => {
                 await this.sceneManager.undoManager.redo();
             },
@@ -545,40 +541,35 @@ export default class SceneCardsPlugin extends Plugin {
             }
         });
 
-        this.addCommand({
+        this.addLocalizedCommand('commands.exportProject', {
             id: 'export-project',
-            name: 'Export project',            callback: () => {
+            callback: () => {
                 new ExportModal(this).open();
             },
         });
 
-        this.addCommand({
+        this.addLocalizedCommand('commands.openHelp', {
             id: 'open-help',
-            name: 'Open help',
             callback: () => this.openHelp(),
         });
 
-        this.addCommand({
+        this.addLocalizedCommand('commands.openNavigator', {
             id: 'open-navigator',
-            name: 'Open navigator',
             callback: () => this.openNavigator(),
         });
 
-        this.addCommand({
+        this.addLocalizedCommand('commands.openSceneInspector', {
             id: 'open-scene-inspector',
-            name: 'Open scene details sidebar',
             callback: () => this.openSceneInspector(),
         });
 
-        this.addCommand({
+        this.addLocalizedCommand('commands.openSceneNotes', {
             id: 'open-scene-notes',
-            name: 'Open scene notes sidebar',
             callback: () => this.openNotesView(),
         });
 
-        this.addCommand({
+        this.addLocalizedCommand('commands.openSceneNotesFile', {
             id: 'open-scene-notes-file',
-            name: 'Open scene notes as file',
             checkCallback: (checking: boolean) => {
                 const scene = this.sceneManager.getScene(this.app.workspace.getActiveFile()?.path ?? '');
                 if (!scene) return false;
@@ -589,43 +580,37 @@ export default class SceneCardsPlugin extends Plugin {
             },
         });
 
-        this.addCommand({
+        this.addLocalizedCommand('commands.openSceneSynopsis', {
             id: 'open-scene-synopsis',
-            name: 'Open scene synopsis sidebar',
             callback: () => this.openSynopsisView(),
         });
 
-        this.addCommand({
+        this.addLocalizedCommand('commands.openSceneDetailsView', {
             id: 'open-scene-details-view',
-            name: 'Open scene details in own pane',
             callback: () => this.openSceneDetailsLeaf(),
         });
 
-        this.addCommand({
+        this.addLocalizedCommand('commands.openResearch', {
             id: 'open-research',
-            name: 'Open research sidebar',
             callback: () => this.openResearch(),
         });
 
-        this.addCommand({
+        this.addLocalizedCommand('commands.createSeries', {
             id: 'create-series',
-            name: 'Create new series from current project',
             callback: () => this.openCreateSeriesModal(),
         });
 
-        this.addCommand({
+        this.addLocalizedCommand('commands.addToSeries', {
             id: 'add-to-series',
-            name: 'Add current project to existing series',
             callback: () => this.openAddToSeriesModal(),
         });
 
-        this.addCommand({
+        this.addLocalizedCommand('commands.removeFromSeries', {
             id: 'remove-from-series',
-            name: 'Remove current project from series',
             callback: async () => {
                 const project = this.sceneManager.activeProject;
                 if (!project?.seriesId && !project?.seriesUuid) {
-                    new Notice('This project is not part of a series.');
+                    new Notice(legacyUi('This project is not part of a series.', 'This project is not part of a series.'));
                     return;
                 }
                 try {
@@ -637,38 +622,35 @@ export default class SceneCardsPlugin extends Plugin {
             },
         });
 
-        this.addCommand({
+        this.addLocalizedCommand('commands.renameProject', {
             id: 'rename-project',
-            name: 'Rename current project',
             callback: () => this.openRenameProjectModal(),
         });
 
-        this.addCommand({
+        this.addLocalizedCommand('commands.manageViewSnapshots', {
             id: 'manage-view-snapshots',
-            name: 'Manage view snapshots',
             callback: () => {
                 if (!this.sceneManager.activeProject) {
-                    new Notice('No active project.');
+                    new Notice(tr('main.noActiveProject'));
                     return;
                 }
                 openManageSnapshotsModal(this.app, this.viewSnapshotService);
             },
         });
 
-        this.addCommand({
+        this.addLocalizedCommand('commands.importScrivener', {
             id: 'import-scrivener',
-            name: 'Import Scrivener project',
             callback: async () => {
                 const { ScrivenerImporter, pickScrivenerDestination } = await import('./services/ScrivenerImporter');
                 if (!ScrivenerImporter.isAvailable()) {
-                    new Notice('Scrivener import is only available on desktop.');
+                    new Notice(legacyUi('Scrivener import is only available on desktop.', 'Scrivener import is only available on desktop.'));
                     return;
                 }
                 let remote: { dialog: { showOpenDialog: (opts: unknown) => Promise<{ canceled: boolean; filePaths?: string[] }> } } | undefined;
                 const win = window as unknown as { require?: (m: string) => unknown };
                 try { remote = win.require?.('@electron/remote') as typeof remote; }
                 catch { try { remote = (win.require?.('electron') as { remote: typeof remote })?.remote; } catch { /* */ } }
-                if (!remote) { new Notice('File dialog not available.'); return; }
+                if (!remote) { new Notice(tr('main.fileDialogUnavailable')); return; }
 
                 const result = await remote.dialog.showOpenDialog({
                     title: 'Select Scrivener Project folder (.scriv)',
@@ -681,7 +663,7 @@ export default class SceneCardsPlugin extends Plugin {
                 if (result.canceled || !result.filePaths?.length) return;
                 const scrivPath = result.filePaths[0];
                 if (!scrivPath.toLowerCase().endsWith('.scriv')) {
-                    new Notice('Please select a .scriv folder.'); return;
+                    new Notice(tr('main.selectScrivenerFolder')); return;
                 }
                 let destination: string | null;
                 try {
@@ -691,13 +673,13 @@ export default class SceneCardsPlugin extends Plugin {
                     return;
                 }
                 if (!destination) return;
-                new Notice('Importing Scrivener project…');
+                new Notice(tr('main.importingScrivener'));
                 try {
                     const importer = new ScrivenerImporter(this.app, this);
                     const r = await importer.import(scrivPath, destination);
                     const parts = [`${r.scenesImported} scenes`, `${r.charactersImported} characters`, `${r.locationsImported} locations`];
                     if (r.filesImported > 0) parts.push(`${r.filesImported} files`);
-                    new Notice(`Imported "${r.projectTitle}": ${parts.join(', ')}`, 8000);
+                    new Notice(legacyUi(`Imported "${r.projectTitle}": ${parts.join(', ')}`, `Imported "${r.projectTitle}": ${parts.join(', ')}`), 8000);
                 } catch (err: unknown) {
                     new Notice('Import failed: ' + (err instanceof Error ? err.message : String(err)));
                 }
@@ -705,9 +687,8 @@ export default class SceneCardsPlugin extends Plugin {
         });
 
         // Issue #83 \u2014 turn an arbitrary markdown note into a scene.
-        this.addCommand({
+        this.addLocalizedCommand('commands.convertNoteToScene', {
             id: 'convert-note-to-scene',
-            name: 'Convert note to scene',
             checkCallback: (checking: boolean) => {
                 const file = this.app.workspace.getActiveFile();
                 if (!file || file.extension !== 'md') return false;
@@ -729,7 +710,7 @@ export default class SceneCardsPlugin extends Plugin {
                 const existing = this.sceneManager.getScene(file.path);
                 if (existing && existing.type === 'scene' && !existing.corkboardNote) return;
                 menu.addItem(item => {
-                    item.setTitle('Convert to scene')
+                    item.setTitle(tr('main.convertToScene'))
                         .setIcon('clapperboard')
                         .onClick(async () => {
                             const newPath = await this.sceneManager.convertFileToScene(file.path);
@@ -815,9 +796,8 @@ export default class SceneCardsPlugin extends Plugin {
         // "Show in StoryLine" — command palette + file-menu entry
         // Detects whether the active file is a character, location, or codex entry
         // and navigates to the appropriate detail panel.
-        this.addCommand({
+        this.addLocalizedCommand('commands.showEntityDetails', {
             id: 'show-entity-details',
-            name: 'Show in details view',
             checkCallback: (checking) => {
                 const file = this.app.workspace.getActiveFile();
                 if (!file) return false;
@@ -832,7 +812,7 @@ export default class SceneCardsPlugin extends Plugin {
                 if (!(file instanceof TFile)) return;
                 if (!this.resolveEntityType(file.path)) return;
                 menu.addItem((item) => {
-                    item.setTitle('Show in StoryLine')
+                    item.setTitle(tr('main.showInStoryLine'))
                         .setIcon('book-open')
                         .onClick(() => this.showEntityDetails(file.path));
                 });
@@ -845,7 +825,7 @@ export default class SceneCardsPlugin extends Plugin {
                 if (!file) return;
                 if (!this.resolveEntityType(file.path)) return;
                 menu.addItem((item) => {
-                    item.setTitle('Show in StoryLine')
+                    item.setTitle(tr('main.showInStoryLine'))
                         .setIcon('book-open')
                         .onClick(() => this.showEntityDetails(file.path));
                 });
@@ -878,7 +858,7 @@ export default class SceneCardsPlugin extends Plugin {
                 const viewType = (view as unknown as { getViewType?: () => string })?.getViewType?.();
                 if (viewType !== MANUSCRIPT_VIEW_TYPE) return;
                 menu.addItem((item) => {
-                    item.setTitle('Find & replace in manuscript')
+                    item.setTitle(tr('main.findReplace'))
                         .setIcon('search')
                         .onClick(() => {
                             const leaves = this.app.workspace.getLeavesOfType(MANUSCRIPT_VIEW_TYPE);
@@ -1260,6 +1240,8 @@ export default class SceneCardsPlugin extends Plugin {
 
     async loadSettings(): Promise<void> {
         this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+        this.settings.interfaceLanguage = normalizeInterfaceLanguage(this.settings.interfaceLanguage);
+        setInterfaceLocale(this.settings.interfaceLanguage, getLanguage());
         const sectionStateKeysMigrated = migrateSectionStateKeys(this.settings);
         if (sectionStateKeysMigrated) await this.saveSettings();
         // Issue #73 — propagate the wikilink-writer toggle to MetadataParser
@@ -1620,7 +1602,7 @@ export default class SceneCardsPlugin extends Plugin {
             }
         }
         if (touched > 0) {
-            new Notice(`StoryLine: synced custom-field YAML in ${touched} file${touched === 1 ? '' : 's'}.`);
+            new Notice(legacyUi(`StoryLine: synced custom-field YAML in ${touched} file${touched === 1 ? '' : 's'}.`, `StoryLine: synced custom-field YAML in ${touched} file${touched === 1 ? '' : 's'}.`));
         }
     }
 
@@ -2702,19 +2684,7 @@ export default class SceneCardsPlugin extends Plugin {
             this.writingTracker.flushSession(stats.totalWords);
         } catch { /* project may not be set yet */ }
 
-        const viewTypes = [
-            BOARD_VIEW_TYPE,
-            PLOTGRID_VIEW_TYPE,
-            TIMELINE_VIEW_TYPE,
-            STORYLINE_VIEW_TYPE,
-            CHARACTER_VIEW_TYPE,
-            LOCATION_VIEW_TYPE,
-            CODEX_VIEW_TYPE,
-            STATS_VIEW_TYPE,
-            NAVIGATOR_VIEW_TYPE,
-            MANUSCRIPT_VIEW_TYPE,
-            RESEARCH_VIEW_TYPE,
-        ];
+        const viewTypes = ALL_STORYLINE_VIEW_TYPES;
 
         for (const viewType of viewTypes) {
             const leaves = this.app.workspace.getLeavesOfType(viewType);
@@ -2744,6 +2714,26 @@ export default class SceneCardsPlugin extends Plugin {
                 (leaf as unknown as { updateHeader?: () => void }).updateHeader?.();
             }
         }
+    }
+
+    /** Apply the selected interface language to runtime-owned labels and views. */
+    async applyInterfaceLanguage(): Promise<void> {
+        setInterfaceLocale(this.settings.interfaceLanguage, getLanguage());
+        for (const { nameKey, command } of this.localizedCommands) {
+            this.removeCommand(command.id);
+            this.addCommand({ ...command, name: tr(nameKey) });
+        }
+        if (this.ribbonIconEl) {
+            const label = tr('ribbon.projects');
+            setTooltip(this.ribbonIconEl, label);
+            this.ribbonIconEl.setAttr('aria-label', label);
+        }
+        await this.refreshOpenViews();
+    }
+
+    private addLocalizedCommand(nameKey: PlainKey, command: Omit<Command, 'name'>): void {
+        this.localizedCommands.push({ nameKey, command });
+        this.addCommand({ ...command, name: tr(nameKey) });
     }
 
     private captureViewScrollState(root: HTMLElement): Array<{ path: number[]; top: number; left: number }> {
@@ -3268,7 +3258,7 @@ export default class SceneCardsPlugin extends Plugin {
     async openNewProjectModal(): Promise<StoryLineProject | null> {
         return new Promise<StoryLineProject | null>((resolve) => {
             const modal = new Modal(this.app);
-            modal.titleEl.setText('New StoryLine project');
+            modal.titleEl.setText(tr('main.newProject'));
             let title = '';
             let customFolder = '';
             let createAsSeries = false;
@@ -3276,17 +3266,17 @@ export default class SceneCardsPlugin extends Plugin {
 
             // Series toggle at the top
             const seriesNameSetting = new Setting(modal.contentEl)
-                .setName('Series name')
-                .setDesc('Characters, locations, and Codex entries will be shared across all books in this series.')
+                .setName(legacyUi('Series name', 'Series name'))
+                .setDesc(legacyUi('Characters, locations, and Codex entries will be shared across all books in this series.', 'Characters, locations, and Codex entries will be shared across all books in this series.'))
                 .addText((text: TextComponent) => {
-                    text.setPlaceholder('My trilogy');
+                    text.setPlaceholder(legacyUi('My trilogy', 'My trilogy'));
                     text.onChange((v: string) => (seriesName = v));
                 });
             seriesNameSetting.settingEl.setCssStyles({ display: 'none' });
 
             new Setting(modal.contentEl)
-                .setName('Create as series')
-                .setDesc('Wrap this book in a series folder with a shared Codex.')
+                .setName(legacyUi('Create as series', 'Create as series'))
+                .setDesc(legacyUi('Wrap this book in a series folder with a shared Codex.', 'Wrap this book in a series folder with a shared Codex.'))
                 .addToggle((toggle: ToggleComponent) => {
                     toggle.setValue(false);
                     toggle.onChange((v: boolean) => {
@@ -3297,16 +3287,16 @@ export default class SceneCardsPlugin extends Plugin {
 
             // Book title
             new Setting(modal.contentEl)
-                .setName('Book title')
-                .setDesc('The title of this book. Each book gets its own scenes folder.')
+                .setName(legacyUi('Book title', 'Book title'))
+                .setDesc(legacyUi('The title of this book. Each book gets its own scenes folder.', 'The title of this book. Each book gets its own scenes folder.'))
                 .addText((text: TextComponent) => {
-                    text.setPlaceholder('My novel');
+                    text.setPlaceholder(legacyUi('My novel', 'My novel'));
                     text.onChange((v: string) => (title = v));
                 });
 
             new Setting(modal.contentEl)
-                .setName('Location')
-                .setDesc(`Leave empty to use default (${this.settings.storyLineRoot}). Or enter a vault folder path like "Writing/Novels".`)
+                .setName(legacyUi('Location', 'Location'))
+                .setDesc(legacyUi(`Leave empty to use default (${this.settings.storyLineRoot}). Or enter a vault folder path like "Writing/Novels".`, `Leave empty to use default (${this.settings.storyLineRoot}). Or enter a vault folder path like "Writing/Novels".`))
                 .addText((text: TextComponent) => {
                     text.setPlaceholder(this.settings.storyLineRoot);
                     text.onChange((v: string) => (customFolder = v.trim()));
@@ -3314,10 +3304,10 @@ export default class SceneCardsPlugin extends Plugin {
 
             new Setting(modal.contentEl)
                 .addButton((btn: ButtonComponent) => {
-                    btn.setButtonText('Create').setCta().onClick(async () => {
+                    btn.setButtonText(legacyUi('Create', 'Create')).setCta().onClick(async () => {
                         if (!title.trim()) return;
                         if (createAsSeries && !seriesName.trim()) {
-                            new Notice('Please enter a series name.');
+                            new Notice(legacyUi('Please enter a series name.', 'Please enter a series name.'));
                             return;
                         }
                         try {
@@ -3341,7 +3331,7 @@ export default class SceneCardsPlugin extends Plugin {
                     });
                 })
                 .addButton((btn: ButtonComponent) => {
-                    btn.setButtonText('Cancel').onClick(() => {
+                    btn.setButtonText(legacyUi('Cancel', 'Cancel')).onClick(() => {
                         modal.close();
                         resolve(null);
                     });
@@ -3357,16 +3347,16 @@ export default class SceneCardsPlugin extends Plugin {
     private openForkProjectModal(): void {
         const activeProject = this.sceneManager.activeProject;
         if (!activeProject) {
-            new Notice('No active project to fork');
+            new Notice(legacyUi('No active project to fork', 'No active project to fork'));
             return;
         }
         const modal = new Modal(this.app);
-        modal.titleEl.setText(`Fork "${activeProject.title}"`);
+        modal.titleEl.setText(legacyUi(`Fork "${activeProject.title}"`, `Fork "${activeProject.title}"`));
         let newTitle = `${activeProject.title} - Variant`;
 
         new Setting(modal.contentEl)
-            .setName('New project name')
-            .setDesc('All scenes from the current project will be copied.')
+            .setName(legacyUi('New project name', 'New project name'))
+            .setDesc(legacyUi('All scenes from the current project will be copied.', 'All scenes from the current project will be copied.'))
             .addText((text: TextComponent) => {
                 text.setValue(newTitle);
                 text.onChange((v: string) => (newTitle = v));
@@ -3374,7 +3364,7 @@ export default class SceneCardsPlugin extends Plugin {
 
         new Setting(modal.contentEl)
             .addButton((btn: ButtonComponent) => {
-                btn.setButtonText('Fork').setCta().onClick(async () => {
+                btn.setButtonText(legacyUi('Fork', 'Fork')).setCta().onClick(async () => {
                     if (!newTitle.trim()) return;
                     const forked = await this.sceneManager.forkProject(activeProject, newTitle.trim());
                     await this.sceneManager.setActiveProject(forked);
@@ -3398,28 +3388,28 @@ export default class SceneCardsPlugin extends Plugin {
     private openDeleteProjectModal(): void {
         const activeProject = this.sceneManager.activeProject;
         if (!activeProject) {
-            new Notice('No active project to delete');
+            new Notice(legacyUi('No active project to delete', 'No active project to delete'));
             return;
         }
 
         const modal = new Modal(this.app);
-        modal.titleEl.setText(`Delete "${activeProject.title}"`);
+        modal.titleEl.setText(legacyUi(`Delete "${activeProject.title}"`, `Delete "${activeProject.title}"`));
 
         // Warning banner
         const warningEl = modal.contentEl.createDiv({ cls: 'sl-delete-warning' });
         warningEl.createEl('p', {
-            text: '⚠️ this will permanently delete the project folder and everything inside it:',
+            text: legacyUi('⚠️ this will permanently delete the project folder and everything inside it:', '⚠️ this will permanently delete the project folder and everything inside it:'),
         });
         const list = warningEl.createEl('ul');
-        list.createEl('li', { text: 'All scenes' });
-        list.createEl('li', { text: 'All characters, locations and Codex entries' });
-        list.createEl('li', { text: 'All notes, research and archive items' });
-        list.createEl('li', { text: 'Project settings and view data' });
+        list.createEl('li', { text: legacyUi('All scenes', 'All scenes') });
+        list.createEl('li', { text: legacyUi('All characters, locations and Codex entries', 'All characters, locations and Codex entries') });
+        list.createEl('li', { text: legacyUi('All notes, research and archive items', 'All notes, research and archive items') });
+        list.createEl('li', { text: legacyUi('Project settings and view data', 'Project settings and view data') });
         if (activeProject.seriesId || activeProject.seriesUuid) {
-            list.createEl('li', { text: 'The book will also be removed from its series.' });
+            list.createEl('li', { text: legacyUi('The book will also be removed from its series.', 'The book will also be removed from its series.') });
         }
         warningEl.createEl('p', {
-            text: 'This action cannot be undone. The folder will be moved to your system trash (or Obsidian\u2019s .trash folder, depending on your settings).',
+            text: legacyUi('This action cannot be undone. The folder will be moved to your system trash (or Obsidian\u2019s .trash folder, depending on your settings).', 'This action cannot be undone. The folder will be moved to your system trash (or Obsidian\u2019s .trash folder, depending on your settings).'),
             cls: 'sl-delete-warning-strong',
         });
 
@@ -3427,8 +3417,8 @@ export default class SceneCardsPlugin extends Plugin {
         const expected = activeProject.title;
         let typed = '';
         new Setting(modal.contentEl)
-            .setName('Confirm by typing the project title')
-            .setDesc(`Type "${expected}" to enable the Delete button.`)
+            .setName(legacyUi('Confirm by typing the project title', 'Confirm by typing the project title'))
+            .setDesc(legacyUi(`Type "${expected}" to enable the Delete button.`, `Type "${expected}" to enable the Delete button.`))
             .addText((text: TextComponent) => {
                 text.setPlaceholder(expected);
                 text.onChange((v: string) => {
@@ -3441,10 +3431,10 @@ export default class SceneCardsPlugin extends Plugin {
         let deleteBtn: ButtonComponent;
         new Setting(modal.contentEl)
             .addButton((btn: ButtonComponent) => {
-                btn.setButtonText('Cancel').onClick(() => modal.close());
+                btn.setButtonText(legacyUi('Cancel', 'Cancel')).onClick(() => modal.close());
             })
             .addButton((btn: ButtonComponent) => {
-                deleteBtn = btn.setButtonText('Delete permanently').setClass('mod-warning').setDisabled(true);
+                deleteBtn = btn.setButtonText(legacyUi('Delete permanently', 'Delete permanently')).setClass('mod-warning').setDisabled(true);
                 btn.onClick(async () => {
                     if (typed.trim() !== expected) return;
                     modal.close();
@@ -3468,32 +3458,32 @@ export default class SceneCardsPlugin extends Plugin {
     private openCreateSeriesModal(): void {
         const project = this.sceneManager.activeProject;
         if (!project) {
-            new Notice('No active project');
+            new Notice(legacyUi('No active project', 'No active project'));
             return;
         }
         if (project.seriesId || project.seriesUuid) {
-            new Notice('This project is already part of a series.');
+            new Notice(legacyUi('This project is already part of a series.', 'This project is already part of a series.'));
             return;
         }
 
         const modal = new Modal(this.app);
-        modal.titleEl.setText('Create new series');
+        modal.titleEl.setText(legacyUi('Create new series', 'Create new series'));
         let seriesName = '';
 
         new Setting(modal.contentEl)
-            .setName('Series name')
-            .setDesc(`"${project.title}" will become the first book in this series. Its codex will be shared.`)
+            .setName(legacyUi('Series name', 'Series name'))
+            .setDesc(legacyUi(`"${project.title}" will become the first book in this series. Its codex will be shared.`, `"${project.title}" will become the first book in this series. Its codex will be shared.`))
             .addText((text: TextComponent) => {
-                text.setPlaceholder('My trilogy');
+                text.setPlaceholder(legacyUi('My trilogy', 'My trilogy'));
                 text.onChange((v: string) => (seriesName = v));
                 window.setTimeout(() => text.inputEl.focus(), 50);
             });
 
         new Setting(modal.contentEl)
             .addButton((btn: ButtonComponent) => {
-                btn.setButtonText('Create series').setCta().onClick(async () => {
+                btn.setButtonText(legacyUi('Create series', 'Create series')).setCta().onClick(async () => {
                     if (!seriesName.trim()) {
-                        new Notice('Please enter a series name.');
+                        new Notice(legacyUi('Please enter a series name.', 'Please enter a series name.'));
                         return;
                     }
                     modal.close();
@@ -3512,37 +3502,37 @@ export default class SceneCardsPlugin extends Plugin {
     private async openAddToSeriesModal(): Promise<void> {
         const project = this.sceneManager.activeProject;
         if (!project) {
-            new Notice('No active project');
+            new Notice(legacyUi('No active project', 'No active project'));
             return;
         }
         if (project.seriesId || project.seriesUuid) {
-            new Notice('This project is already part of a series.');
+            new Notice(legacyUi('This project is already part of a series.', 'This project is already part of a series.'));
             return;
         }
 
         const seriesList = await this.seriesManager.discoverSeries();
         if (seriesList.length === 0) {
-            new Notice('No series found. Create one first using "create new series from current project".');
+            new Notice(legacyUi('No series found. Create one first using "create new series from current project".', 'No series found. Create one first using "create new series from current project".'));
             return;
         }
 
         const modal = new Modal(this.app);
-        modal.titleEl.setText('Add to existing series');
+        modal.titleEl.setText(legacyUi('Add to existing series', 'Add to existing series'));
         let selectedFolder = seriesList[0].folder;
 
         new Setting(modal.contentEl)
-            .setName('Series')
-            .setDesc(`"${project.title}" will be added to the selected series. Its codex will be merged into the shared series codex.`)
+            .setName(legacyUi('Series', 'Series'))
+            .setDesc(legacyUi(`"${project.title}" will be added to the selected series. Its codex will be merged into the shared series codex.`, `"${project.title}" will be added to the selected series. Its codex will be merged into the shared series codex.`))
             .addDropdown((dropdown: DropdownComponent) => {
                 for (const s of seriesList) {
-                    dropdown.addOption(s.folder, `${s.meta.name} (${s.meta.bookOrder.length} books)`);
+                    dropdown.addOption(s.folder, legacyUi(`${s.meta.name} (${s.meta.bookOrder.length} books)`, `${s.meta.name} (${s.meta.bookOrder.length} books)`));
                 }
                 dropdown.onChange((v: string) => (selectedFolder = v));
             });
 
         new Setting(modal.contentEl)
             .addButton((btn: ButtonComponent) => {
-                btn.setButtonText('Add to series').setCta().onClick(async () => {
+                btn.setButtonText(legacyUi('Add to series', 'Add to series')).setCta().onClick(async () => {
                     modal.close();
                     try {
                         await this.seriesManager.addProjectToSeries(selectedFolder);
@@ -3559,17 +3549,17 @@ export default class SceneCardsPlugin extends Plugin {
     private openRenameProjectModal(): void {
         const project = this.sceneManager.activeProject;
         if (!project) {
-            new Notice('No active project to rename.');
+            new Notice(legacyUi('No active project to rename.', 'No active project to rename.'));
             return;
         }
 
         const modal = new Modal(this.app);
-        modal.titleEl.setText('Rename project');
+        modal.titleEl.setText(legacyUi('Rename project', 'Rename project'));
         let newTitle = project.title;
 
         new Setting(modal.contentEl)
-            .setName('New title')
-            .setDesc('The project file and folder will be renamed. All links are updated automatically.')
+            .setName(legacyUi('New title', 'New title'))
+            .setDesc(legacyUi('The project file and folder will be renamed. All links are updated automatically.', 'The project file and folder will be renamed. All links are updated automatically.'))
             .addText((text: TextComponent) => {
                 text.setValue(project.title);
                 text.onChange((v: string) => (newTitle = v));
@@ -3578,7 +3568,7 @@ export default class SceneCardsPlugin extends Plugin {
 
         new Setting(modal.contentEl)
             .addButton((btn: ButtonComponent) => {
-                btn.setButtonText('Rename').setCta().onClick(async () => {
+                btn.setButtonText(legacyUi('Rename', 'Rename')).setCta().onClick(async () => {
                     if (!newTitle.trim() || newTitle.trim() === project.title) {
                         modal.close();
                         return;
@@ -3586,7 +3576,7 @@ export default class SceneCardsPlugin extends Plugin {
                     try {
                         this.seriesManager.checkLinkSettings();
                         await this.sceneManager.renameProject(project, newTitle.trim());
-                        new Notice(`Project renamed to "${newTitle.trim()}"`);
+                        new Notice(legacyUi(`Project renamed to "${newTitle.trim()}"`, `Project renamed to "${newTitle.trim()}"`));
                         modal.close();
                         this.refreshOpenViews();
                     } catch (e: unknown) {
@@ -3615,7 +3605,7 @@ class ProjectSwitcherModal extends FuzzySuggestModal<StoryLineProject> {
         super(app);
         this.projects = projects;
         this.onChoose = onChoose;
-        this.setPlaceholder('Switch to project…');
+        this.setPlaceholder(legacyUi('Switch to project…', 'Switch to project…'));
     }
 
     getItems(): StoryLineProject[] {
@@ -3639,13 +3629,13 @@ class ProjectSelectModal extends Modal {
     constructor(app: App, plugin: SceneCardsPlugin) {
         super(app);
         this.plugin = plugin;
-        this.titleEl.setText('Open StoryLine project');
+        this.titleEl.setText(legacyUi('Open StoryLine project', 'Open StoryLine project'));
     }
     onOpen() {
         const { contentEl } = this;
         contentEl.empty();
         const info = contentEl.createDiv({ cls: 'project-select-info' });
-        info.createEl('p', { text: 'Select a project to load, or create a new one.' });
+        info.createEl('p', { text: legacyUi('Select a project to load, or create a new one.', 'Select a project to load, or create a new one.') });
 
         const list = contentEl.createDiv({ cls: 'project-list' });
 
@@ -3654,14 +3644,14 @@ class ProjectSelectModal extends Modal {
         select.addEventListener('keydown', (e: KeyboardEvent) => e.stopPropagation());
 
         const actions = contentEl.createDiv({ cls: 'project-actions' });
-        const openBtn = actions.createEl('button', { text: 'Open', cls: 'mod-cta' });
+        const openBtn = actions.createEl('button', { text: legacyUi('Open', 'Open'), cls: 'mod-cta' });
         openBtn.setAttr('type', 'button');
         openBtn.addEventListener('click', async () => {
             const val = select.value;
             const projects = this.plugin.sceneManager.getProjects();
             const selected = projects.find((p: StoryLineProject) => p.filePath === val);
             if (!selected) {
-                new Notice('No project selected');
+                new Notice(legacyUi('No project selected', 'No project selected'));
                 return;
             }
             try {
@@ -3675,7 +3665,7 @@ class ProjectSelectModal extends Modal {
             }
         });
 
-        const createBtn = actions.createEl('button', { text: 'Create new project', cls: 'mod-cta' });
+        const createBtn = actions.createEl('button', { text: legacyUi('Create new project', 'Create new project'), cls: 'mod-cta' });
         createBtn.setAttr('type', 'button');
         createBtn.addEventListener('click', async () => {
             // open project creation modal and refresh list if a new project was created
@@ -3703,11 +3693,11 @@ class ProjectSelectModal extends Modal {
             }
         });
 
-        const cancel = actions.createEl('button', { text: 'Cancel', cls: 'mod-quiet' });
+        const cancel = actions.createEl('button', { text: legacyUi('Cancel', 'Cancel'), cls: 'mod-quiet' });
         cancel.setAttr('type', 'button');
         cancel.addEventListener('click', () => this.close());
 
-        const seriesBtn = actions.createEl('button', { text: 'Manage series…' });
+        const seriesBtn = actions.createEl('button', { text: legacyUi('Manage series…', 'Manage series…') });
         seriesBtn.setAttr('type', 'button');
         seriesBtn.addEventListener('click', async () => {
             const seriesModal = new SeriesManagementModal(this.app, this.plugin);
@@ -3715,19 +3705,19 @@ class ProjectSelectModal extends Modal {
         });
 
         // "Browse" button — manually pick a .md file as a StoryLine project
-        const browseBtn = actions.createEl('button', { text: 'Browse for project…' });
+        const browseBtn = actions.createEl('button', { text: legacyUi('Browse for project…', 'Browse for project…') });
         browseBtn.setAttr('type', 'button');
         browseBtn.addEventListener('click', async () => {
             // Build a list of all .md files in the vault for the user to pick from
             const browseModal = new Modal(this.app);
-            browseModal.titleEl.setText('Select a StoryLine project file');
+            browseModal.titleEl.setText(legacyUi('Select a StoryLine project file', 'Select a StoryLine project file'));
             const container = browseModal.contentEl.createDiv({ cls: 'project-browse-list' });
             const fileList = container.createDiv();
             fileList.setCssStyles({
                 maxHeight: '300px',
                 overflowY: 'auto',
             });
-            fileList.createDiv({ text: 'Scanning…' });
+            fileList.createDiv({ text: legacyUi('Scanning…', 'Scanning…') });
 
             // Scan StoryLine root and one level deep, filtering to only
             // files with type: storyline frontmatter (actual project files).
@@ -3772,7 +3762,7 @@ class ProjectSelectModal extends Modal {
             // Render the project list
             fileList.empty();
             if (projectFiles.length === 0) {
-                fileList.createDiv({ text: 'No StoryLine projects found.' });
+                fileList.createDiv({ text: legacyUi('No StoryLine projects found.', 'No StoryLine projects found.') });
             }
             for (const pf of projectFiles) {
                 const row = fileList.createDiv({ cls: 'project-browse-row' });
@@ -3810,7 +3800,7 @@ class ProjectSelectModal extends Modal {
                             browseModal.close();
                             this.close();
                         } else {
-                            new Notice('Could not parse file as a StoryLine project');
+                            new Notice(legacyUi('Could not parse file as a StoryLine project', 'Could not parse file as a StoryLine project'));
                         }
                     } catch (err) {
                         new Notice('Failed to open project: ' + String(err));
@@ -3827,7 +3817,7 @@ class ProjectSelectModal extends Modal {
                 await this.plugin.sceneManager.scanProjects();
                 const projects = this.plugin.sceneManager.getProjects();
                 if (projects.length === 0) {
-                    select.createEl('option', { text: 'No projects found' }).setAttribute('disabled', 'true');
+                    select.createEl('option', { text: legacyUi('No projects found', 'No projects found') }).setAttribute('disabled', 'true');
                 }
                 for (const p of projects) {
                     const rootPath = this.plugin.settings.storyLineRoot;
@@ -3844,7 +3834,7 @@ class ProjectSelectModal extends Modal {
                         : projects[0].filePath;
                 }
             } catch {
-                select.createEl('option', { text: 'Error loading projects' }).setAttribute('disabled', 'true');
+                select.createEl('option', { text: legacyUi('Error loading projects', 'Error loading projects') }).setAttribute('disabled', 'true');
             }
         })();
     }
@@ -3859,7 +3849,7 @@ class SeriesManagementModal extends Modal {
     constructor(app: App, plugin: SceneCardsPlugin) {
         super(app);
         this.plugin = plugin;
-        this.titleEl.setText('Manage series');
+        this.titleEl.setText(legacyUi('Manage series', 'Manage series'));
     }
 
     onOpen() {
@@ -3875,7 +3865,7 @@ class SeriesManagementModal extends Modal {
 
         if (seriesList.length === 0) {
             contentEl.createEl('p', {
-                text: 'No series found. Create a series from the new project modal or use the command palette.',
+                text: legacyUi('No series found. Create a series from the new project modal or use the command palette.', 'No series found. Create a series from the new project modal or use the command palette.'),
                 cls: 'sl-series-empty',
             });
             return;
@@ -3944,7 +3934,7 @@ class SeriesManagementModal extends Modal {
 
             // ── Add book button ──
             const addRow = card.createDiv({ cls: 'sl-series-add-row' });
-            const addBtn = addRow.createEl('button', { text: 'Add book to this series', cls: 'sl-series-add-btn' });
+            const addBtn = addRow.createEl('button', { text: legacyUi('Add book to this series', 'Add book to this series'), cls: 'sl-series-add-btn' });
             setIcon(addBtn.createSpan({ prepend: true }), 'plus');
             addBtn.addEventListener('click', () => this.addBookToSeries(folder, meta));
         }
@@ -3952,12 +3942,12 @@ class SeriesManagementModal extends Modal {
 
     private async renameSeries(folder: string, meta: SeriesMetadata) {
         const modal = new Modal(this.app);
-        modal.titleEl.setText('Rename series');
+        modal.titleEl.setText(legacyUi('Rename series', 'Rename series'));
         let newName = meta.name;
 
         new Setting(modal.contentEl)
-            .setName('Series name')
-            .setDesc('Updates the series display name in series.json only. The folder identity stays unchanged.')
+            .setName(legacyUi('Series name', 'Series name'))
+            .setDesc(legacyUi('Updates the series display name in series.json only. The folder identity stays unchanged.', 'Updates the series display name in series.json only. The folder identity stays unchanged.'))
             .addText((text: TextComponent) => {
                 text.setValue(meta.name);
                 text.onChange((v: string) => (newName = v));
@@ -3966,7 +3956,7 @@ class SeriesManagementModal extends Modal {
 
         new Setting(modal.contentEl)
             .addButton((btn: ButtonComponent) => {
-                btn.setButtonText('Rename').setCta().onClick(async () => {
+                btn.setButtonText(legacyUi('Rename', 'Rename')).setCta().onClick(async () => {
                     if (!newName.trim() || newName.trim() === meta.name) {
                         modal.close();
                         return;
@@ -3974,7 +3964,7 @@ class SeriesManagementModal extends Modal {
                     try {
                         await this.plugin.seriesManager.renameSeriesName(folder, newName.trim());
 
-                        new Notice(`Series renamed to "${newName.trim()}"`);
+                        new Notice(legacyUi(`Series renamed to "${newName.trim()}"`, `Series renamed to "${newName.trim()}"`));
                         modal.close();
                         this.plugin.refreshOpenViews();
                         this.render();
@@ -4004,20 +3994,20 @@ class SeriesManagementModal extends Modal {
         });
 
         if (!bookProject) {
-            new Notice(`Could not find project "${bookName}" — it may have been moved or deleted.`);
+            new Notice(legacyUi(`Could not find project "${bookName}" — it may have been moved or deleted.`, `Could not find project "${bookName}" — it may have been moved or deleted.`));
             return;
         }
 
         // Confirm
         const confirm = await new Promise<boolean>((resolve) => {
             const m = new Modal(this.app);
-            m.titleEl.setText('Remove from series');
+            m.titleEl.setText(legacyUi('Remove from series', 'Remove from series'));
             m.contentEl.createEl('p', {
-                text: `Remove "${bookName}" from "${meta.name}"? The shared codex will be copied into the book's local folder.`,
+                text: legacyUi(`Remove "${bookName}" from "${meta.name}"? The shared codex will be copied into the book's local folder.`, `Remove "${bookName}" from "${meta.name}"? The shared codex will be copied into the book's local folder.`),
             });
             new Setting(m.contentEl)
-                .addButton((btn: ButtonComponent) => btn.setButtonText('Remove').setClass('mod-warning').onClick(() => { m.close(); resolve(true); }))
-                .addButton((btn: ButtonComponent) => btn.setButtonText('Cancel').onClick(() => { m.close(); resolve(false); }));
+                .addButton((btn: ButtonComponent) => btn.setButtonText(legacyUi('Remove', 'Remove')).setClass('mod-warning').onClick(() => { m.close(); resolve(true); }))
+                .addButton((btn: ButtonComponent) => btn.setButtonText(legacyUi('Cancel', 'Cancel')).onClick(() => { m.close(); resolve(false); }));
             m.open();
         });
         if (!confirm) return;
@@ -4053,24 +4043,24 @@ class SeriesManagementModal extends Modal {
         });
 
         if (!bookProject) {
-            new Notice(`Could not find project "${bookName}" — it may have been moved or deleted.`);
+            new Notice(legacyUi(`Could not find project "${bookName}" — it may have been moved or deleted.`, `Could not find project "${bookName}" — it may have been moved or deleted.`));
             return;
         }
 
         const modal = new Modal(this.app);
-        modal.titleEl.setText(`Delete "${bookName}"`);
+        modal.titleEl.setText(legacyUi(`Delete "${bookName}"`, `Delete "${bookName}"`));
 
         const warningEl = modal.contentEl.createDiv({ cls: 'sl-delete-warning' });
         warningEl.createEl('p', {
-            text: `\u26a0\ufe0f This will permanently delete "${bookName}" and everything inside it:`,
+            text: legacyUi(`\u26a0\ufe0f This will permanently delete "${bookName}" and everything inside it:`, `\u26a0\ufe0f This will permanently delete "${bookName}" and everything inside it:`),
         });
         const list = warningEl.createEl('ul');
-        list.createEl('li', { text: 'All scenes' });
-        list.createEl('li', { text: 'All characters, locations and Codex entries' });
-        list.createEl('li', { text: 'All notes, research and archive items' });
+        list.createEl('li', { text: legacyUi('All scenes', 'All scenes') });
+        list.createEl('li', { text: legacyUi('All characters, locations and Codex entries', 'All characters, locations and Codex entries') });
+        list.createEl('li', { text: legacyUi('All notes, research and archive items', 'All notes, research and archive items') });
         list.createEl('li', { text: 'The book will be removed from the series "' + meta.name + '".' });
         warningEl.createEl('p', {
-            text: 'This action cannot be undone. The folder will be moved to your system trash (or Obsidian\u2019s .trash folder, depending on your settings).',
+            text: legacyUi('This action cannot be undone. The folder will be moved to your system trash (or Obsidian\u2019s .trash folder, depending on your settings).', 'This action cannot be undone. The folder will be moved to your system trash (or Obsidian\u2019s .trash folder, depending on your settings).'),
             cls: 'sl-delete-warning-strong',
         });
 
@@ -4078,8 +4068,8 @@ class SeriesManagementModal extends Modal {
         let typed = '';
         let deleteBtn: ButtonComponent;
         new Setting(modal.contentEl)
-            .setName('Confirm by typing the book title')
-            .setDesc(`Type "${expected}" to enable the Delete button.`)
+            .setName(legacyUi('Confirm by typing the book title', 'Confirm by typing the book title'))
+            .setDesc(legacyUi(`Type "${expected}" to enable the Delete button.`, `Type "${expected}" to enable the Delete button.`))
             .addText((text: TextComponent) => {
                 text.setPlaceholder(expected);
                 text.onChange((v: string) => {
@@ -4091,10 +4081,10 @@ class SeriesManagementModal extends Modal {
 
         new Setting(modal.contentEl)
             .addButton((btn: ButtonComponent) => {
-                btn.setButtonText('Cancel').onClick(() => modal.close());
+                btn.setButtonText(legacyUi('Cancel', 'Cancel')).onClick(() => modal.close());
             })
             .addButton((btn: ButtonComponent) => {
-                deleteBtn = btn.setButtonText('Delete permanently').setClass('mod-warning').setDisabled(true);
+                deleteBtn = btn.setButtonText(legacyUi('Delete permanently', 'Delete permanently')).setClass('mod-warning').setDisabled(true);
                 btn.onClick(async () => {
                     if (typed.trim() !== expected) return;
                     modal.close();
@@ -4121,17 +4111,17 @@ class SeriesManagementModal extends Modal {
         });
 
         if (!bookProject) {
-            new Notice(`Could not find project "${bookName}".`);
+            new Notice(legacyUi(`Could not find project "${bookName}".`, `Could not find project "${bookName}".`));
             return;
         }
 
         const modal = new Modal(this.app);
-        modal.titleEl.setText('Rename book');
+        modal.titleEl.setText(legacyUi('Rename book', 'Rename book'));
         let newTitle = bookProject.title;
 
         new Setting(modal.contentEl)
-            .setName('New title')
-            .setDesc('Updates the book display title only. The folder and file identity stay unchanged.')
+            .setName(legacyUi('New title', 'New title'))
+            .setDesc(legacyUi('Updates the book display title only. The folder and file identity stay unchanged.', 'Updates the book display title only. The folder and file identity stay unchanged.'))
             .addText((text: TextComponent) => {
                 text.setValue(bookProject.title);
                 text.onChange((v: string) => (newTitle = v));
@@ -4140,14 +4130,14 @@ class SeriesManagementModal extends Modal {
 
         new Setting(modal.contentEl)
             .addButton((btn: ButtonComponent) => {
-                btn.setButtonText('Rename').setCta().onClick(async () => {
+                btn.setButtonText(legacyUi('Rename', 'Rename')).setCta().onClick(async () => {
                     if (!newTitle.trim() || newTitle.trim() === bookProject.title) {
                         modal.close();
                         return;
                     }
                     try {
                         await this.plugin.sceneManager.renameProject(bookProject, newTitle.trim());
-                        new Notice(`Book renamed to "${newTitle.trim()}"`);
+                        new Notice(legacyUi(`Book renamed to "${newTitle.trim()}"`, `Book renamed to "${newTitle.trim()}"`));
                         modal.close();
                         this.plugin.refreshOpenViews();
                         this.render();
@@ -4165,17 +4155,17 @@ class SeriesManagementModal extends Modal {
         const projects = this.plugin.sceneManager.getProjects().filter(p => !p.seriesId && !p.seriesUuid);
 
         if (projects.length === 0) {
-            new Notice('No standalone projects found to add. Create a new project first.');
+            new Notice(legacyUi('No standalone projects found to add. Create a new project first.', 'No standalone projects found to add. Create a new project first.'));
             return;
         }
 
         const modal = new Modal(this.app);
-        modal.titleEl.setText(`Add book to "${meta.name}"`);
+        modal.titleEl.setText(legacyUi(`Add book to "${meta.name}"`, `Add book to "${meta.name}"`));
         let selectedPath = projects[0].filePath;
 
         new Setting(modal.contentEl)
-            .setName('Project')
-            .setDesc('Select a standalone project to add to this series.')
+            .setName(legacyUi('Project', 'Project'))
+            .setDesc(legacyUi('Select a standalone project to add to this series.', 'Select a standalone project to add to this series.'))
             .addDropdown((dropdown: DropdownComponent) => {
                 for (const p of projects) {
                     dropdown.addOption(p.filePath, p.title);
@@ -4185,7 +4175,7 @@ class SeriesManagementModal extends Modal {
 
         new Setting(modal.contentEl)
             .addButton((btn: ButtonComponent) => {
-                btn.setButtonText('Add to series').setCta().onClick(async () => {
+                btn.setButtonText(legacyUi('Add to series', 'Add to series')).setCta().onClick(async () => {
                     const bookProject = projects.find(p => p.filePath === selectedPath);
                     if (!bookProject) return;
                     modal.close();

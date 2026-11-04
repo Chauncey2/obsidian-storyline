@@ -14,6 +14,7 @@ import SceneCardsPlugin from '../main';
 import { MANUSCRIPT_VIEW_TYPE } from '../constants';
 import { openStructureLabelModal } from '../components/StructureLabelModal';
 import { getChapterDisplayLabel } from '../utils/actChapter';
+import { legacyUi } from '../i18n';
 
 /**
  * Discussion #183 — module-level cursor/scroll snapshot.
@@ -213,7 +214,7 @@ export class ManuscriptView extends ItemView {
         // Toolbar
         const toolbar = container.createDiv('story-line-toolbar');
         const titleRow = toolbar.createDiv('story-line-title-row');
-        titleRow.createEl('h3', { cls: 'story-line-view-title', text: 'StoryLine' });
+        titleRow.createEl('h3', { cls: 'story-line-view-title', text: legacyUi('StoryLine', 'StoryLine') });
 
         // View switcher tabs
         renderViewSwitcher(toolbar, MANUSCRIPT_VIEW_TYPE, this.plugin, this.leaf);
@@ -269,7 +270,7 @@ export class ManuscriptView extends ItemView {
             }
 
             const plainWrap = (filterBar as HTMLElement).createEl('label', { cls: 'sl-toggle-wrap' });
-            plainWrap.createSpan({ cls: 'sl-toggle-label', text: 'Plain text' });
+            plainWrap.createSpan({ cls: 'sl-toggle-label', text: legacyUi('Plain text', 'Plain text') });
             const plainCb = plainWrap.createEl('input', { type: 'checkbox' });
             plainCb.checked = this._plainText;
             plainWrap.createSpan({ cls: 'sl-toggle-track' });
@@ -281,7 +282,7 @@ export class ManuscriptView extends ItemView {
             });
 
             const lockWrap = (filterBar as HTMLElement).createEl('label', { cls: 'sl-toggle-wrap' });
-            lockWrap.createSpan({ cls: 'sl-toggle-label', text: 'Lock links' });
+            lockWrap.createSpan({ cls: 'sl-toggle-label', text: legacyUi('Lock links', 'Lock links') });
             const lockCb = lockWrap.createEl('input', { type: 'checkbox' });
             lockCb.checked = this._lockLinks;
             lockWrap.createSpan({ cls: 'sl-toggle-track' });
@@ -424,9 +425,9 @@ export class ManuscriptView extends ItemView {
         if (scenes.length === 0) {
             this.scrollArea.createDiv({
                 cls: 'sl-manuscript-empty',
-                text: 'No scenes match the current filters.',
+                text: legacyUi('No scenes match the current filters.', 'No scenes match the current filters.'),
             });
-            this.footerEl.setText('0 words');
+            this.footerEl.setText(legacyUi('0 words', '0 words'));
             return;
         }
 
@@ -489,7 +490,7 @@ export class ManuscriptView extends ItemView {
                         event.preventDefault();
                         const menu = new Menu();
                         menu.addItem(item => item
-                            .setTitle('Rename chapter')
+                            .setTitle(legacyUi('Rename chapter', 'Rename chapter'))
                             .setIcon('pencil')
                             .onClick(() => openStructureLabelModal(
                                 this.app,
@@ -540,7 +541,7 @@ export class ManuscriptView extends ItemView {
             // Editor container — track for eager mounting, observe for lazy loading
             const editorWrap = block.createDiv('sl-manuscript-editor-wrap');
             editorWrap.dataset.scenePath = scene.filePath;
-            editorWrap.createDiv({ cls: 'sl-manuscript-loading', text: 'Loading…' });
+            editorWrap.createDiv({ cls: 'sl-manuscript-loading', text: legacyUi('Loading…', 'Loading…') });
             this.lazyObserver.observe(editorWrap);
             editorContainers.push({ el: editorWrap, path: scene.filePath });
 
@@ -555,7 +556,7 @@ export class ManuscriptView extends ItemView {
         const useChars = this.plugin.settings.countUnit === 'chars';
         const value = useChars ? totalChars : totalWords;
         const unitLabel = useChars ? 'chars' : (value === 1 ? 'word' : 'words');
-        this.footerEl.setText(`${scenes.length} scenes · ${value.toLocaleString()} ${unitLabel}`);
+        this.footerEl.setText(legacyUi(`${scenes.length} scenes · ${value.toLocaleString()} ${unitLabel}`, `${scenes.length} scenes · ${value.toLocaleString()} ${unitLabel}`));
 
         // Eagerly mount the first few editors immediately (don't wait for IntersectionObserver)
         this._isMounting = true;
@@ -791,7 +792,7 @@ export class ManuscriptView extends ItemView {
             // replace any literal "&nbsp;" / "&#160;" text back to U+00A0.
             this.decodeNbspEntities(previewEl);
         } else {
-            container.createDiv({ cls: 'sl-manuscript-scene-empty', text: 'Empty scene' });
+            container.createDiv({ cls: 'sl-manuscript-scene-empty', text: legacyUi('Empty scene', 'Empty scene') });
         }
     }
 
@@ -907,29 +908,29 @@ export class ManuscriptView extends ItemView {
 
         const input = row.createEl('input', {
             cls: 'sl-manuscript-search-input',
-            attr: { type: 'text', placeholder: 'Find in manuscript…', 'aria-label': 'Find in manuscript' },
+            attr: { type: 'text', placeholder: legacyUi('Find in manuscript…', 'Find in manuscript…'), 'aria-label': 'Find in manuscript' },
         });
         this.searchInput = input;
 
-        const count = row.createSpan({ cls: 'sl-manuscript-search-count', text: '' });
+        const count = row.createSpan({ cls: 'sl-manuscript-search-count', text: legacyUi('', '') });
 
-        const prevBtn = row.createEl('button', { cls: 'sl-manuscript-search-btn', attr: { 'aria-label': 'Previous match', title: 'Previous (Shift+Enter)' } });
+        const prevBtn = row.createEl('button', { cls: 'sl-manuscript-search-btn', attr: { 'aria-label': 'Previous match', title: legacyUi('Previous (Shift+Enter)', 'Previous (Shift+Enter)') } });
         setIcon(prevBtn, 'chevron-up');
         prevBtn.addEventListener('click', () => this.searchNext(false));
 
-        const nextBtn = row.createEl('button', { cls: 'sl-manuscript-search-btn', attr: { 'aria-label': 'Next match', title: 'Next (enter)' } });
+        const nextBtn = row.createEl('button', { cls: 'sl-manuscript-search-btn', attr: { 'aria-label': 'Next match', title: legacyUi('Next (enter)', 'Next (enter)') } });
         setIcon(nextBtn, 'chevron-down');
         nextBtn.addEventListener('click', () => this.searchNext(true));
 
-        const caseBtn = row.createEl('button', { cls: 'sl-manuscript-search-toggle', attr: { 'aria-label': 'Match case', title: 'Match case' } });
-        caseBtn.setText('Aa');
+        const caseBtn = row.createEl('button', { cls: 'sl-manuscript-search-toggle', attr: { 'aria-label': 'Match case', title: legacyUi('Match case', 'Match case') } });
+        caseBtn.setText(legacyUi('Aa', 'Aa'));
         caseBtn.addEventListener('click', () => {
             this.searchCaseSensitive = !this.searchCaseSensitive;
             caseBtn.toggleClass('is-active', this.searchCaseSensitive);
             this.runSearch();
         });
 
-        const wordBtn = row.createEl('button', { cls: 'sl-manuscript-search-toggle', attr: { 'aria-label': 'Whole word', title: 'Whole word' } });
+        const wordBtn = row.createEl('button', { cls: 'sl-manuscript-search-toggle', attr: { 'aria-label': 'Whole word', title: legacyUi('Whole word', 'Whole word') } });
         setIcon(wordBtn, 'whole-word');
         wordBtn.addEventListener('click', () => {
             this.searchWholeWord = !this.searchWholeWord;
@@ -937,15 +938,15 @@ export class ManuscriptView extends ItemView {
             this.runSearch();
         });
 
-        const regexBtn = row.createEl('button', { cls: 'sl-manuscript-search-toggle', attr: { 'aria-label': 'Regular expression', title: 'Regex' } });
-        regexBtn.setText('.*');
+        const regexBtn = row.createEl('button', { cls: 'sl-manuscript-search-toggle', attr: { 'aria-label': 'Regular expression', title: legacyUi('Regex', 'Regex') } });
+        regexBtn.setText(legacyUi('.*', '.*'));
         regexBtn.addEventListener('click', () => {
             this.searchRegex = !this.searchRegex;
             regexBtn.toggleClass('is-active', this.searchRegex);
             this.runSearch();
         });
 
-        const closeBtn = row.createEl('button', { cls: 'sl-manuscript-search-btn', attr: { 'aria-label': 'Close', title: 'Close (esc)' } });
+        const closeBtn = row.createEl('button', { cls: 'sl-manuscript-search-btn', attr: { 'aria-label': 'Close', title: legacyUi('Close (esc)', 'Close (esc)') } });
         setIcon(closeBtn, 'x');
         closeBtn.addEventListener('click', () => this.closeSearch());
 
@@ -956,15 +957,15 @@ export class ManuscriptView extends ItemView {
 
         const replaceInput = replaceRow.createEl('input', {
             cls: 'sl-manuscript-search-input',
-            attr: { type: 'text', placeholder: 'Replace…', 'aria-label': 'Replace' },
+            attr: { type: 'text', placeholder: legacyUi('Replace…', 'Replace…'), 'aria-label': 'Replace' },
         });
         this.replaceInput = replaceInput;
 
-        const replaceBtn = replaceRow.createEl('button', { cls: 'sl-manuscript-search-btn', attr: { 'aria-label': 'Replace this match', title: 'Replace' } });
+        const replaceBtn = replaceRow.createEl('button', { cls: 'sl-manuscript-search-btn', attr: { 'aria-label': 'Replace this match', title: legacyUi('Replace', 'Replace') } });
         setIcon(replaceBtn, 'replace');
         replaceBtn.addEventListener('click', () => this.replaceCurrent());
 
-        const replaceAllBtn = replaceRow.createEl('button', { cls: 'sl-manuscript-search-btn', attr: { 'aria-label': 'Replace all matches', title: 'Replace all' } });
+        const replaceAllBtn = replaceRow.createEl('button', { cls: 'sl-manuscript-search-btn', attr: { 'aria-label': 'Replace all matches', title: legacyUi('Replace all', 'Replace all') } });
         setIcon(replaceAllBtn, 'check-check');
         replaceAllBtn.addEventListener('click', () => this.replaceAll());
 
@@ -1122,9 +1123,9 @@ export class ManuscriptView extends ItemView {
         const el = this.searchPanel?.querySelector('.sl-manuscript-search-count') as HTMLElement | null;
         if (!el) return;
         if (this.searchMatchTotal === 0) {
-            el.setText(this.searchInput?.value ? 'No results' : '');
+            el.setText(this.searchInput?.value ? legacyUi('No results', 'No results') : '');
         } else {
-            el.setText(`${this.searchMatchIndex + 1} of ${this.searchMatchTotal}`);
+            el.setText(legacyUi(`${this.searchMatchIndex + 1} of ${this.searchMatchTotal}`, `${this.searchMatchIndex + 1} of ${this.searchMatchTotal}`));
         }
     }
 
@@ -1267,7 +1268,7 @@ export class ManuscriptView extends ItemView {
             }
         }
 
-        new Notice(`Replaced ${totalReplaced} occurrence${totalReplaced === 1 ? '' : 's'}`);
+        new Notice(legacyUi(`Replaced ${totalReplaced} occurrence${totalReplaced === 1 ? '' : 's'}`, `Replaced ${totalReplaced} occurrence${totalReplaced === 1 ? '' : 's'}`));
         // Wait for file modify events to propagate, then re-run search.
         await new Promise(r => window.setTimeout(r, 300));
         this.runSearch();
@@ -1295,7 +1296,7 @@ export class ManuscriptView extends ItemView {
         const useChars = this.plugin.settings.countUnit === 'chars';
         const value = useChars ? totalChars : totalWords;
         const unitLabel = useChars ? 'chars' : (value === 1 ? 'word' : 'words');
-        this.footerEl.setText(`${scenes.length} scenes · ${value.toLocaleString()} ${unitLabel}`);
+        this.footerEl.setText(legacyUi(`${scenes.length} scenes · ${value.toLocaleString()} ${unitLabel}`, `${scenes.length} scenes · ${value.toLocaleString()} ${unitLabel}`));
     }
 
     /** Apply focus-mode effects via CSS custom properties; static rules live in styles.css. */

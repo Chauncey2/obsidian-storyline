@@ -2,6 +2,7 @@
 import { App, Notice, normalizePath } from 'obsidian';
 import type SceneCardsPlugin from '../main';
 import { SeriesMetadata, deriveProjectFoldersFromFilePath } from '../models/StoryLineProject';
+import { tr } from '../i18n';
 
 /**
  * Manages series — groups of book projects sharing a common codex.
@@ -237,7 +238,7 @@ export class SeriesManager {
             await this.plugin.sceneManager.saveProjectFrontmatter(updatedProject);
         }
 
-        new Notice(`Series "${seriesName}" created`);
+        new Notice(tr('notice.seriesCreated', { name: seriesName }));
         return seriesFolder;
     }
 
@@ -320,7 +321,7 @@ export class SeriesManager {
             await this.plugin.sceneManager.saveProjectFrontmatter(updatedProject);
         }
 
-        new Notice(`Project added to series "${meta.name}"`);
+        new Notice(tr('notice.projectAddedToSeries', { name: meta.name }));
     }
 
     // ── Remove from series ─────────────────────────────
@@ -374,7 +375,7 @@ export class SeriesManager {
             await this.plugin.sceneManager.saveProjectFrontmatter(updatedProject);
         }
 
-        new Notice(`Project removed from series "${meta.name}"`);
+        new Notice(tr('notice.projectRemovedFromSeries', { name: meta.name }));
     }
 
     /** Rename only the display name in series.json; folder identity is unchanged. */

@@ -5,6 +5,7 @@ import { SceneManager } from '../services/SceneManager';
 import { InfoPanelComponent } from '../components/InfoPanel';
 import { ManuscriptView } from './ManuscriptView';
 import { MANUSCRIPT_VIEW_TYPE, SYNOPSIS_VIEW_TYPE } from '../constants';
+import { tr } from '../i18n';
 
 /**
  * Standalone Synopsis view — mirrors the focused scene's `synopsis`
@@ -48,7 +49,7 @@ export class SynopsisView extends ItemView {
         this.synopsisPanel = new InfoPanelComponent(panelEl, this.plugin, this.sceneManager, 'synopsis');
 
         this.emptyEl = container.createDiv('sl-scene-inspector-empty');
-        this.emptyEl.createEl('p', { text: 'Open a scene file to edit its synopsis here.' });
+        this.emptyEl.createEl('p', { text: tr('common.openSceneSynopsisHere') });
 
         this.registerEvent(
             this.app.workspace.on('active-leaf-change', (leaf) => {

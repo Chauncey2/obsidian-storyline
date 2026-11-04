@@ -8,6 +8,7 @@ import { ResearchView } from './ResearchView';
 import { HelpView } from './HelpView';
 import { ManuscriptView } from './ManuscriptView';
 import { attachTooltip } from '../components/Tooltip';
+import { tr } from '../i18n';
 import {
     SCENE_INSPECTOR_VIEW_TYPE,
     MANUSCRIPT_VIEW_TYPE,
@@ -125,7 +126,7 @@ export class SceneInspectorView extends ItemView {
 
         // Empty state (shared across Info + Details)
         this.emptyEl = panelsHost.createDiv('sl-scene-inspector-empty');
-        this.emptyEl.createEl('p', { text: 'Open a scene file to see its details here.' });
+        this.emptyEl.createEl('p', { text: tr('common.openSceneDetailsHere') });
 
         // Research tab — embed the full Research view
         const researchPanelEl = panelsHost.createDiv('sl-inspector-panel sl-inspector-embed');
@@ -276,7 +277,7 @@ export class SceneInspectorView extends ItemView {
                 e.stopPropagation();
                 const menu = new Menu();
                 menu.addItem((item) => {
-                    item.setTitle(`Open ${label} in own pane`)
+                    item.setTitle(tr('common.openOwnPane', { label }))
                         .setIcon('panel-right-open')
                         .onClick(() => this.popOutTab(def.popOutType as string));
                 });

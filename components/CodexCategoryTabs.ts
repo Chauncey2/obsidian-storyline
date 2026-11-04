@@ -6,6 +6,7 @@
 import * as obsidian from 'obsidian';
 import type SceneCardsPlugin from '../main';
 import { CHARACTER_VIEW_TYPE, LOCATION_VIEW_TYPE, CODEX_VIEW_TYPE } from '../constants';
+import { tr } from '../i18n';
 
 export interface CodexTabsOptions {
     /** The view type that should be highlighted as active ('Characters' | 'Locations' | category id) */
@@ -28,11 +29,11 @@ export function renderCodexCategoryTabs(parent: HTMLElement, opts: CodexTabsOpti
     // ── Characters pseudo-tab ──
     const charTab = tabs.createEl('button', {
         cls: `codex-tab codex-pseudo-tab ${activeId === 'characters-pseudo' ? 'active' : ''}`,
-        attr: { 'aria-label': 'Characters' },
+        attr: { 'aria-label': tr('common.characters') },
     });
     const charIcon = charTab.createSpan({ cls: 'codex-tab-icon' });
     obsidian.setIcon(charIcon, 'users');
-    charTab.createSpan({ cls: 'codex-tab-label', text: 'Characters' });
+    charTab.createSpan({ cls: 'codex-tab-label', text: tr('common.characters') });
     if (activeId !== 'characters-pseudo') {
         charTab.addEventListener('click', () => switchTo(leaf, plugin, CHARACTER_VIEW_TYPE));
     }
@@ -40,11 +41,11 @@ export function renderCodexCategoryTabs(parent: HTMLElement, opts: CodexTabsOpti
     // ── Locations pseudo-tab ──
     const locTab = tabs.createEl('button', {
         cls: `codex-tab codex-pseudo-tab ${activeId === 'locations-pseudo' ? 'active' : ''}`,
-        attr: { 'aria-label': 'Locations' },
+        attr: { 'aria-label': tr('common.locations') },
     });
     const locIcon = locTab.createSpan({ cls: 'codex-tab-icon' });
     obsidian.setIcon(locIcon, 'map-pin');
-    locTab.createSpan({ cls: 'codex-tab-label', text: 'Locations' });
+    locTab.createSpan({ cls: 'codex-tab-label', text: tr('common.locations') });
     if (activeId !== 'locations-pseudo') {
         locTab.addEventListener('click', () => switchTo(leaf, plugin, LOCATION_VIEW_TYPE));
     }

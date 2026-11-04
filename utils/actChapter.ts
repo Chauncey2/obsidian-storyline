@@ -16,6 +16,7 @@
  *    auto-increment-style behaviour is safe to apply);
  *  - turn a value into a safe folder name or filename prefix.
  */
+import { trContent, type ResolvedLocale } from '../i18n';
 
 export type ActChapterValue = number | string | undefined | null;
 
@@ -85,6 +86,40 @@ export function getChapterDisplayLabel(chapter: ActChapterValue, subtitle?: stri
     if (chapter === undefined || chapter === null || chapter === '') return '';
     const label = subtitle?.replace(/^Ch(?:apter)?\s*\d+\s*[—:]\s*/i, '').trim();
     return label ? `Chapter ${chapter}: ${label}` : `Chapter ${chapter}`;
+}
+
+const ACT_LABEL_PREFIX = /^(?:(?:Act|Prologue|Epilogue)\s*\d*|第\s*[0-9一二三四五六七八九十百]+\s*幕|序章|尾声)\s*[—:：]\s*/i;
+const CHAPTER_LABEL_PREFIX = /^(?:Ch(?:apter)?\s*\d+|第\s*[0-9一二三四五六七八九十百]+\s*章)\s*[—:：]\s*/i;
+
+export function stripActLabelPrefix(label: string | undefined): string | undefined {
+    return label?.replace(ACT_LABEL_PREFIX, '');
+}
+
+export function stripChapterLabelPrefix(label: string | undefined): string | undefined {
+    return label?.replace(CHAPTER_LABEL_PREFIX, '');
+}
+
+export function formatActLabel(act: ActChapterValue, locale: ResolvedLocale): string {
+    if (isPrologueAct(act)) return trContent(locale, 'act.prologue');
+    if (isEpilogueAct(act)) return trContent(locale, 'act.epilogue');
+    if (act === undefined || act === null || act === '') return '';
+    const n = toActChapterNumber(act);
+    if (!isNaN(n) && n >= 1 && n <= 98) return trContent(locale, 'act.numbered', { n });
+    return String(act);
+}
+
+export function formatActLabelWithSubtitle(act: ActChapterValue, locale: ResolvedLocale, subtitle?: string): string {
+    const label = formatActLabel(act, locale);
+    if (!label) return '';
+    return subtitle ? trContent(locale, 'act.withLabel', { act: label, label: subtitle }) : label;
+}
+
+export function formatChapterLabel(chapter: ActChapterValue, locale: ResolvedLocale, subtitle?: string): string {
+    if (chapter === undefined || chapter === null || chapter === '') return '';
+    const label = subtitle ? stripChapterLabelPrefix(subtitle)?.trim() : '';
+    return label
+        ? trContent(locale, 'chapter.withLabel', { n: String(chapter), label })
+        : trContent(locale, 'chapter.numbered', { n: String(chapter) });
 }
 
 /**

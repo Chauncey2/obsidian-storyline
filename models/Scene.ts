@@ -379,6 +379,8 @@ export interface BeatDefinition {
 export interface BeatSheetTemplate {
     /** Template display name */
     name: string;
+    /** Localized name for display; name remains the persisted English identifier. */
+    displayName?: string;
     /** One-line summary */
     summary: string;
     /** Act numbers to create */

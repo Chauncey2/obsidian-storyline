@@ -5,6 +5,7 @@ import { SceneManager } from '../services/SceneManager';
 import { InspectorComponent } from '../components/Inspector';
 import { ManuscriptView } from './ManuscriptView';
 import { MANUSCRIPT_VIEW_TYPE, DETAILS_VIEW_TYPE } from '../constants';
+import { tr } from '../i18n';
 
 /**
  * Standalone Scene Details view — hosts the full InspectorComponent
@@ -53,7 +54,7 @@ export class DetailsView extends ItemView {
         this.inspectorHost.setCssStyles({ display: 'none' });
 
         this.emptyEl = panelsHost.createDiv('sl-scene-inspector-empty');
-        this.emptyEl.createEl('p', { text: 'Open a scene file to see its details here.' });
+        this.emptyEl.createEl('p', { text: tr('common.openSceneDetailsHere') });
 
         this.inspectorComponent = new InspectorComponent(
             this.inspectorHost,

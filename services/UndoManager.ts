@@ -2,6 +2,7 @@
 import { App, TFile, Notice } from 'obsidian';
 import { Scene } from '../models/Scene';
 import { MetadataParser } from './MetadataParser';
+import { tr } from '../i18n';
 
 /**
  * Types of undoable actions
@@ -136,7 +137,7 @@ export class UndoManager {
     async undo(): Promise<boolean> {
         const action = this.undoStack.pop();
         if (!action) {
-            new Notice('Nothing to undo');
+            new Notice(tr('notice.nothingToUndo'));
             return false;
         }
 
@@ -144,12 +145,12 @@ export class UndoManager {
             await this.applyReverse(action);
             this.redoStack.push(action);
             if (this.redoStack.length > MAX_STACK) this.redoStack.shift();
-            new Notice(`Undo: ${action.label}`);
+            new Notice(tr('notice.undo', { label: action.label }));
             this.onAfterUndoRedo?.();
             return true;
         } catch (e) {
             console.error('StoryLine: undo failed', e);
-            new Notice(`Undo failed: ${(e as Error).message}`);
+            new Notice(tr('notice.undoFailed', { error: (e as Error).message }));
             return false;
         }
     }
@@ -157,7 +158,7 @@ export class UndoManager {
     async redo(): Promise<boolean> {
         const action = this.redoStack.pop();
         if (!action) {
-            new Notice('Nothing to redo');
+            new Notice(tr('notice.nothingToRedo'));
             return false;
         }
 
@@ -165,12 +166,12 @@ export class UndoManager {
             await this.applyForward(action);
             this.undoStack.push(action);
             if (this.undoStack.length > MAX_STACK) this.undoStack.shift();
-            new Notice(`Redo: ${action.label}`);
+            new Notice(tr('notice.redo', { label: action.label }));
             this.onAfterUndoRedo?.();
             return true;
         } catch (e) {
             console.error('StoryLine: redo failed', e);
-            new Notice(`Redo failed: ${(e as Error).message}`);
+            new Notice(tr('notice.redoFailed', { error: (e as Error).message }));
             return false;
         }
     }

@@ -14,6 +14,7 @@
 
 import { App, TFile, TFolder, normalizePath, Notice, type DataAdapter } from 'obsidian';
 import { tokenizeWords, DEFAULT_STORYLINE_LOCALE, type StoryLineLocale } from '../utils/locale';
+import { tr } from '../i18n';
 
 export interface SceneSnapshot {
     /** Vault-relative path of the snapshot file */
@@ -72,7 +73,7 @@ export class SnapshotManager {
         const wordcount = this.countWords(content);
         await this.app.vault.create(snapshotPath, content);
 
-        new Notice(`Snapshot "${safeLabel}" saved`);
+        new Notice(tr('notice.snapshotSaved', { label: safeLabel }));
 
         return {
             filePath: snapshotPath,
@@ -174,7 +175,7 @@ export class SnapshotManager {
 
         const snapshotContent = await this.readSnapshotContent(snapshotPath);
         await this.app.vault.modify(sceneFile, snapshotContent);
-        new Notice('Snapshot restored');
+        new Notice(tr('notice.snapshotRestored'));
     }
 
     /**

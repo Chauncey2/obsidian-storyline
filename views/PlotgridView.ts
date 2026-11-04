@@ -21,6 +21,7 @@ import { resolveTagColor, getPlotlineHSL, resolveStickyNoteColors, contrastTextC
 import { compareActChapter, getActDisplayLabel, getChapterDisplayLabel } from '../utils/actChapter';
 import { attachTooltip } from '../components/Tooltip';
 import type SceneCardsPlugin from '../main';
+import { legacyUi } from '../i18n';
 import { Scene, getStatusOrder, resolveStatusCfg } from '../models/Scene';
 import { openConfirmModal } from '../components/ConfirmModal';
 import { getVaultMarkdownFiles } from '../utils/vault';
@@ -90,8 +91,8 @@ export class PlotgridView extends ItemView {
         // PlotGrid is desktop-only — show friendly message on mobile
         if (isMobile) {
             const msg = container.createDiv('sl-mobile-unavailable');
-            msg.createEl('h3', { text: 'Plot grid' });
-            msg.createEl('p', { text: 'The plot grid requires a larger screen. Use the board view to manage scenes on mobile.' });
+            msg.createEl('h3', { text: legacyUi('Plot grid', 'Plot grid') });
+            msg.createEl('p', { text: legacyUi('The plot grid requires a larger screen. Use the board view to manage scenes on mobile.', 'The plot grid requires a larger screen. Use the board view to manage scenes on mobile.') });
             return;
         }
 
@@ -371,7 +372,7 @@ export class PlotgridView extends ItemView {
         const plugin = this.plugin;
         const projectKey = this.getProjectKey();
         if (!plugin || !projectKey) {
-            new Notice('Cannot reset the plot grid without an active project.');
+            new Notice(legacyUi('Cannot reset the plot grid without an active project.', 'Cannot reset the plot grid without an active project.'));
             return;
         }
 
@@ -403,7 +404,7 @@ export class PlotgridView extends ItemView {
             this.renderToolbar();
             this.renderGrid();
             plugin.viewSnapshotService.scheduleAutoSave();
-            new Notice(`Plot grid reset. Backup saved as ${backupPath.split('/').pop()}.`);
+            new Notice(legacyUi(`Plot grid reset. Backup saved as ${backupPath.split('/').pop()}.`, `Plot grid reset. Backup saved as ${backupPath.split('/').pop()}.`));
         } catch (error) {
             if (!resetSaved && this.isCurrentProject(projectKey)) this.scheduleSave();
             const detail = error instanceof Error ? error.message : String(error);
@@ -420,7 +421,7 @@ export class PlotgridView extends ItemView {
 
         const fileName = backupPath.split('/').pop() ?? 'backup';
         openConfirmModal(this.app, {
-            title: 'Restore plot grid backup',
+            title: legacyUi('Restore plot grid backup', 'Restore plot grid backup'),
             message: `Restore ${fileName}? This replaces the current plot grid.`,
             confirmLabel: 'Restore backup',
             onConfirm: async () => {
@@ -447,11 +448,11 @@ export class PlotgridView extends ItemView {
                     this.renderToolbar();
                     this.renderGrid();
                     plugin.viewSnapshotService.scheduleAutoSave();
-                    new Notice('Plot grid backup restored.');
+                    new Notice(legacyUi('Plot grid backup restored.', 'Plot grid backup restored.'));
                 } catch (error) {
                     if (this.isCurrentProject(projectKey)) this.scheduleSave();
                     const detail = error instanceof Error ? error.message : String(error);
-                    new Notice(`Could not restore plot grid backup. ${detail}`);
+                    new Notice(legacyUi(`Could not restore plot grid backup. ${detail}`, `Could not restore plot grid backup. ${detail}`));
                 }
             },
         });
@@ -480,13 +481,13 @@ export class PlotgridView extends ItemView {
     /** Pop the last undo snapshot and restore it. */
     undoPlotGridMove(): void {
         if (this.undoStack.length === 0) {
-            new Notice('Nothing to undo on the plot grid.');
+            new Notice(legacyUi('Nothing to undo on the plot grid.', 'Nothing to undo on the plot grid.'));
             return;
         }
         this.data = this.undoStack.pop()!;
         this.scheduleSave();
         this.renderGrid();
-        new Notice('Plot grid move undone.');
+        new Notice(legacyUi('Plot grid move undone.', 'Plot grid move undone.'));
     }
 
     private buildLayout(container: HTMLElement) {
@@ -566,7 +567,7 @@ export class PlotgridView extends ItemView {
         const titleRow = toolbar.createDiv('story-line-title-row');
         titleRow.createEl('h3', {
             cls: 'story-line-view-title',
-            text: 'StoryLine'
+            text: legacyUi('StoryLine', 'StoryLine')
         });
         // Show active project title next to the main label (no dropdown / new button here)
         // project name shown in top-center only; no inline project selector here
@@ -683,7 +684,7 @@ export class PlotgridView extends ItemView {
             boxSizing: 'border-box',
         });
         alignSelect.title = 'Alignment for selection';
-        alignSelect.createEl('option', { text: 'Align', value: '', disabled: true });
+        alignSelect.createEl('option', { text: legacyUi('Align', 'Align'), value: '', disabled: true });
         for (const [value, label] of [['left', 'Left'], ['center', 'Center'], ['right', 'Right']] as const) {
             const option = alignSelect.createEl('option', { text: label });
             option.value = value;
@@ -947,12 +948,12 @@ export class PlotgridView extends ItemView {
         }
 
         if (!changed) {
-            new Notice('Plot grid row heights already fit their content');
+            new Notice(legacyUi('Plot grid row heights already fit their content', 'Plot grid row heights already fit their content'));
             return;
         }
 
         this.scheduleSave();
-        new Notice('Plot grid row heights resized to fit content');
+        new Notice(legacyUi('Plot grid row heights resized to fit content', 'Plot grid row heights resized to fit content'));
     }
 
     private async waitForPlotGridLayout(): Promise<void> {
@@ -1201,17 +1202,17 @@ export class PlotgridView extends ItemView {
         corner.addEventListener('contextmenu', async (evt) => {
             evt.preventDefault();
             const menu = new Menu();
-            menu.addItem((it) => it.setTitle('Reset grid').onClick(() => {
+            menu.addItem((it) => it.setTitle(legacyUi('Reset grid', 'Reset grid')).onClick(() => {
                 class ConfirmModal extends Modal {
                     onConfirm: () => Promise<void>;
                     constructor(app: App, onConfirm: () => Promise<void>) { super(app); this.onConfirm = onConfirm; }
                     onOpen() {
                         const { contentEl } = this;
-                        contentEl.createEl('h3', { text: 'Reset grid' });
-                        contentEl.createEl('p', { text: 'This removes all rows and columns, including custom columns, plus cell text, formatting, and scene links. A backup will be saved first and can be restored from this menu.' });
+                        contentEl.createEl('h3', { text: legacyUi('Reset grid', 'Reset grid') });
+                        contentEl.createEl('p', { text: legacyUi('This removes all rows and columns, including custom columns, plus cell text, formatting, and scene links. A backup will be saved first and can be restored from this menu.', 'This removes all rows and columns, including custom columns, plus cell text, formatting, and scene links. A backup will be saved first and can be restored from this menu.') });
                         const btns = contentEl.createDiv();
-                        const ok = btns.createEl('button', { text: 'Reset' });
-                        const cancel = btns.createEl('button', { text: 'Cancel' });
+                        const ok = btns.createEl('button', { text: legacyUi('Reset', 'Reset') });
+                        const cancel = btns.createEl('button', { text: legacyUi('Cancel', 'Cancel') });
                         ok.addEventListener('click', async () => {
                             ok.disabled = true;
                             cancel.disabled = true;
@@ -1228,7 +1229,7 @@ export class PlotgridView extends ItemView {
             const backupPath = projectKey ? await this.findLatestResetBackup(projectKey) : null;
             if (backupPath) {
                 menu.addSeparator();
-                menu.addItem((it) => it.setTitle('Restore last reset backup').onClick(() => {
+                menu.addItem((it) => it.setTitle(legacyUi('Restore last reset backup', 'Restore last reset backup')).onClick(() => {
                     void this.confirmRestoreResetBackup(backupPath);
                 }));
             }
@@ -1321,9 +1322,9 @@ export class PlotgridView extends ItemView {
             el.addEventListener('contextmenu', (evt) => {
                 evt.preventDefault();
                 const menu = new Menu();
-                menu.addItem((item) => item.setTitle('Rename column').onClick(() => {
+                menu.addItem((item) => item.setTitle(legacyUi('Rename column', 'Rename column')).onClick(() => {
                     const modal = new Modal(this.app);
-                    modal.titleEl.setText('Rename column');
+                    modal.titleEl.setText(legacyUi('Rename column', 'Rename column'));
                     const inp = modal.contentEl.createEl('input', { type: 'text', cls: 'plot-grid-rename-input' });
                     inp.setCssStyles({ width: '100%' });
                     inp.value = col.label;
@@ -1333,7 +1334,7 @@ export class PlotgridView extends ItemView {
                         this.scheduleSave(); this.renderGrid(); modal.close();
                     };
                     inp.addEventListener('keydown', (ke) => { if (ke.key === 'Enter') commitRename(); });
-                    const btn = modal.contentEl.createEl('button', { text: 'OK', cls: 'mod-cta' });
+                    const btn = modal.contentEl.createEl('button', { text: legacyUi('OK', 'OK'), cls: 'mod-cta' });
                     btn.setCssStyles({ marginTop: '8px' });
                     btn.addEventListener('click', () => commitRename());
                     modal.open();
@@ -1341,7 +1342,7 @@ export class PlotgridView extends ItemView {
                     inp.select();
                 }));
                 menu.addItem((item) => item.setTitle((this.data.stickyHeaders ? 'Disable' : 'Enable') + ' Sticky Headers').onClick(() => { this.data.stickyHeaders = !this.data.stickyHeaders; this.scheduleSave(); this.renderToolbar(); this.renderGrid(); }));
-                menu.addItem((item) => item.setTitle('Set column colour???').onClick(() => {
+                menu.addItem((item) => item.setTitle(legacyUi('Set column colour???', 'Set column colour???')).onClick(() => {
                     const header = this.canvasEl?.querySelectorAll('.plot-grid-col-header')[ci] as HTMLElement | undefined;
                     const els: HTMLElement[] = [];
                     for (let ri = 0; ri < this.data.rows.length; ri++) { const e = this.getCellElement(ri, ci); if (e) els.push(e); }
@@ -1349,7 +1350,7 @@ export class PlotgridView extends ItemView {
                     const prevHeaderBg = header ? header.style.background : null;
                     this.chooseColor(this.data.columns[ci].bgColor || this.defaultBgColor(), (c) => { if (c === null) { els.forEach((e,i) => e.setCssStyles({ background: prevs[i] })); if (header && prevHeaderBg !== null) header.setCssStyles({ background: prevHeaderBg }); return; } this.data.columns[ci].bgColor = c || ''; this.scheduleSave(); this.renderGrid(); for (let ri=0; ri<this.data.rows.length; ri++) this.flashElement(this.getCellElement(ri, ci)); }, (preview) => { if (preview === null) { els.forEach((e,i) => e.setCssStyles({ background: prevs[i] })); if (header && prevHeaderBg !== null) header.setCssStyles({ background: prevHeaderBg }); } else { els.forEach(e => e.setCssStyles({ background: preview })); if (header) header.setCssStyles({ background: preview }); } });
                 }));
-                menu.addItem((item) => item.setTitle('Set header colour???').onClick(() => {
+                menu.addItem((item) => item.setTitle(legacyUi('Set header colour???', 'Set header colour???')).onClick(() => {
                     const header = this.canvasEl?.querySelectorAll('.plot-grid-col-header')[ci] as HTMLElement | undefined;
                     const prevHeaderBg = header ? header.style.background : null;
                     this.chooseColor(this.data.columns[ci].headerBgColor || this.data.columns[ci].bgColor || this.defaultBgColor(), (c) => {
@@ -1363,10 +1364,10 @@ export class PlotgridView extends ItemView {
                     });
                 }));
                 menu.addSeparator();
-                menu.addItem((item) => item.setTitle('Insert column left').onClick(() => this.insertColumnAt(ci, true)));
-                menu.addItem((item) => item.setTitle('Insert column right').onClick(() => this.insertColumnAt(ci, false)));
+                menu.addItem((item) => item.setTitle(legacyUi('Insert column left', 'Insert column left')).onClick(() => this.insertColumnAt(ci, true)));
+                menu.addItem((item) => item.setTitle(legacyUi('Insert column right', 'Insert column right')).onClick(() => this.insertColumnAt(ci, false)));
                 menu.addSeparator();
-                menu.addItem((item) => item.setTitle('Delete column').onClick(() => this.deleteColumn(ci)));
+                menu.addItem((item) => item.setTitle(legacyUi('Delete column', 'Delete column')).onClick(() => this.deleteColumn(ci)));
                 menu.showAtMouseEvent(evt);
             });
         }
@@ -1516,9 +1517,9 @@ export class PlotgridView extends ItemView {
             rowEl.addEventListener('contextmenu', (evt) => {
                 evt.preventDefault();
                 const menu = new Menu();
-                menu.addItem((item) => item.setTitle('Rename row').onClick(() => {
+                menu.addItem((item) => item.setTitle(legacyUi('Rename row', 'Rename row')).onClick(() => {
                     const modal = new Modal(this.app);
-                    modal.titleEl.setText('Rename row');
+                    modal.titleEl.setText(legacyUi('Rename row', 'Rename row'));
                     const inp = modal.contentEl.createEl('input', { type: 'text', cls: 'plot-grid-rename-input' });
                     inp.setCssStyles({ width: '100%' });
                     inp.value = row.label;
@@ -1528,7 +1529,7 @@ export class PlotgridView extends ItemView {
                         this.scheduleSave(); this.renderGrid(); modal.close();
                     };
                     inp.addEventListener('keydown', (ke) => { if (ke.key === 'Enter') commitRename(); });
-                    const btn = modal.contentEl.createEl('button', { text: 'OK', cls: 'mod-cta' });
+                    const btn = modal.contentEl.createEl('button', { text: legacyUi('OK', 'OK'), cls: 'mod-cta' });
                     btn.setCssStyles({ marginTop: '8px' });
                     btn.addEventListener('click', () => commitRename());
                     modal.open();
@@ -1536,7 +1537,7 @@ export class PlotgridView extends ItemView {
                     inp.select();
                 }));
                 menu.addItem((item) => item.setTitle((this.data.stickyHeaders ? 'Disable' : 'Enable') + ' Sticky Headers').onClick(() => { this.data.stickyHeaders = !this.data.stickyHeaders; this.scheduleSave(); this.renderToolbar(); this.renderGrid(); }));
-                menu.addItem((item) => item.setTitle('Set row colour???').onClick(() => {
+                menu.addItem((item) => item.setTitle(legacyUi('Set row colour???', 'Set row colour???')).onClick(() => {
                     const els: HTMLElement[] = [];
                     for (let ci = 0; ci < this.data.columns.length; ci++) { const e = this.getCellElement(ri, ci); if (e) els.push(e); }
                     const prevs = els.map(e => e.style.background);
@@ -1544,7 +1545,7 @@ export class PlotgridView extends ItemView {
                     const prevHeaderBg = header ? header.style.background : null;
                     this.chooseColor(this.data.rows[ri].bgColor || this.defaultBgColor(), (c) => { if (c === null) { els.forEach((e,i) => e.setCssStyles({ background: prevs[i] })); if (header && prevHeaderBg !== null) header.setCssStyles({ background: prevHeaderBg }); return; } this.data.rows[ri].bgColor = c || ''; this.scheduleSave(); this.renderGrid(); for (let ci=0; ci<this.data.columns.length; ci++) this.flashElement(this.getCellElement(ri, ci)); }, (preview) => { if (preview === null) { els.forEach((e,i) => e.setCssStyles({ background: prevs[i] })); if (header && prevHeaderBg !== null) header.setCssStyles({ background: prevHeaderBg }); } else { els.forEach(e => e.setCssStyles({ background: preview })); if (header) header.setCssStyles({ background: preview }); } });
                 }));
-                menu.addItem((item) => item.setTitle('Set header colour???').onClick(() => {
+                menu.addItem((item) => item.setTitle(legacyUi('Set header colour???', 'Set header colour???')).onClick(() => {
                     const header = this.canvasEl?.querySelectorAll('.plot-grid-row-header')[ri] as HTMLElement | undefined;
                     const prevHeaderBg = header ? header.style.background : null;
                     this.chooseColor(this.data.rows[ri].headerBgColor || this.data.rows[ri].bgColor || this.defaultBgColor(), (c) => {
@@ -1558,10 +1559,10 @@ export class PlotgridView extends ItemView {
                     });
                 }));
                 menu.addSeparator();
-                menu.addItem((item) => item.setTitle('Insert row above').onClick(() => this.insertRowAt(ri, true)));
-                menu.addItem((item) => item.setTitle('Insert row below').onClick(() => this.insertRowAt(ri, false)));
+                menu.addItem((item) => item.setTitle(legacyUi('Insert row above', 'Insert row above')).onClick(() => this.insertRowAt(ri, true)));
+                menu.addItem((item) => item.setTitle(legacyUi('Insert row below', 'Insert row below')).onClick(() => this.insertRowAt(ri, false)));
                 menu.addSeparator();
-                menu.addItem((item) => item.setTitle('Delete row').onClick(() => this.deleteRow(ri)));
+                menu.addItem((item) => item.setTitle(legacyUi('Delete row', 'Delete row')).onClick(() => this.deleteRow(ri)));
                 menu.showAtMouseEvent(evt);
             });
 
@@ -1675,7 +1676,7 @@ export class PlotgridView extends ItemView {
                             if (scene.plotgridOrigin) {
                                 noteLabel.createSpan({ text: scene.plotgridOrigin });
                             } else {
-                                noteLabel.createSpan({ text: 'Note' });
+                                noteLabel.createSpan({ text: legacyUi('Note', 'Note') });
                             }
 
                             // Render note content directly in the cell
@@ -1762,7 +1763,7 @@ export class PlotgridView extends ItemView {
                             ev.stopPropagation();
                             const f = this.app.vault.getAbstractFileByPath(cell.linkedSceneId as string) as TFile | null;
                             if (f) this.app.workspace.getLeaf('tab').openFile(f, { state: { mode: 'source', source: false } });
-                            else new Notice('Linked file not found');
+                            else new Notice(legacyUi('Linked file not found', 'Linked file not found'));
                         });
                         const sub = cellEl.createDiv('plot-grid-linked-subtitle');
                         sub.textContent = (cell.linkedSceneId.split('/').pop()?.replace('.md', '')) || '';
@@ -1889,27 +1890,27 @@ export class PlotgridView extends ItemView {
                         const notePresets = resolveStickyNoteColors(this.plugin!.settings);
                         notePresets.forEach((preset) => {
                             menu.addItem(item => item
-                                .setTitle(`Color: ${preset.label}`)
+                                .setTitle(legacyUi(`Color: ${preset.label}`, `Color: ${preset.label}`))
                                 .setIcon('palette')
                                 .onClick(() => { void this.setNoteColor(note, preset.color, key); }));
                         });
                         menu.addItem(item => item
-                            .setTitle('Color: custom…')
+                            .setTitle(legacyUi('Color: custom…', 'Color: custom…'))
                             .setIcon('pipette')
                             .onClick(() => { this.openNoteColorModal(linkedScene, key); }));
                         menu.addItem(item => item
-                            .setTitle('Color: default')
+                            .setTitle(legacyUi('Color: default', 'Color: default'))
                             .setIcon('rotate-ccw')
                             .onClick(() => { void this.setNoteColor(linkedScene, undefined, key); }));
 
                         menu.addSeparator();
-                        menu.addItem((it) => it.setTitle('Duplicate note').setIcon('copy').onClick(async () => {
+                        menu.addItem((it) => it.setTitle(legacyUi('Duplicate note', 'Duplicate note')).setIcon('copy').onClick(async () => {
                             await scMgr?.duplicateScene(linkedScene.filePath);
                             this.renderGrid();
                         }));
-                        menu.addItem((it) => it.setTitle('Delete note').setIcon('trash').onClick(async () => {
+                        menu.addItem((it) => it.setTitle(legacyUi('Delete note', 'Delete note')).setIcon('trash').onClick(async () => {
                             openConfirmModal(this.app, {
-                                title: 'Delete Note',
+                                title: legacyUi('Delete Note', 'Delete Note'),
                                 message: `Delete note "${linkedScene.title || 'Note'}"?`,
                                 confirmLabel: 'Delete',
                                 onConfirm: async () => {
@@ -1922,7 +1923,7 @@ export class PlotgridView extends ItemView {
                         }));
 
                         menu.addSeparator();
-                        menu.addItem((it) => it.setTitle('Convert to scene').setIcon('clapperboard').onClick(async () => {
+                        menu.addItem((it) => it.setTitle(legacyUi('Convert to scene', 'Convert to scene')).setIcon('clapperboard').onClick(async () => {
                             const oldPath = linkedScene.filePath;
                             const newPath = await scMgr?.moveNoteToSceneFolder(oldPath) ?? oldPath;
                             linkedScene.corkboardNote = false;
@@ -1935,14 +1936,14 @@ export class PlotgridView extends ItemView {
                             }
                             this.renderGrid();
                         }));
-                        menu.addItem((it) => it.setTitle('Edit cell text').onClick(() => this.enterEditMode(cellEl, cell, contentEl)));
-                        menu.addItem((it) => it.setTitle('Unlink note').setIcon('unlink').onClick(() => {
+                        menu.addItem((it) => it.setTitle(legacyUi('Edit cell text', 'Edit cell text')).onClick(() => this.enterEditMode(cellEl, cell, contentEl)));
+                        menu.addItem((it) => it.setTitle(legacyUi('Unlink note', 'Unlink note')).setIcon('unlink').onClick(() => {
                             const c = this.data.cells[key]; if (c) c.linkedSceneId = undefined; this.scheduleSave(); this.renderGrid();
                         }));
                     } else if (linkedScene) {
                         // ── Regular Scene actions ──
-                        menu.addItem((it) => it.setTitle('Open scene').setIcon('file-text').onClick(() => this.openScene(linkedScene)));
-                        menu.addItem((it) => it.setTitle('Show in inspector').setIcon('info').onClick(() => {
+                        menu.addItem((it) => it.setTitle(legacyUi('Open scene', 'Open scene')).setIcon('file-text').onClick(() => this.openScene(linkedScene)));
+                        menu.addItem((it) => it.setTitle(legacyUi('Show in inspector', 'Show in inspector')).setIcon('info').onClick(() => {
                             if (this.plugin?.isSceneInspectorOpen()) {
                                 this.inspectorComponent?.hide();
                                 this.app.workspace.trigger('storyline:scene-focus', linkedScene.filePath);
@@ -1954,7 +1955,7 @@ export class PlotgridView extends ItemView {
                         // Status submenu
                         const statuses = getStatusOrder();
                         statuses.forEach(s => {
-                            menu.addItem((it) => it.setTitle(`Status: ${resolveStatusCfg(s).label}`)
+                            menu.addItem((it) => it.setTitle(legacyUi(`Status: ${resolveStatusCfg(s).label}`, `Status: ${resolveStatusCfg(s).label}`))
                                 .setChecked(linkedScene.status === s)
                                 .onClick(async () => {
                                     await scMgr?.updateScene(linkedScene.filePath, { status: s });
@@ -1962,17 +1963,17 @@ export class PlotgridView extends ItemView {
                                 }));
                         });
                         menu.addSeparator();
-                        menu.addItem((it) => it.setTitle('Duplicate scene').setIcon('copy').onClick(async () => {
+                        menu.addItem((it) => it.setTitle(legacyUi('Duplicate scene', 'Duplicate scene')).setIcon('copy').onClick(async () => {
                             await scMgr?.duplicateScene(linkedScene.filePath);
                             this.renderGrid();
                         }));
-                        menu.addItem((it) => it.setTitle('Edit cell text').onClick(() => this.enterEditMode(cellEl, cell, contentEl)));
-                        menu.addItem((it) => it.setTitle('Unlink scene').setIcon('unlink').onClick(() => {
+                        menu.addItem((it) => it.setTitle(legacyUi('Edit cell text', 'Edit cell text')).onClick(() => this.enterEditMode(cellEl, cell, contentEl)));
+                        menu.addItem((it) => it.setTitle(legacyUi('Unlink scene', 'Unlink scene')).setIcon('unlink').onClick(() => {
                             const c = this.data.cells[key]; if (c) c.linkedSceneId = undefined; this.scheduleSave(); this.renderGrid();
                         }));
-                        menu.addItem((it) => it.setTitle('Delete scene').setIcon('trash').onClick(async () => {
+                        menu.addItem((it) => it.setTitle(legacyUi('Delete scene', 'Delete scene')).setIcon('trash').onClick(async () => {
                             openConfirmModal(this.app, {
-                                title: 'Delete Scene',
+                                title: legacyUi('Delete Scene', 'Delete Scene'),
                                 message: `Delete scene "${linkedScene.title || 'Untitled'}"?`,
                                 confirmLabel: 'Delete',
                                 onConfirm: async () => {
@@ -1984,27 +1985,27 @@ export class PlotgridView extends ItemView {
                         }));
                     } else {
                         // No linked scene — show cell editing + create/link options
-                        menu.addItem((it) => it.setTitle('Edit cell').onClick(() => this.enterEditMode(cellEl, cell, contentEl)));
+                        menu.addItem((it) => it.setTitle(legacyUi('Edit cell', 'Edit cell')).onClick(() => this.enterEditMode(cellEl, cell, contentEl)));
                         menu.addSeparator();
                         if (scMgr) {
-                            menu.addItem((it) => it.setTitle('Create new scene???').setIcon('plus').onClick(() => {
+                            menu.addItem((it) => it.setTitle(legacyUi('Create new scene???', 'Create new scene???')).setIcon('plus').onClick(() => {
                                 this.openQuickAddForCell(key);
                             }));
                         }
-                        menu.addItem((it) => it.setTitle('Link scene card???').setIcon('link').onClick(() => {
+                        menu.addItem((it) => it.setTitle(legacyUi('Link scene card???', 'Link scene card???')).setIcon('link').onClick(() => {
                             this.openSceneLinkModal((path) => { const c = this.data.cells[key]; if (c) c.linkedSceneId = path; this.scheduleSave(); this.renderGrid(); });
                         }));
                         menu.addSeparator();
-                        menu.addItem((it) => it.setTitle('Clear cell content').onClick(() => { const c = this.data.cells[key]; if (c) c.content = ''; this.scheduleSave(); this.renderGrid(); }));
+                        menu.addItem((it) => it.setTitle(legacyUi('Clear cell content', 'Clear cell content')).onClick(() => { const c = this.data.cells[key]; if (c) c.content = ''; this.scheduleSave(); this.renderGrid(); }));
                     }
                     menu.addSeparator();
-                    menu.addItem((it) => it.setTitle('Insert row above').onClick(() => this.insertRowAt(ri, true)));
-                    menu.addItem((it) => it.setTitle('Insert row below').onClick(() => this.insertRowAt(ri, false)));
-                    menu.addItem((it) => it.setTitle('Insert column left').onClick(() => this.insertColumnAt(ci, true)));
-                    menu.addItem((it) => it.setTitle('Insert column right').onClick(() => this.insertColumnAt(ci, false)));
+                    menu.addItem((it) => it.setTitle(legacyUi('Insert row above', 'Insert row above')).onClick(() => this.insertRowAt(ri, true)));
+                    menu.addItem((it) => it.setTitle(legacyUi('Insert row below', 'Insert row below')).onClick(() => this.insertRowAt(ri, false)));
+                    menu.addItem((it) => it.setTitle(legacyUi('Insert column left', 'Insert column left')).onClick(() => this.insertColumnAt(ci, true)));
+                    menu.addItem((it) => it.setTitle(legacyUi('Insert column right', 'Insert column right')).onClick(() => this.insertColumnAt(ci, false)));
                     menu.addSeparator();
-                    menu.addItem((it) => it.setTitle('Delete row').onClick(() => this.deleteRow(ri)));
-                    menu.addItem((it) => it.setTitle('Delete column').onClick(() => this.deleteColumn(ci)));
+                    menu.addItem((it) => it.setTitle(legacyUi('Delete row', 'Delete row')).onClick(() => this.deleteRow(ri)));
+                    menu.addItem((it) => it.setTitle(legacyUi('Delete column', 'Delete column')).onClick(() => this.deleteColumn(ci)));
                     menu.showAtMouseEvent(evt);
                 });
 
@@ -2044,7 +2045,7 @@ export class PlotgridView extends ItemView {
                             };
                             if (targetHasContent) {
                                 openConfirmModal(this.app, {
-                                    title: 'Overwrite Cell',
+                                    title: legacyUi('Overwrite Cell', 'Overwrite Cell'),
                                     message: 'The target cell already has content. Overwrite it?',
                                     confirmLabel: 'Overwrite',
                                     onConfirm: doMove,
@@ -2325,7 +2326,7 @@ export class PlotgridView extends ItemView {
             constructor(app: App, init: string, onChoose: (c: string | null) => void, onPreview?: (c: string | null) => void) { super(app); this.initVal = init; this.onChoose = onChoose; this.onPreview = onPreview; }
             onOpen() {
                 const { contentEl } = this;
-                const titleEl = contentEl.createEl('h3', { text: 'Choose color' });
+                const titleEl = contentEl.createEl('h3', { text: legacyUi('Choose color', 'Choose color') });
                 titleEl.setCssStyles({ margin: '4px 0 8px 0' });
                 const row = contentEl.createDiv();
                 this.inputEl = row.createEl('input') as HTMLInputElement;
@@ -2454,9 +2455,9 @@ export class PlotgridView extends ItemView {
                     paddingRight: '6px',
                 });
 
-                const ok = btns.createEl('button', { text: 'OK' });
+                const ok = btns.createEl('button', { text: legacyUi('OK', 'OK') });
                 ok.addEventListener('click', () => { this.onChoose(selectedColor === '' ? '' : selectedColor); this.close(); });
-                const cancel = btns.createEl('button', { text: 'Cancel' });
+                const cancel = btns.createEl('button', { text: legacyUi('Cancel', 'Cancel') });
                 cancel.addEventListener('click', () => { if (this.onPreview) this.onPreview(null); this.onChoose(null); this.close(); });
 
                 // Make the modal draggable by its header
@@ -2536,7 +2537,7 @@ export class PlotgridView extends ItemView {
         const selCol = this.selectedCol;
         if (selRow !== null && selCol !== null) {
             const s = this.getSelectedCellData();
-            if (!s) { new Notice('Select a cell first'); return; }
+            if (!s) { new Notice(legacyUi('Select a cell first', 'Select a cell first')); return; }
             s.cell.bold = !s.cell.bold;
             this.flashElement(s.el);
         } else if (selRow !== null) {
@@ -2554,7 +2555,7 @@ export class PlotgridView extends ItemView {
             // Do not change per-cell bold flags here; header formatting only affects the header text.
             const headerEl = this.canvasEl?.querySelectorAll('.plot-grid-col-header')[selCol] as HTMLElement | undefined;
             if (headerEl) this.flashElement(headerEl);
-        } else { new Notice('Select a cell, row, or column first'); return; }
+        } else { new Notice(legacyUi('Select a cell, row, or column first', 'Select a cell, row, or column first')); return; }
         this.scheduleSave();
         this.renderGrid();
     }
@@ -2565,7 +2566,7 @@ export class PlotgridView extends ItemView {
         const selCol = this.selectedCol;
         if (selRow !== null && selCol !== null) {
             const s = this.getSelectedCellData();
-            if (!s) { new Notice('Select a cell first'); return; }
+            if (!s) { new Notice(legacyUi('Select a cell first', 'Select a cell first')); return; }
             s.cell.italic = !s.cell.italic;
             this.flashElement(s.el);
         } else if (selRow !== null) {
@@ -2580,7 +2581,7 @@ export class PlotgridView extends ItemView {
             // Do not change per-cell italic flags here; header formatting only affects the header text.
             const headerEl = this.canvasEl?.querySelectorAll('.plot-grid-col-header')[selCol] as HTMLElement | undefined;
             if (headerEl) this.flashElement(headerEl);
-        } else { new Notice('Select a cell, row, or column first'); return; }
+        } else { new Notice(legacyUi('Select a cell, row, or column first', 'Select a cell, row, or column first')); return; }
         this.scheduleSave();
         this.renderGrid();
     }
@@ -2591,7 +2592,7 @@ export class PlotgridView extends ItemView {
         const selCol = this.selectedCol;
         if (selRow !== null && selCol !== null) {
             const s = this.getSelectedCellData();
-            if (!s) { new Notice('Select a cell first'); return; }
+            if (!s) { new Notice(legacyUi('Select a cell first', 'Select a cell first')); return; }
             s.cell.align = a;
             this.flashElement(s.el);
         } else if (selRow !== null) {
@@ -2606,7 +2607,7 @@ export class PlotgridView extends ItemView {
                 const cell = this.data.cells[key]; if (cell) cell.align = a;
             }
             for (let ri = 0; ri < this.data.rows.length; ri++) this.flashElement(this.getCellElement(ri, selCol));
-        } else { new Notice('Select a cell, row, or column first'); return; }
+        } else { new Notice(legacyUi('Select a cell, row, or column first', 'Select a cell, row, or column first')); return; }
         this.scheduleSave();
         this.renderGrid();
     }
@@ -2618,7 +2619,7 @@ export class PlotgridView extends ItemView {
         const selCol = this.selectedCol;
         if (selRow !== null && selCol !== null) {
             const s = this.getSelectedCellData();
-            if (!s) { new Notice('Select a cell first'); return; }
+            if (!s) { new Notice(legacyUi('Select a cell first', 'Select a cell first')); return; }
             const cellKey = s.key;
             const el = s.el;
             const prev = el.style.background;
@@ -2680,7 +2681,7 @@ export class PlotgridView extends ItemView {
                 this.renderGrid();
                 for (let ri = 0; ri < this.data.rows.length; ri++) this.flashElement(this.getCellElement(ri, selCol));
             }, (preview) => { if (preview === null) { els.forEach((e,i) => e.setCssStyles({ background: prevs[i] })); if (header && prevHeaderBg !== null) header.setCssStyles({ background: prevHeaderBg }); } else { els.forEach(e => e.setCssStyles({ background: preview })); if (header) header.setCssStyles({ background: preview }); } });
-        } else { new Notice('Select a cell, row, or column first'); return; }
+        } else { new Notice(legacyUi('Select a cell, row, or column first', 'Select a cell, row, or column first')); return; }
     }
 
 
@@ -2689,7 +2690,7 @@ export class PlotgridView extends ItemView {
         const selCol = this.selectedCol;
         if (selRow !== null && selCol !== null) {
             const s = this.getSelectedCellData();
-            if (!s) { new Notice('Select a cell first'); return; }
+            if (!s) { new Notice(legacyUi('Select a cell first', 'Select a cell first')); return; }
             const cellKey = s.key;
             const el = s.el;
             const prev = el.style.color;
@@ -2739,7 +2740,7 @@ export class PlotgridView extends ItemView {
                     if (header) header.setCssStyles({ color: preview });
                 }
             });
-        } else { new Notice('Select a cell, row, or column first'); return; }
+        } else { new Notice(legacyUi('Select a cell, row, or column first', 'Select a cell, row, or column first')); return; }
     }
 
     /** Open a scene file in a new tab */
@@ -2756,7 +2757,7 @@ export class PlotgridView extends ItemView {
             const leaf = this.app.workspace.getLeaf('tab');
             await leaf.openFile(file, { state: { mode: 'source', source: false } });
         } else {
-            new Notice(`Could not find file: ${scene.filePath}`);
+            new Notice(legacyUi(`Could not find file: ${scene.filePath}`, `Could not find file: ${scene.filePath}`));
         }
     }
 
@@ -2956,17 +2957,17 @@ export class PlotgridView extends ItemView {
 
     private openNoteColorModal(scene: Scene, cellKey: string): void {
         const modal = new Modal(this.app);
-        modal.titleEl.setText('Custom note color');
+        modal.titleEl.setText(legacyUi('Custom note color', 'Custom note color'));
         const current = this.normalizeHexColor(scene.corkboardNoteColor) ?? '#F6EDB4';
         const row = modal.contentEl.createDiv('story-line-note-color-modal-row');
-        row.createEl('label', { text: 'Pick color' });
+        row.createEl('label', { text: legacyUi('Pick color', 'Pick color') });
         const picker = row.createEl('input', {
             attr: { type: 'color', value: current },
         });
         new obsidian.Setting(modal.contentEl)
-            .addButton(btn => { btn.setButtonText('Cancel').onClick(() => modal.close()); })
+            .addButton(btn => { btn.setButtonText(legacyUi('Cancel', 'Cancel')).onClick(() => modal.close()); })
             .addButton(btn => {
-                btn.setButtonText('Apply').setCta().onClick(async () => {
+                btn.setButtonText(legacyUi('Apply', 'Apply')).setCta().onClick(async () => {
                     await this.setNoteColor(scene, picker.value, cellKey);
                     modal.close();
                 });
@@ -2992,7 +2993,7 @@ export class PlotgridView extends ItemView {
         const file = await scMgr.createScene({
             status: 'idea',
             corkboardNote: true,
-            title: 'Note',
+            title: legacyUi('Note', 'Note'),
             body,
             plotgridOrigin: originLabel,
         });
@@ -3008,7 +3009,7 @@ export class PlotgridView extends ItemView {
         this.renderGrid();
         const rowIndex = this.data.rows.findIndex(row => this.data.columns.some(col => `${row.id}-${col.id}` === cell.id));
         if (rowIndex >= 0) void this.autosizeRowToContent(rowIndex);
-        new Notice('Auto-Note created from cell');
+        new Notice(legacyUi('Auto-Note created from cell', 'Auto-Note created from cell'));
     }
 
     private getPlotGridOrigin(cellId: string): string | undefined {
@@ -3035,7 +3036,7 @@ export class PlotgridView extends ItemView {
             }
             onOpen() {
                 const { contentEl } = this;
-                contentEl.createEl('h3', { text: 'Link scene card' });
+                contentEl.createEl('h3', { text: legacyUi('Link scene card', 'Link scene card') });
                 this.inputEl = contentEl.createEl('input');
                 this.inputEl.placeholder = 'Search files...';
                 this.inputEl.setCssStyles({ width: '100%' });
@@ -3064,7 +3065,7 @@ export class PlotgridView extends ItemView {
                         this.close();
                     });
                 }
-                if (files.length === 0) this.listEl.createDiv({ text: 'No files found', cls: 'muted' });
+                if (files.length === 0) this.listEl.createDiv({ text: legacyUi('No files found', 'No files found'), cls: 'muted' });
             }
         }
 
@@ -3076,9 +3077,9 @@ export class PlotgridView extends ItemView {
 
     private openSyncModal() {
         const scMgr = this.plugin?.sceneManager as SceneManager | undefined;
-        if (!scMgr) { new Notice('Scene manager not available'); return; }
+        if (!scMgr) { new Notice(legacyUi('Scene manager not available', 'Scene manager not available')); return; }
         const scenes = scMgr.getAllScenes();
-        if (scenes.length === 0) { new Notice('No scenes found in the active project'); return; }
+        if (scenes.length === 0) { new Notice(legacyUi('No scenes found in the active project', 'No scenes found in the active project')); return; }
 
         // Capture outer-class reference for use inside the nested Modal subclass below.
         // eslint-disable-next-line @typescript-eslint/no-this-alias -- nested Modal class needs access to the outer view instance for callbacks
@@ -3087,14 +3088,14 @@ export class PlotgridView extends ItemView {
             constructor(app: App) { super(app); }
             onOpen() {
                 const { contentEl } = this;
-                contentEl.createEl('h3', { text: 'Sync from scenes' });
+                contentEl.createEl('h3', { text: legacyUi('Sync from scenes', 'Sync from scenes') });
                 contentEl.createEl('p', {
-                    text: 'Auto-populate the grid with rows from scenes and columns from story data. Manual changes will be preserved.',
+                    text: legacyUi('Auto-populate the grid with rows from scenes and columns from story data. Manual changes will be preserved.', 'Auto-populate the grid with rows from scenes and columns from story data. Manual changes will be preserved.'),
                     cls: 'setting-item-description',
                 });
 
                 // Column source selector
-                const colSourceLabel = contentEl.createEl('label', { text: 'Columns from:' });
+                const colSourceLabel = contentEl.createEl('label', { text: legacyUi('Columns from:', 'Columns from:') });
                 colSourceLabel.setCssStyles({
                     display: 'block',
                     marginTop: '12px',
@@ -3107,9 +3108,9 @@ export class PlotgridView extends ItemView {
                     width: '100%',
                     marginBottom: '12px',
                 });
-                colSourceSelect.createEl('option', { text: 'Characters', value: 'characters' });
-                colSourceSelect.createEl('option', { text: 'Plotlines (tags)', value: 'tags' });
-                colSourceSelect.createEl('option', { text: 'Locations', value: 'locations' });
+                colSourceSelect.createEl('option', { text: legacyUi('Characters', 'Characters'), value: 'characters' });
+                colSourceSelect.createEl('option', { text: legacyUi('Plotlines (tags)', 'Plotlines (tags)'), value: 'tags' });
+                colSourceSelect.createEl('option', { text: legacyUi('Locations', 'Locations'), value: 'locations' });
                 // Add codex categories that appear in sidebar
                 const codexMgr = view.plugin?.codexManager;
                 const sidebarCats = (view.plugin as unknown as { settings?: { codexSidebarCategories?: string[] } })?.settings?.codexSidebarCategories;
@@ -3124,13 +3125,13 @@ export class PlotgridView extends ItemView {
 
                 // Row sorting info
                 const sortInfo = contentEl.createEl('p', {
-                    text: 'Rows will be ordered by act — chapter — sequence.',
+                    text: legacyUi('Rows will be ordered by act — chapter — sequence.', 'Rows will be ordered by act — chapter — sequence.'),
                     cls: 'setting-item-description',
                 });
                 sortInfo.setCssStyles({ marginBottom: '12px' });
 
                 // How to handle existing data
-                const modeLabel = contentEl.createEl('label', { text: 'Merge mode:' });
+                const modeLabel = contentEl.createEl('label', { text: legacyUi('Merge mode:', 'Merge mode:') });
                 modeLabel.setCssStyles({
                     display: 'block',
                     marginBottom: '4px',
@@ -3142,13 +3143,13 @@ export class PlotgridView extends ItemView {
                     width: '100%',
                     marginBottom: '16px',
                 });
-                modeSelect.createEl('option', { text: 'Merge — keep manual rows/columns, add missing', value: 'merge' });
-                modeSelect.createEl('option', { text: 'Replace — rebuild from scenes (manual data cleared)', value: 'replace' });
+                modeSelect.createEl('option', { text: legacyUi('Merge — keep manual rows/columns, add missing', 'Merge — keep manual rows/columns, add missing'), value: 'merge' });
+                modeSelect.createEl('option', { text: legacyUi('Replace — rebuild from scenes (manual data cleared)', 'Replace — rebuild from scenes (manual data cleared)'), value: 'replace' });
 
                 let showLinkedSceneCards = view.plugin?.settings.plotgridShowLinkedSceneCards ?? true;
                 new obsidian.Setting(contentEl)
-                    .setName('Show linked scene cards in synced cells')
-                    .setDesc('When enabled, synced cells display a preview card for their linked scene.')
+                    .setName(legacyUi('Show linked scene cards in synced cells', 'Show linked scene cards in synced cells'))
+                    .setDesc(legacyUi('When enabled, synced cells display a preview card for their linked scene.', 'When enabled, synced cells display a preview card for their linked scene.'))
                     .addToggle(toggle => toggle
                         .setValue(showLinkedSceneCards)
                         .onChange(async value => {
@@ -3165,10 +3166,10 @@ export class PlotgridView extends ItemView {
                     gap: '8px',
                 });
 
-                const cancelBtn = btns.createEl('button', { text: 'Cancel' });
+                const cancelBtn = btns.createEl('button', { text: legacyUi('Cancel', 'Cancel') });
                 cancelBtn.addEventListener('click', () => this.close());
 
-                const syncBtn = btns.createEl('button', { text: 'Sync', cls: 'mod-cta' });
+                const syncBtn = btns.createEl('button', { text: legacyUi('Sync', 'Sync'), cls: 'mod-cta' });
                 syncBtn.addEventListener('click', async () => {
                     const colSource = colSourceSelect.value;
                     const mode = modeSelect.value as 'merge' | 'replace';
@@ -3373,7 +3374,7 @@ export class PlotgridView extends ItemView {
 
         this.scheduleSave();
         this.renderGrid();
-        new Notice(`Synced ${scenes.length} scenes → ${this.data.rows.length} rows, ${this.data.columns.length} columns`);
+        new Notice(legacyUi(`Synced ${scenes.length} scenes → ${this.data.rows.length} rows, ${this.data.columns.length} columns`, `Synced ${scenes.length} scenes → ${this.data.rows.length} rows, ${this.data.columns.length} columns`));
     }
 
     /** Format a row label from a scene */
@@ -3593,8 +3594,8 @@ export class PlotgridView extends ItemView {
 
         // ── Header ──
         const header = el.createDiv('inspector-header');
-        header.createEl('h3', { text: 'Cell details' });
-        const closeBtn = header.createEl('button', { cls: 'clickable-icon inspector-close', text: '×' });
+        header.createEl('h3', { text: legacyUi('Cell details', 'Cell details') });
+        const closeBtn = header.createEl('button', { cls: 'clickable-icon inspector-close', text: legacyUi('×', '×') });
         closeBtn.addEventListener('click', () => this.hideCellInspector());
 
         // ── Tab bar (only when a scene is linked) ──
@@ -3604,8 +3605,8 @@ export class PlotgridView extends ItemView {
 
         if (linkedScene) {
             const tabBar = el.createDiv('sl-cell-tab-bar');
-            const cellTab = tabBar.createDiv({ cls: 'sl-cell-tab sl-cell-tab-active', text: 'Cell' });
-            const sceneTab = tabBar.createDiv({ cls: 'sl-cell-tab', text: 'Scene' });
+            const cellTab = tabBar.createDiv({ cls: 'sl-cell-tab sl-cell-tab-active', text: legacyUi('Cell', 'Cell') });
+            const sceneTab = tabBar.createDiv({ cls: 'sl-cell-tab', text: legacyUi('Scene', 'Scene') });
 
             // Small dot on Scene tab to indicate linked scene
             sceneTab.createSpan({ cls: 'sl-cell-tab-dot' });
@@ -3656,15 +3657,15 @@ export class PlotgridView extends ItemView {
 
         // Row / Column label
         const posSection = cellBody.createDiv('inspector-section');
-        posSection.createSpan({ cls: 'inspector-label', text: 'Row: ' });
+        posSection.createSpan({ cls: 'inspector-label', text: legacyUi('Row: ', 'Row: ') });
         posSection.createSpan({ text: row?.label || `Row ${rowIndex + 1}` });
         const colSection = cellBody.createDiv('inspector-section');
-        colSection.createSpan({ cls: 'inspector-label', text: 'Column: ' });
+        colSection.createSpan({ cls: 'inspector-label', text: legacyUi('Column: ', 'Column: ') });
         colSection.createSpan({ text: col?.label || `Column ${colIndex + 1}` });
 
         // ── Cell text (editable) ──
         const textSection = cellBody.createDiv('inspector-section');
-        textSection.createSpan({ cls: 'inspector-label', text: 'Content:' });
+        textSection.createSpan({ cls: 'inspector-label', text: legacyUi('Content:', 'Content:') });
         const textArea = textSection.createEl('textarea', { cls: 'inspector-cell-textarea' });
         textArea.value = cell.content || '';
         textArea.rows = 8;
@@ -3730,7 +3731,7 @@ export class PlotgridView extends ItemView {
         // ── Linked scene summary (shown on Cell tab as a small info block) ──
         if (linkedScene) {
             const linkSection = cellBody.createDiv('inspector-section');
-            linkSection.createSpan({ cls: 'inspector-label', text: 'Linked Scene:' });
+            linkSection.createSpan({ cls: 'inspector-label', text: legacyUi('Linked Scene:', 'Linked Scene:') });
             const sceneLink = linkSection.createEl('a', {
                 cls: 'inspector-scene-link',
                 text: linkedScene.title || linkedScene.filePath.split('/').pop()?.replace('.md', '') || 'Untitled',
@@ -3766,7 +3767,7 @@ export class PlotgridView extends ItemView {
         // ── Characters found ──
         if (result.characters.length > 0) {
             const section = container.createDiv('inspector-section');
-            section.createSpan({ cls: 'inspector-label', text: 'Characters:' });
+            section.createSpan({ cls: 'inspector-label', text: legacyUi('Characters:', 'Characters:') });
             const chipList = section.createDiv('inspector-chip-list');
             chipList.setCssStyles({
                 display: 'flex',
@@ -3807,7 +3808,7 @@ export class PlotgridView extends ItemView {
         // ── Locations found ──
         if (result.locations.length > 0) {
             const section = container.createDiv('inspector-section');
-            section.createSpan({ cls: 'inspector-label', text: 'Locations:' });
+            section.createSpan({ cls: 'inspector-label', text: legacyUi('Locations:', 'Locations:') });
             const chipList = section.createDiv('inspector-chip-list');
             chipList.setCssStyles({
                 display: 'flex',
@@ -3835,7 +3836,7 @@ export class PlotgridView extends ItemView {
         // ── Tags found ──
         if (result.tags.length > 0) {
             const section = container.createDiv('inspector-section');
-            section.createSpan({ cls: 'inspector-label', text: 'Tags:' });
+            section.createSpan({ cls: 'inspector-label', text: legacyUi('Tags:', 'Tags:') });
             const tagList = section.createDiv('inspector-tag-list');
             tagList.setCssStyles({
                 display: 'flex',
@@ -3847,7 +3848,7 @@ export class PlotgridView extends ItemView {
             const scheme = this.plugin?.settings.colorScheme || 'mocha';
             const allTagsSorted = [...result.tags].sort();
             for (const tag of result.tags) {
-                const chip = tagList.createSpan({ cls: 'inspector-tag-chip', text: `#${tag}` });
+                const chip = tagList.createSpan({ cls: 'inspector-tag-chip', text: legacyUi(`#${tag}`, `#${tag}`) });
                 chip.setCssStyles({
                     padding: '2px 8px',
                     borderRadius: '10px',

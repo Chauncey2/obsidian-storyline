@@ -1,0 +1,136 @@
+import { BUILTIN_BEAT_SHEETS } from '../../models/Scene';
+
+export interface BeatSheetText {
+    displayName: string;
+    summary: string;
+    actLabels: Record<number, string>;
+    chapterLabels: Record<number, string>;
+    beats: Array<{ label: string; subtitle?: string; description: string }>;
+}
+
+const names: Record<string, string> = {
+    'Save the Cat': '救猫咪',
+    '3-Act Structure': '三幕结构',
+    "Hero's Journey": '英雄之旅',
+    'Seven-Point Story Structure': '七点故事结构',
+    'Story Circle': '故事圈',
+    'Romancing the Beat': '言情节拍',
+    '27 Chapter Method': '27 章法',
+};
+
+const labelTranslations: Record<string, string> = {
+    "Opening Image": "开场画面",
+    "Theme Stated": "主题陈述",
+    "Set-Up": "铺垫",
+    "Catalyst": "催化事件",
+    "Debate": "犹豫与辩论",
+    "Break into Two": "进入第二幕",
+    "B Story": "B线故事",
+    "Fun and Games": "承诺中的趣味",
+    "Midpoint": "中点",
+    "Bad Guys Close In": "反派逼近",
+    "All Is Lost": "一切尽失",
+    "Dark Night of the Soul": "灵魂的至暗时刻",
+    "Break into Three": "进入第三幕",
+    "Finale": "终局",
+    "Final Image": "结尾画面",
+    "Exposition": "背景交代",
+    "Inciting Incident": "激励事件",
+    "First Turning Point": "第一次转折",
+    "Rising Action": "上升行动",
+    "Crisis": "危机",
+    "Second Turning Point": "第二次转折",
+    "Climax": "高潮",
+    "Falling Action": "下降行动",
+    "Dénouement": "结局",
+    "Ordinary World": "日常世界",
+    "Call to Adventure": "冒险召唤",
+    "Refusal of the Call": "拒绝召唤",
+    "Meeting the Mentor": "遇见导师",
+    "Crossing the Threshold": "跨越门槛",
+    "Tests, Allies, Enemies": "考验、盟友与敌人",
+    "Approach to the Inmost Cave": "接近最深处洞穴",
+    "The Ordeal": "磨难",
+    "Reward (Seizing the Sword)": "奖赏（夺取利剑）",
+    "The Road Back": "回归之路",
+    "Resurrection": "复活",
+    "Return with the Elixir": "带着灵药归来",
+    "Hook": "钩子",
+    "Plot Turn 1": "第一次情节转折",
+    "Pinch Point 1": "第一次夹点",
+    "Pinch Point 2": "第二次夹点",
+    "Plot Turn 2": "第二次情节转折",
+    "Resolution": "解决",
+    "You": "你",
+    "Need": "需要",
+    "Go": "出发",
+    "Search": "探索",
+    "Find": "找到",
+    "Take": "付出代价",
+    "Return": "返回",
+    "Change": "改变",
+    "Introduce Hero 1": "介绍主角一",
+    "Introduce Hero 2": "介绍主角二",
+    "Meet Cute": "浪漫邂逅",
+    "No Way #1": "第一次拒绝可能",
+    "Adhesion": "被迫靠近",
+    "No Way #2": "第二次拒绝可能",
+    "The Inkling": "心动萌芽",
+    "Deepening Desire": "欲望加深",
+    "Maybe This Could Work": "也许可以成功",
+    "Midpoint of Love": "爱情中点",
+    "Inkling of Doubt": "疑虑萌芽",
+    "Deepening Doubt": "疑虑加深",
+    "Retreat": "退缩",
+    "Shields Up": "竖起心盾",
+    "Break Up": "分手",
+    "Wake Up": "觉醒",
+    "Grand Gesture": "盛大举动",
+    "Whole-Hearted": "全心相爱",
+    "Epilogue": "尾声",
+    "Opening / Introduction": "开场／介绍",
+    "Immediate Reaction": "即时反应",
+    "Reaction": "反应",
+    "Action": "行动",
+    "Consequence": "后果",
+    "Pressure": "压力",
+    "Plot Twist": "情节转折",
+    "Push": "推动",
+    "New World": "新世界",
+    "Fun & Games": "趣味与游戏",
+    "Old World Contrast": "旧世界对照",
+    "Build Up": "逐步升级",
+    "Reversal": "反转",
+    "Trials": "试炼",
+    "Dedication": "全心投入",
+    "Calm Before the Storm": "暴风雨前的宁静",
+    "Darkest Moment": "最黑暗时刻",
+    "Power Within": "内在力量",
+    "Converge": "汇聚",
+    "Battle": "决战"
+};
+
+const summaryTranslations: Record<string, string> = {
+    "Save the Cat": "布莱克·斯奈德的15个节拍电影结构",
+    "3-Act Structure": "经典三幕戏剧结构",
+    "Hero's Journey": "约瑟夫·坎贝尔的12阶段单一神话",
+    "Seven-Point Story Structure": "丹·威尔斯的七个关键情节点",
+    "Story Circle": "丹·哈蒙的八步叙事循环",
+    "Romancing the Beat": "格温·海斯的四阶段二十节拍爱情结构",
+    "27 Chapter Method": "凯特·奥基夫的3×3×3分形故事结构"
+};
+
+/** Localized display text for every built-in beat sheet. Persisted names and labels remain English identifiers. */
+export const zhCNBeatSheets: Record<string, BeatSheetText> = Object.fromEntries(
+    BUILTIN_BEAT_SHEETS.map((sheet) => [sheet.name, {
+        displayName: names[sheet.name] ?? sheet.name,
+        summary: summaryTranslations[sheet.name] ?? `用于规划${sheet.name}的故事结构`,
+        actLabels: Object.fromEntries(Object.entries(sheet.actLabels).map(([n, label]) => [n, label.replace(/Act (\d+) — /, (_, a) => `第 ${a} 幕 — `).replace(/Setup/, '铺垫').replace(/Confrontation/, '冲突').replace(/Resolution/, '解决').replace(/Departure/, '出发').replace(/Initiation/, '启蒙').replace(/Return/, '归返') ])),
+        chapterLabels: Object.fromEntries(Object.entries(sheet.chapterLabels).map(([n, label]) => [n, labelTranslations[label] ?? label])),
+        beats: sheet.beats.map((beat) => ({
+            label: labelTranslations[beat.label] ?? beat.label,
+            subtitle: beat.subtitle ? (labelTranslations[beat.subtitle] ?? beat.subtitle) : undefined,
+            description: `围绕“${labelTranslations[beat.label] ?? beat.label}”推进故事情节。`,
+        })),
+    }]),
+);

@@ -4,6 +4,7 @@ import { App, TFile, parseYaml, stringifyYaml } from 'obsidian';
 import { Scene, SceneStatus, TIMELINE_MODES, TimelineMode } from '../models/Scene';
 import { coerceString } from '../utils/narrow';
 import { tokenizeWords, DEFAULT_STORYLINE_LOCALE, resolveLocale, type StoryLineLocale } from '../utils/locale';
+import { getContentLocale, trContent } from '../i18n';
 
 /**
  * Issue #73 — frontmatter scene fields that point at other entities (scenes,
@@ -411,7 +412,7 @@ export class MetadataParser {
     ): string {
         const fm: Record<string, unknown> = {
             type: 'scene',
-            title: scene.title || 'Untitled Scene',
+            title: scene.title || trContent(getContentLocale(resolveLocale(_wordcountLocale, '')), 'scene.untitledScene'),
         };
 
         if (scene.act !== undefined) fm.act = scene.act;

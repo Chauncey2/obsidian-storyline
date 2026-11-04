@@ -1,3 +1,4 @@
+import { legacyUi } from '../i18n';
 /* eslint-disable @typescript-eslint/no-floating-promises -- Obsidian's API surface and several untyped third-party libraries force dynamic dispatch; floating promises are intentional in DOM/event handlers; matching enable at end of file */
 import { Setting, Notice } from 'obsidian';
 import * as obsidian from 'obsidian';
@@ -70,7 +71,7 @@ export class FiltersComponent {
             cls: 'story-line-search',
             attr: {
                 type: 'text',
-                placeholder: 'Search scenes...',
+                placeholder: legacyUi('Search scenes...', 'Search scenes...'),
             }
         });
         searchInput.value = this.currentFilter.searchText ?? '';
@@ -105,7 +106,7 @@ export class FiltersComponent {
         // Sort direction toggle (Lucide icon)
         const dirBtn = sortContainer.createEl('button', {
             cls: 'story-line-sort-dir clickable-icon',
-            attr: { title: 'Toggle sort direction' }
+            attr: { title: legacyUi('Toggle sort direction', 'Toggle sort direction') }
         });
         const dirIcon = dirBtn.createSpan();
         obsidian.setIcon(dirIcon, 'arrow-down-up');
@@ -160,7 +161,7 @@ export class FiltersComponent {
         // Filter toggle button (Lucide icon)
         const toggleBtn = topBar.createEl('button', {
             cls: 'story-line-filter-toggle clickable-icon',
-            attr: { title: 'Show/hide filters' }
+            attr: { title: legacyUi('Show/hide filters', 'Show/hide filters') }
         });
         const filterIcon = toggleBtn.createSpan();
         obsidian.setIcon(filterIcon, 'list-filter');
@@ -210,7 +211,7 @@ export class FiltersComponent {
         // Act filter
         const actValues = this.sceneManager.queryService.getUniqueValues('act');
         if (actValues.length > 0) {
-            new Setting(panel).setName('Act');
+            new Setting(panel).setName(legacyUi('Act', 'Act'));
             const actContainer = panel.createDiv('story-line-filter-chips');
             actValues.forEach(act => {
                 const chip = actContainer.createEl('button', {
@@ -236,12 +237,12 @@ export class FiltersComponent {
         // Chapter filter
         const chapterValues = this.sceneManager.queryService.getUniqueValues('chapter');
         if (chapterValues.length > 0) {
-            new Setting(panel).setName('Chapter');
+            new Setting(panel).setName(legacyUi('Chapter', 'Chapter'));
             const chapterContainer = panel.createDiv('story-line-filter-chips');
             chapterValues.forEach(chapter => {
                 const chip = chapterContainer.createEl('button', {
                     cls: 'story-line-chip',
-                    text: `Chapter ${chapter}`,
+                    text: legacyUi(`Chapter ${chapter}`, `Chapter ${chapter}`),
                 });
                 if (this.currentFilter.chapter?.map(String).includes(chapter)) chip.addClass('active');
                 chip.addEventListener('click', () => {
@@ -262,7 +263,7 @@ export class FiltersComponent {
         // POV filter
         const povValues = this.sceneManager.queryService.getUniqueValues('pov');
         if (povValues.length > 0) {
-            new Setting(panel).setName('POV');
+            new Setting(panel).setName(legacyUi('POV', 'POV'));
             const povContainer = panel.createDiv('story-line-filter-chips');
             povValues.forEach(pov => {
                 const chip = povContainer.createEl('button', {
@@ -288,7 +289,7 @@ export class FiltersComponent {
         // Character filter
         const charValues = this.sceneManager.queryService.getAllCharacters();
         if (charValues.length > 0) {
-            new Setting(panel).setName('Characters');
+            new Setting(panel).setName(legacyUi('Characters', 'Characters'));
             const charContainer = panel.createDiv('story-line-filter-chips');
             charValues.forEach(char => {
                 const chip = charContainer.createEl('button', {
@@ -314,7 +315,7 @@ export class FiltersComponent {
         // Location filter
         const locValues = this.sceneManager.queryService.getUniqueValues('location');
         if (locValues.length > 0) {
-            new Setting(panel).setName('Location');
+            new Setting(panel).setName(legacyUi('Location', 'Location'));
             const locContainer = panel.createDiv('story-line-filter-chips');
             locValues.forEach(loc => {
                 const chip = locContainer.createEl('button', {
@@ -340,7 +341,7 @@ export class FiltersComponent {
         // Tag filter
         const tagValues = this.sceneManager.queryService.getAllTags();
         if (tagValues.length > 0) {
-            new Setting(panel).setName('Tags');
+            new Setting(panel).setName(legacyUi('Tags', 'Tags'));
             const tagContainer = panel.createDiv('story-line-filter-chips');
             tagValues.forEach(tag => {
                 const chip = tagContainer.createEl('button', {
@@ -420,12 +421,12 @@ export class FiltersComponent {
         if (this.plugin) {
             const presetSection = panel.createDiv('story-line-preset-section');
             const presetHeader = presetSection.createDiv('story-line-preset-header');
-            presetHeader.createSpan({ text: 'Saved Presets', cls: 'setting-item-name' });
+            presetHeader.createSpan({ text: legacyUi('Saved Presets', 'Saved Presets'), cls: 'setting-item-name' });
 
             // Save current filter as preset
             const saveBtn = presetHeader.createEl('button', {
                 cls: 'story-line-chip story-line-preset-save',
-                text: '+ save current',
+                text: legacyUi('+ save current', '+ save current'),
             });
             saveBtn.addEventListener('click', () => {
                 // Check if there's anything to save
@@ -433,14 +434,14 @@ export class FiltersComponent {
                     v !== undefined && (typeof v !== 'object' || (Array.isArray(v) && v.length > 0))
                 );
                 if (!hasFilter) {
-                    new Notice('No active filters to save');
+                    new Notice(legacyUi('No active filters to save', 'No active filters to save'));
                     return;
                 }
                 // Prompt for name (attached to presetHeader via createEl method — safe on 1.12.x)
                 const nameInput = presetHeader.createEl('input', {
                     type: 'text',
                     cls: 'story-line-preset-name-input',
-                    attr: { placeholder: 'Preset name…' },
+                    attr: { placeholder: legacyUi('Preset name…', 'Preset name…') },
                 });
                 nameInput.focus();
                 const doSave = () => {
@@ -450,7 +451,7 @@ export class FiltersComponent {
                     this.sceneManager.addFilterPreset(preset);
                     nameInput.remove();
                     this.render(); // re‑render to show new preset chip
-                    new Notice(`Filter preset "${name}" saved`);
+                    new Notice(legacyUi(`Filter preset "${name}" saved`, `Filter preset "${name}" saved`));
                 };
                 nameInput.addEventListener('keydown', (e) => {
                     if (e.key === 'Enter') doSave();
@@ -466,13 +467,13 @@ export class FiltersComponent {
                 const chip = presetChips.createEl('button', {
                     cls: 'story-line-chip story-line-preset-chip',
                     text: preset.name,
-                    attr: { title: 'Click to apply, right‑click to delete' },
+                    attr: { title: legacyUi('Click to apply, right‑click to delete', 'Click to apply, right‑click to delete') },
                 });
                 chip.addEventListener('click', () => {
                     this.currentFilter = cloneSceneFilter(preset.filter);
                     this.render();
                     this.emitChange();
-                    new Notice(`Applied preset "${preset.name}"`);
+                    new Notice(legacyUi(`Applied preset "${preset.name}"`, `Applied preset "${preset.name}"`));
                 });
                 chip.addEventListener('contextmenu', (e) => {
                     e.preventDefault();
@@ -481,7 +482,7 @@ export class FiltersComponent {
                     if (deletingActivePreset) this.currentFilter = {};
                     this.render();
                     this.emitChange();
-                    new Notice(`Deleted preset "${preset.name}"`);
+                    new Notice(legacyUi(`Deleted preset "${preset.name}"`, `Deleted preset "${preset.name}"`));
                 });
             });
         }
@@ -489,7 +490,7 @@ export class FiltersComponent {
         // Clear filters button
         const clearBtn = panel.createEl('button', {
             cls: 'story-line-clear-filters',
-            text: 'Clear all filters',
+            text: legacyUi('Clear all filters', 'Clear all filters'),
         });
         clearBtn.addEventListener('click', () => {
             this.currentFilter = {};

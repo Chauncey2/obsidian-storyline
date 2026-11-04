@@ -1,3 +1,4 @@
+import { legacyUi } from '../i18n';
 import { App, Modal, Setting } from 'obsidian';
 
 export interface SceneFilenameSyncChange {
@@ -17,29 +18,29 @@ export class SceneFilenameSyncModal extends Modal {
     onOpen(): void {
         const { contentEl } = this;
         contentEl.empty();
-        this.titleEl.setText('Synchronize scene filenames');
+        this.titleEl.setText(legacyUi('Synchronize scene filenames', 'Synchronize scene filenames'));
         contentEl.createEl('p', {
-            text: `${this.changes.length} scene filename${this.changes.length === 1 ? '' : 's'} will be updated from current metadata. Scene content and frontmatter will not be changed.`,
+            text: legacyUi(`${this.changes.length} scene filename${this.changes.length === 1 ? '' : 's'} will be updated from current metadata. Scene content and frontmatter will not be changed.`, `${this.changes.length} scene filename${this.changes.length === 1 ? '' : 's'} will be updated from current metadata. Scene content and frontmatter will not be changed.`),
         });
 
         const list = contentEl.createEl('ul', { cls: 'storyline-filename-sync-list' });
         for (const change of this.changes.slice(0, 100)) {
             const item = list.createEl('li');
             item.createEl('code', { text: change.currentPath });
-            item.createSpan({ text: ' -> ' });
+            item.createSpan({ text: legacyUi(' -> ', ' -> ') });
             item.createEl('code', { text: change.newPath });
         }
         if (this.changes.length > 100) {
             contentEl.createEl('p', {
-                text: `Showing the first 100 changes of ${this.changes.length}.`,
+                text: legacyUi(`Showing the first 100 changes of ${this.changes.length}.`, `Showing the first 100 changes of ${this.changes.length}.`),
                 cls: 'mod-muted',
             });
         }
 
         new Setting(contentEl)
-            .addButton(btn => btn.setButtonText('Cancel').onClick(() => this.close()))
+            .addButton(btn => btn.setButtonText(legacyUi('Cancel', 'Cancel')).onClick(() => this.close()))
             .addButton(btn => btn
-                .setButtonText('Synchronize filenames')
+                .setButtonText(legacyUi('Synchronize filenames', 'Synchronize filenames'))
                 .setCta()
                 .onClick(async () => {
                     this.close();

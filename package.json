@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "node esbuild.config.mjs",
     "build": "node esbuild.config.mjs production",
-    "lint:obsidian": "eslint \"**/*.ts\""
+    "lint:obsidian": "eslint \"**/*.ts\"",
+    "typecheck": "tsc --noEmit --ignoreDeprecations 5.0",
+    "test": "esbuild tests/*.test.ts --bundle --platform=node --format=cjs --outdir=.test-build --log-level=warning && node --test .test-build/*.test.js",
+    "i18n:audit": "node scripts/i18n-audit.mjs"
   },
   "keywords": [
     "obsidian",

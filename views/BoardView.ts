@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-floating-promises, @typescript-eslint/no-misused-promises, @typescript-eslint/no-unnecessary-type-assertion -- Obsidian's API surface and several untyped third-party libraries force dynamic dispatch; floating promises are intentional in DOM/event handlers; matching enable at end of file */
 import { ItemView, WorkspaceLeaf, Menu, Notice, TFile, Modal, Setting, MarkdownRenderer, normalizePath } from 'obsidian';
 import * as obsidian from 'obsidian';
-import { Scene, SceneFilter, SortConfig, BoardGroupBy, SceneStatus, SceneTemplate, BeatSheetTemplate, BUILTIN_BEAT_SHEETS, getStatusOrder, getStatusConfig, resolveStatusCfg } from '../models/Scene';
+import { Scene, SceneFilter, SortConfig, BoardGroupBy, SceneStatus, SceneTemplate, BeatSheetTemplate, getStatusOrder, getStatusConfig, resolveStatusCfg } from '../models/Scene';
 import { openConfirmModal } from '../components/ConfirmModal';
 import { openStructureLabelModal } from '../components/StructureLabelModal';
 import { SceneManager } from '../services/SceneManager';
@@ -21,7 +21,10 @@ import { attachTooltip } from '../components/Tooltip';
 import { resolveImagePath } from '../components/ImagePicker';
 import { createElement as createLucideElement, ScanSquare } from 'lucide';
 import type SceneCardsPlugin from '../main';
-import { compareActChapter, parseActChapterInput, getActDisplayLabel, getChapterDisplayLabel } from '../utils/actChapter';
+import { compareActChapter, parseActChapterInput, getActDisplayLabel, formatActLabelWithSubtitle, formatChapterLabel } from '../utils/actChapter';
+import { displayGroupKey } from '../utils/groupLabels';
+import { getContentLocale, getInterfaceLocale, tr, trValue, legacyUi } from '../i18n';
+import { getBuiltinBeatSheets } from '../i18n/content';
 
 type BoardMode = 'kanban' | 'corkboard';
 
@@ -169,7 +172,7 @@ export class BoardView extends ItemView {
                 const searchWrapper = filterBar.querySelector('.story-line-search-wrapper');
                 // Create on filterBar, then reposition with insertBefore.
                 const groupContainer = filterBar.createDiv({ cls: 'story-line-group-control' });
-                groupContainer.createSpan({ text: 'Group by: ' });
+                groupContainer.createSpan({ text: legacyUi('Group by: ', 'Group by: ') });
                 const groupSelect = groupContainer.createEl('select', { cls: 'dropdown' });
                 const groupOptions: { value: BoardGroupBy; label: string }[] = [
                     { value: 'act', label: 'Act' },
@@ -241,7 +244,7 @@ export class BoardView extends ItemView {
         const titleRow = toolbar.createDiv('story-line-title-row');
         titleRow.createEl('h3', {
             cls: 'story-line-view-title',
-            text: 'StoryLine'
+            text: tr('common.storyLine')
         });
         // project name shown in top-center only; no inline project selector here
 
@@ -253,11 +256,11 @@ export class BoardView extends ItemView {
         const modeToggle = controls.createDiv('story-line-board-mode-toggle');
         const corkboardBtn = modeToggle.createEl('button', {
             cls: `story-line-board-mode-btn ${this.boardMode === 'corkboard' ? 'active' : ''}`,
-            text: 'Corkboard'
+            text: legacyUi('Corkboard', 'Corkboard')
         });
         const kanbanBtn = modeToggle.createEl('button', {
             cls: `story-line-board-mode-btn ${this.boardMode === 'kanban' ? 'active' : ''}`,
-            text: 'Kanban'
+            text: legacyUi('Kanban', 'Kanban')
         });
         corkboardBtn.addEventListener('click', () => {
             if (this.boardMode !== 'corkboard') {
@@ -278,7 +281,7 @@ export class BoardView extends ItemView {
 
         if (this.boardMode === 'corkboard') {
             const toggleWrap = controls.createEl('label', { cls: 'sl-toggle-wrap' });
-            toggleWrap.createSpan({ cls: 'sl-toggle-label', text: 'Scenes' });
+            toggleWrap.createSpan({ cls: 'sl-toggle-label', text: tr('common.scenes') });
             const cb = toggleWrap.createEl('input', { type: 'checkbox' });
             cb.checked = this.plugin.settings.showScenesInCorkboard;
             toggleWrap.createSpan({ cls: 'sl-toggle-track' });
@@ -291,7 +294,7 @@ export class BoardView extends ItemView {
 
         if (this.boardMode === 'kanban') {
             const notesToggleWrap = controls.createEl('label', { cls: 'sl-toggle-wrap' });
-            notesToggleWrap.createSpan({ cls: 'sl-toggle-label', text: 'Notes' });
+            notesToggleWrap.createSpan({ cls: 'sl-toggle-label', text: tr('common.notes') });
             const notesCb = notesToggleWrap.createEl('input', { type: 'checkbox' });
             notesCb.checked = this.plugin.settings.showNotesInKanban;
             notesToggleWrap.createSpan({ cls: 'sl-toggle-track' });
@@ -307,7 +310,7 @@ export class BoardView extends ItemView {
         const isCorkboardMode = this.boardMode === 'corkboard';
         const addBtn = controls.createEl('button', {
             cls: 'mod-cta story-line-add-btn',
-            text: isCorkboardMode ? '+ New Note' : '+ New Scene'
+            text: isCorkboardMode ? legacyUi('+ New Note', '+ New Note') : legacyUi('+ New Scene', '+ New Scene')
         });
         addBtn.addEventListener('click', () => {
             if (isCorkboardMode) {
@@ -322,13 +325,13 @@ export class BoardView extends ItemView {
         if (!isCorkboardMode && this.groupBy === 'chapter') {
             const addChBtn = controls.createEl('button', {
                 cls: 'mod-cta story-line-add-btn',
-                text: '+ new chapter'
+                text: legacyUi('+ new chapter', '+ new chapter')
             });
             addChBtn.addEventListener('click', async () => {
                 const newNum = await this.sceneManager.insertChapter();
                 await this.sceneManager.initialize();
                 this.refreshBoard();
-                new Notice(`Added Chapter ${newNum}. Group by Chapter to see it.`);
+                new Notice(legacyUi(`Added Chapter ${newNum}. Group by Chapter to see it.`, `Added Chapter ${newNum}. Group by Chapter to see it.`));
             });
         }
 
@@ -358,7 +361,7 @@ export class BoardView extends ItemView {
 
             this.corkboardZoomLabel = iconGroup.createSpan({
                 cls: 'story-line-corkboard-zoom-value',
-                text: `${Math.round(this.corkboardCamera.zoom * 100)}%`,
+                text: legacyUi(`${Math.round(this.corkboardCamera.zoom * 100)}%`, `${Math.round(this.corkboardCamera.zoom * 100)}%`),
             });
 
             const zoomInBtn = iconGroup.createEl('button', {
@@ -391,7 +394,7 @@ export class BoardView extends ItemView {
                 cls: 'clickable-icon story-line-corkboard-reset-zoom',
                 attr: { 'aria-label': 'Reset zoom to 1:1' },
             });
-            resetZoomBtn.setText('1:1');
+            resetZoomBtn.setText(legacyUi('1:1', '1:1'));
             attachTooltip(resetZoomBtn, 'Reset zoom to 1:1');
             resetZoomBtn.addEventListener('click', () => this.resetCorkboardZoom());
         } else {
@@ -550,8 +553,8 @@ export class BoardView extends ItemView {
 
         if (sortedKeys.length === 0) {
             const empty = this.boardEl.createDiv('story-line-empty');
-            empty.createEl('p', { text: 'No scenes found.' });
-            empty.createEl('p', { text: 'Click "+ new scene" to create your first scene, or check your scene folder setting.' });
+            empty.createEl('p', { text: tr('common.noScenes') });
+            empty.createEl('p', { text: legacyUi('Click "+ new scene" to create your first scene, or check your scene folder setting.', 'Click "+ new scene" to create your first scene, or check your scene folder setting.') });
             return;
         }
 
@@ -600,8 +603,8 @@ export class BoardView extends ItemView {
 
         if (scenes.length === 0) {
             const empty = this.boardEl.createDiv('story-line-empty');
-            empty.createEl('p', { text: 'No scenes found.' });
-            empty.createEl('p', { text: 'Click "+ new scene" to create your first scene, or adjust your filters.' });
+            empty.createEl('p', { text: tr('common.noScenes') });
+            empty.createEl('p', { text: legacyUi('Click "+ new scene" to create your first scene, or adjust your filters.', 'Click "+ new scene" to create your first scene, or adjust your filters.') });
             return;
         }
 
@@ -713,7 +716,7 @@ export class BoardView extends ItemView {
         const textarea = editorWrap.createEl('textarea', {
             cls: 'story-line-corkboard-note-text',
             attr: {
-                placeholder: 'Write your note…',
+                placeholder: legacyUi('Write your note…', 'Write your note…'),
                 rows: '6',
             },
         });
@@ -752,7 +755,7 @@ export class BoardView extends ItemView {
             preview.empty();
             const source = textarea.value.trim();
             if (!source) {
-                preview.createDiv({ cls: 'story-line-corkboard-note-preview-empty', text: 'Write your note…' });
+                preview.createDiv({ cls: 'story-line-corkboard-note-preview-empty', text: legacyUi('Write your note…', 'Write your note…') });
                 return;
             }
             await MarkdownRenderer.render(this.app, source, preview, scene.filePath, this);
@@ -932,7 +935,7 @@ export class BoardView extends ItemView {
         const convertBtn = footer.createEl('button', {
             cls: 'story-line-corkboard-convert-btn',
             attr: {
-                title: 'Convert to scene',
+                title: legacyUi('Convert to scene', 'Convert to scene'),
             },
         });
         obsidian.setIcon(convertBtn, 'clapperboard');
@@ -1013,7 +1016,7 @@ export class BoardView extends ItemView {
         this.schedulePersistCorkboardLayout();
 
         this.refreshBoard();
-        new Notice('Note duplicated');
+        new Notice(legacyUi('Note duplicated', 'Note duplicated'));
     }
 
     private isCorkboardNoteScene(scene: Scene): boolean {
@@ -1140,7 +1143,7 @@ export class BoardView extends ItemView {
 
     private applyCorkboardCamera(canvas: HTMLElement): void {
         canvas.setCssStyles({ transform: `translate(${this.corkboardCamera.x}px, ${this.corkboardCamera.y}px) scale(${this.corkboardCamera.zoom})` });
-        this.corkboardZoomLabel?.setText(`${Math.round(this.corkboardCamera.zoom * 100)}%`);
+        this.corkboardZoomLabel?.setText(legacyUi(`${Math.round(this.corkboardCamera.zoom * 100)}%`, `${Math.round(this.corkboardCamera.zoom * 100)}%`));
     }
 
     private zoomCorkboardBy(delta: number): void {
@@ -1658,28 +1661,28 @@ export class BoardView extends ItemView {
         const backingFile = this.app.vault.getAbstractFileByPath(scenePath);
         if (backingFile instanceof TFile) {
             menu.addItem(item => item
-                .setTitle('Open in editor')
+                .setTitle(legacyUi('Open in editor', 'Open in editor'))
                 .setIcon('file-text')
                 .onClick(() => { void this.openScene(scene); }));
         }
 
         menu.addItem(item => item
-            .setTitle('Top')
+            .setTitle(legacyUi('Top', 'Top'))
             .setIcon('chevrons-up')
             .onClick(() => { this.moveCorkboardLayer(scenePath, 'top'); }));
 
         menu.addItem(item => item
-            .setTitle('Up')
+            .setTitle(legacyUi('Up', 'Up'))
             .setIcon('arrow-up')
             .onClick(() => { this.moveCorkboardLayer(scenePath, 'up'); }));
 
         menu.addItem(item => item
-            .setTitle('Down')
+            .setTitle(legacyUi('Down', 'Down'))
             .setIcon('arrow-down')
             .onClick(() => { this.moveCorkboardLayer(scenePath, 'down'); }));
 
         menu.addItem(item => item
-            .setTitle('Bottom')
+            .setTitle(legacyUi('Bottom', 'Bottom'))
             .setIcon('chevrons-down')
             .onClick(() => { this.moveCorkboardLayer(scenePath, 'bottom'); }));
 
@@ -1688,18 +1691,18 @@ export class BoardView extends ItemView {
         const notePresets = resolveStickyNoteColors(this.plugin.settings);
         notePresets.forEach((preset) => {
             menu.addItem(item => item
-                .setTitle(`Color: ${preset.label}`)
+                .setTitle(legacyUi(`Color: ${preset.label}`, `Color: ${preset.label}`))
                 .setIcon('palette')
                 .onClick(() => { void this.setCorkboardNoteColor(scene, preset.color); }));
         });
 
         menu.addItem(item => item
-            .setTitle('Color: custom…')
+            .setTitle(legacyUi('Color: custom…', 'Color: custom…'))
             .setIcon('pipette')
             .onClick(() => { this.openCorkboardNoteColorModal(scene); }));
 
         menu.addItem(item => item
-            .setTitle('Color: default')
+            .setTitle(legacyUi('Color: default', 'Color: default'))
             .setIcon('rotate-ccw')
             .onClick(() => { void this.setCorkboardNoteColor(scene, undefined); }));
 
@@ -1708,16 +1711,16 @@ export class BoardView extends ItemView {
         const hasFontLight = !!this.plugin.settings.stickyNoteFontColorLight;
         const hasFontDark = !!this.plugin.settings.stickyNoteFontColorDark;
         menu.addItem(item => item
-            .setTitle('Font color: light notes???')
+            .setTitle(legacyUi('Font color: light notes???', 'Font color: light notes???'))
             .setIcon('text')
             .onClick(() => { this.openStickyNoteFontColorModal(scene, 'light'); }));
         menu.addItem(item => item
-            .setTitle('Font color: dark notes???')
+            .setTitle(legacyUi('Font color: dark notes???', 'Font color: dark notes???'))
             .setIcon('text')
             .onClick(() => { this.openStickyNoteFontColorModal(scene, 'dark'); }));
         if (hasFontLight || hasFontDark) {
             menu.addItem(item => item
-                .setTitle('Font color: reset to auto')
+                .setTitle(legacyUi('Font color: reset to auto', 'Font color: reset to auto'))
                 .setIcon('rotate-ccw')
                 .onClick(async () => {
                     this.plugin.settings.stickyNoteFontColorLight = '';
@@ -1729,7 +1732,7 @@ export class BoardView extends ItemView {
 
         menu.addSeparator();
         menu.addItem(item => item
-            .setTitle('Duplicate note')
+            .setTitle(legacyUi('Duplicate note', 'Duplicate note'))
             .setIcon('copy')
             .onClick(() => { void this.duplicateCorkboardNote(scene); }));
 
@@ -1737,11 +1740,11 @@ export class BoardView extends ItemView {
         menu.addSeparator();
         if (scene.corkboardNoteImage) {
             menu.addItem(item => item
-                .setTitle('Change image???')
+                .setTitle(legacyUi('Change image???', 'Change image???'))
                 .setIcon('image')
                 .onClick(() => { void this.changeNoteImage(scene); }));
             menu.addItem(item => item
-                .setTitle('Remove image')
+                .setTitle(legacyUi('Remove image', 'Remove image'))
                 .setIcon('image-off')
                 .onClick(async () => {
                     await this.sceneManager.updateScene(scene.filePath, {
@@ -1754,13 +1757,13 @@ export class BoardView extends ItemView {
                 }));
         } else {
             menu.addItem(item => item
-                .setTitle('Set image???')
+                .setTitle(legacyUi('Set image???', 'Set image???'))
                 .setIcon('image-plus')
                 .onClick(() => { void this.changeNoteImage(scene); }));
         }
 
         menu.addItem(item => item
-            .setTitle('Delete note')
+            .setTitle(legacyUi('Delete note', 'Delete note'))
             .setIcon('trash')
             .onClick(async () => {
                 await this.deleteScene(scene);
@@ -1769,7 +1772,7 @@ export class BoardView extends ItemView {
         if (!scene.corkboardNoteImage) {
             menu.addSeparator();
             menu.addItem(item => item
-                .setTitle('Convert to scene')
+                .setTitle(legacyUi('Convert to scene', 'Convert to scene'))
                 .setIcon('clapperboard')
                 .onClick(() => { void this.convertCorkboardNoteToScene(scene); }));
         }
@@ -1881,11 +1884,11 @@ export class BoardView extends ItemView {
 
     private openCorkboardNoteColorModal(scene: Scene): void {
         const modal = new Modal(this.app);
-        modal.titleEl.setText('Custom note color');
+        modal.titleEl.setText(legacyUi('Custom note color', 'Custom note color'));
 
         const current = this.normalizeHexColor(scene.corkboardNoteColor) ?? '#F6EDB4';
         const row = modal.contentEl.createDiv('story-line-note-color-modal-row');
-        row.createEl('label', { text: 'Pick color' });
+        row.createEl('label', { text: legacyUi('Pick color', 'Pick color') });
         const picker = row.createEl('input', {
             attr: {
                 type: 'color',
@@ -1895,10 +1898,10 @@ export class BoardView extends ItemView {
 
         new Setting(modal.contentEl)
             .addButton(btn => {
-                btn.setButtonText('Cancel').onClick(() => modal.close());
+                btn.setButtonText(legacyUi('Cancel', 'Cancel')).onClick(() => modal.close());
             })
             .addButton(btn => {
-                btn.setButtonText('Apply').setCta().onClick(async () => {
+                btn.setButtonText(legacyUi('Apply', 'Apply')).setCta().onClick(async () => {
                     await this.setCorkboardNoteColor(scene, picker.value);
                     modal.close();
                 });
@@ -1917,14 +1920,14 @@ export class BoardView extends ItemView {
      */
     private openStickyNoteFontColorModal(scene: Scene, bucket: 'light' | 'dark'): void {
         const modal = new Modal(this.app);
-        modal.titleEl.setText(bucket === 'light' ? 'Sticky note font color (light notes)' : 'Sticky note font color (dark notes)');
+        modal.titleEl.setText(bucket === 'light' ? legacyUi('Sticky note font color (light notes)', 'Sticky note font color (light notes)') : legacyUi('Sticky note font color (dark notes)', 'Sticky note font color (dark notes)'));
 
         const currentValue = bucket === 'light'
             ? this.plugin.settings.stickyNoteFontColorLight
             : this.plugin.settings.stickyNoteFontColorDark;
         const fallback = bucket === 'light' ? '#000000' : '#FFFFFF';
         const row = modal.contentEl.createDiv('story-line-note-color-modal-row');
-        row.createEl('label', { text: 'Pick font color' });
+        row.createEl('label', { text: legacyUi('Pick font color', 'Pick font color') });
         const picker = row.createEl('input', {
             attr: {
                 type: 'color',
@@ -1939,7 +1942,7 @@ export class BoardView extends ItemView {
 
         new Setting(modal.contentEl)
             .addButton(btn => {
-                btn.setButtonText('Auto').onClick(async () => {
+                btn.setButtonText(legacyUi('Auto', 'Auto')).onClick(async () => {
                     if (bucket === 'light') {
                         this.plugin.settings.stickyNoteFontColorLight = '';
                     } else {
@@ -1951,10 +1954,10 @@ export class BoardView extends ItemView {
                 });
             })
             .addButton(btn => {
-                btn.setButtonText('Cancel').onClick(() => modal.close());
+                btn.setButtonText(legacyUi('Cancel', 'Cancel')).onClick(() => modal.close());
             })
             .addButton(btn => {
-                btn.setButtonText('Apply').setCta().onClick(async () => {
+                btn.setButtonText(legacyUi('Apply', 'Apply')).setCta().onClick(async () => {
                     const v = picker.value.toUpperCase();
                     if (bucket === 'light') {
                         this.plugin.settings.stickyNoteFontColorLight = v;
@@ -1984,7 +1987,7 @@ export class BoardView extends ItemView {
         const displayTitle = this.getColumnDisplayTitle(title);
         header.createSpan({
             cls: 'story-line-column-title',
-            text: `${displayTitle} (${scenes.length})`
+            text: legacyUi(`${displayTitle} (${scenes.length})`, `${displayTitle} (${scenes.length})`)
         });
 
         // Show description subtitle if available (for act / chapter columns)
@@ -2108,7 +2111,7 @@ export class BoardView extends ItemView {
         // Add scene button at bottom
         const addBtn = column.createEl('button', {
             cls: 'story-line-column-add',
-            text: '+ add scene'
+            text: legacyUi('+ add scene', '+ add scene')
         });
         addBtn.addEventListener('click', () => this.openQuickAdd(title));
     }
@@ -2411,13 +2414,13 @@ export class BoardView extends ItemView {
         const count = this.selectedScenes.size;
         this.bulkBarEl.createSpan({
             cls: 'bulk-bar-label',
-            text: `${count} scenes selected`
+            text: legacyUi(`${count} scenes selected`, `${count} scenes selected`)
         });
 
         // Bulk status change
         const statusBtn = this.bulkBarEl.createEl('button', {
             cls: 'bulk-bar-btn',
-            text: 'Set status'
+            text: legacyUi('Set status', 'Set status')
         });
         const statusIcon = statusBtn.createSpan();
         obsidian.setIcon(statusIcon, 'check-circle');
@@ -2431,7 +2434,7 @@ export class BoardView extends ItemView {
                             for (const fp of this.selectedScenes) {
                                 await this.sceneManager.updateScene(fp, { status });
                             }
-                            new Notice(`Updated status to "${status}" for ${count} scenes`);
+                            new Notice(legacyUi(`Updated status to "${status}" for ${count} scenes`, `Updated status to "${status}" for ${count} scenes`));
                             this.selectedScenes.clear();
                             this.refreshBoard();
                             this.updateBulkBar();
@@ -2444,7 +2447,7 @@ export class BoardView extends ItemView {
         // Bulk move to act
         const actBtn = this.bulkBarEl.createEl('button', {
             cls: 'bulk-bar-btn',
-            text: 'Move to act'
+            text: legacyUi('Move to act', 'Move to act')
         });
         const actIcon = actBtn.createSpan();
         obsidian.setIcon(actIcon, 'folder');
@@ -2461,7 +2464,7 @@ export class BoardView extends ItemView {
                                 for (const fp of this.selectedScenes) {
                                     await this.sceneManager.updateScene(fp, { act: Number(act) || act }, { moveFile: true });
                                 }
-                                new Notice(`Moved ${count} scenes to ${getActDisplayLabel(act)}`);
+                                new Notice(legacyUi(`Moved ${count} scenes to ${getActDisplayLabel(act)}`, `Moved ${count} scenes to ${getActDisplayLabel(act)}`));
                                 this.selectedScenes.clear();
                                 this.refreshBoard();
                                 this.updateBulkBar();
@@ -2476,7 +2479,7 @@ export class BoardView extends ItemView {
                                 for (const fp of this.selectedScenes) {
                                     await this.sceneManager.updateScene(fp, { act }, { moveFile: true });
                                 }
-                                new Notice(`Moved ${count} scenes to ${getActDisplayLabel(act)}`);
+                                new Notice(legacyUi(`Moved ${count} scenes to ${getActDisplayLabel(act)}`, `Moved ${count} scenes to ${getActDisplayLabel(act)}`));
                                 this.selectedScenes.clear();
                                 this.refreshBoard();
                                 this.updateBulkBar();
@@ -2490,7 +2493,7 @@ export class BoardView extends ItemView {
         // Bulk add tag
         const tagBtn = this.bulkBarEl.createEl('button', {
             cls: 'bulk-bar-btn',
-            text: 'Add tag'
+            text: legacyUi('Add tag', 'Add tag')
         });
         const tagIcon = tagBtn.createSpan();
         obsidian.setIcon(tagIcon, 'tag');
@@ -2512,7 +2515,7 @@ export class BoardView extends ItemView {
                                     }
                                 }
                             }
-                            new Notice(`Added tag "${tag}" to ${count} scenes`);
+                            new Notice(legacyUi(`Added tag "${tag}" to ${count} scenes`, `Added tag "${tag}" to ${count} scenes`));
                             this.selectedScenes.clear();
                             this.refreshBoard();
                             this.updateBulkBar();
@@ -2523,17 +2526,17 @@ export class BoardView extends ItemView {
             // Option to enter a new tag
             menu.addSeparator();
             menu.addItem(item => {
-                item.setTitle('New tag…')
+                item.setTitle(legacyUi('New tag…', 'New tag…'))
                     .setIcon('plus')
                     .onClick(() => {
                         const inputModal = new Modal(this.app);
-                        inputModal.titleEl.setText('New tag');
+                        inputModal.titleEl.setText(legacyUi('New tag', 'New tag'));
                         const { contentEl } = inputModal;
-                        const input = contentEl.createEl('input', { type: 'text', attr: { placeholder: 'Enter new tag' } });
+                        const input = contentEl.createEl('input', { type: 'text', attr: { placeholder: legacyUi('Enter new tag', 'Enter new tag') } });
                         input.setCssStyles({ width: '100%' });
                         const btnRow = contentEl.createDiv({ cls: 'modal-button-container' });
-                        const okBtn = btnRow.createEl('button', { text: 'Add', cls: 'mod-cta' });
-                        const cancelBtn = btnRow.createEl('button', { text: 'Cancel' });
+                        const okBtn = btnRow.createEl('button', { text: tr('common.addButton'), cls: 'mod-cta' });
+                        const cancelBtn = btnRow.createEl('button', { text: tr('common.cancelButton') });
                         const submit = () => {
                             const newTag = input.value.trim();
                             inputModal.close();
@@ -2549,7 +2552,7 @@ export class BoardView extends ItemView {
                                         }
                                     }
                                 }
-                                new Notice(`Added tag "${newTag}" to ${count} scenes`);
+                                new Notice(legacyUi(`Added tag "${newTag}" to ${count} scenes`, `Added tag "${newTag}" to ${count} scenes`));
                                 this.selectedScenes.clear();
                                 this.refreshBoard();
                                 this.updateBulkBar();
@@ -2569,20 +2572,20 @@ export class BoardView extends ItemView {
         // Bulk delete
         const deleteBtn = this.bulkBarEl.createEl('button', {
             cls: 'bulk-bar-btn bulk-bar-delete',
-            text: 'Delete'
+            text: legacyUi('Delete', 'Delete')
         });
         const deleteIcon = deleteBtn.createSpan();
         obsidian.setIcon(deleteIcon, 'trash');
         deleteBtn.addEventListener('click', async () => {
             openConfirmModal(this.app, {
-                title: 'Delete Scenes',
+                title: legacyUi('Delete Scenes', 'Delete Scenes'),
                 message: `Delete ${count} scene(s)? This cannot be undone.`,
                 confirmLabel: 'Delete',
                 onConfirm: async () => {
                     for (const fp of this.selectedScenes) {
                         await this.sceneManager.deleteScene(fp);
                     }
-                    new Notice(`Deleted ${count} scenes`);
+                    new Notice(legacyUi(`Deleted ${count} scenes`, `Deleted ${count} scenes`));
                     this.selectedScenes.clear();
                     this.refreshBoard();
                     this.updateBulkBar();
@@ -2593,7 +2596,7 @@ export class BoardView extends ItemView {
         // Clear selection
         const clearBtn = this.bulkBarEl.createEl('button', {
             cls: 'bulk-bar-btn bulk-bar-clear',
-            text: '✓ clear'
+            text: legacyUi('✓ clear', '✓ clear')
         });
         clearBtn.addEventListener('click', () => {
             this.selectedScenes.clear();
@@ -2606,7 +2609,7 @@ export class BoardView extends ItemView {
         // Merge scenes (2+ selected)
         const mergeBtn = this.bulkBarEl.createEl('button', {
             cls: 'bulk-bar-btn',
-            text: 'Merge'
+            text: legacyUi('Merge', 'Merge')
         });
         const mergeIcon = mergeBtn.createSpan();
         obsidian.setIcon(mergeIcon, 'combine');
@@ -2618,7 +2621,7 @@ export class BoardView extends ItemView {
             scenes.sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0));
 
             if (scenes.length < 2) {
-                new Notice('Select at least 2 scenes to merge');
+                new Notice(legacyUi('Select at least 2 scenes to merge', 'Select at least 2 scenes to merge'));
                 return;
             }
 
@@ -2646,7 +2649,7 @@ export class BoardView extends ItemView {
             const leaf = this.app.workspace.getLeaf('tab');
             await leaf.openFile(file, { state: { mode: 'source', source: false } });
         } else {
-            new Notice(`Could not find file: ${scene.filePath}`);
+            new Notice(legacyUi(`Could not find file: ${scene.filePath}`, `Could not find file: ${scene.filePath}`));
         }
     }
 
@@ -2666,22 +2669,22 @@ export class BoardView extends ItemView {
 
         if (this.boardMode === 'corkboard') {
             menu.addItem(item => item
-                .setTitle('Top')
+                .setTitle(legacyUi('Top', 'Top'))
                 .setIcon('chevrons-up')
                 .onClick(() => { this.moveCorkboardLayer(scene.filePath, 'top'); }));
 
             menu.addItem(item => item
-                .setTitle('Up')
+                .setTitle(legacyUi('Up', 'Up'))
                 .setIcon('arrow-up')
                 .onClick(() => { this.moveCorkboardLayer(scene.filePath, 'up'); }));
 
             menu.addItem(item => item
-                .setTitle('Down')
+                .setTitle(legacyUi('Down', 'Down'))
                 .setIcon('arrow-down')
                 .onClick(() => { this.moveCorkboardLayer(scene.filePath, 'down'); }));
 
             menu.addItem(item => item
-                .setTitle('Bottom')
+                .setTitle(legacyUi('Bottom', 'Bottom'))
                 .setIcon('chevrons-down')
                 .onClick(() => { this.moveCorkboardLayer(scene.filePath, 'bottom'); }));
 
@@ -2689,13 +2692,13 @@ export class BoardView extends ItemView {
         }
 
         menu.addItem(item => {
-            item.setTitle('Edit scene')
+            item.setTitle(legacyUi('Edit scene', 'Edit scene'))
                 .setIcon('pencil')
                 .onClick(() => this.openScene(scene));
         });
 
         menu.addItem(item => {
-            item.setTitle('Duplicate scene')
+            item.setTitle(legacyUi('Duplicate scene', 'Duplicate scene'))
                 .setIcon('copy')
                 .onClick(async () => {
                     await this.sceneManager.duplicateScene(scene.filePath);
@@ -2704,7 +2707,7 @@ export class BoardView extends ItemView {
         });
 
         menu.addItem(item => {
-            item.setTitle('Split scene')
+            item.setTitle(legacyUi('Split scene', 'Split scene'))
                 .setIcon('scissors')
                 .onClick(() => {
                     new SplitSceneModal(this.plugin, scene, () => this.refreshBoard()).open();
@@ -2713,7 +2716,7 @@ export class BoardView extends ItemView {
 
         // Scene color picker
         menu.addItem(item => {
-            item.setTitle(scene.color ? 'Change Color' : 'Set Color')
+            item.setTitle(scene.color ? legacyUi('Change Color', 'Change Color') : legacyUi('Set Color', 'Set Color'))
                 .setIcon('palette')
                 .onClick(() => {
                     SceneCardComponent.openColorPicker(this.app, scene, this.sceneManager, () => this.refreshBoard());
@@ -2726,7 +2729,7 @@ export class BoardView extends ItemView {
         const statuses = getStatusOrder();
         statuses.forEach(status => {
             menu.addItem(item => {
-                item.setTitle(`Status: ${resolveStatusCfg(status).label}`)
+                item.setTitle(legacyUi(`Status: ${resolveStatusCfg(status).label}`, `Status: ${resolveStatusCfg(status).label}`))
                     .setChecked(scene.status === status)
                     .onClick(async () => {
                         await this.sceneManager.updateScene(scene.filePath, { status });
@@ -2741,7 +2744,7 @@ export class BoardView extends ItemView {
         const definedActs = this.sceneManager.getDefinedActs();
         if (definedActs.length > 0) {
             menu.addItem(item => {
-                item.setTitle('Move to act???')
+                item.setTitle(legacyUi('Move to act???', 'Move to act???'))
                     .setIcon('folder');
                 // Build submenu manually via Menu
             });
@@ -2783,7 +2786,7 @@ export class BoardView extends ItemView {
         menu.addSeparator();
 
         menu.addItem(item => {
-            item.setTitle('Save as template')
+            item.setTitle(legacyUi('Save as template', 'Save as template'))
                 .setIcon('file-plus')
                 .onClick(() => {
                     const tpl: SceneTemplate = {
@@ -2800,14 +2803,14 @@ export class BoardView extends ItemView {
                     };
                     this.plugin.settings.sceneTemplates.push(tpl);
                     this.plugin.saveSettings();
-                    new Notice(`Scene template "${tpl.name}" saved`);
+                    new Notice(legacyUi(`Scene template "${tpl.name}" saved`, `Scene template "${tpl.name}" saved`));
                 });
         });
 
         menu.addSeparator();
 
         menu.addItem(item => {
-            item.setTitle(scene.inactive ? 'Mark Active' : 'Mark Inactive')
+            item.setTitle(scene.inactive ? legacyUi('Mark Active', 'Mark Active') : legacyUi('Mark Inactive', 'Mark Inactive'))
                 .setIcon(scene.inactive ? 'eye' : 'eye-off')
                 .onClick(async () => {
                     await this.sceneManager.updateScene(scene.filePath, { inactive: !scene.inactive });
@@ -2818,7 +2821,7 @@ export class BoardView extends ItemView {
         menu.addSeparator();
 
         menu.addItem(item => {
-            item.setTitle('Archive scene')
+            item.setTitle(legacyUi('Archive scene', 'Archive scene'))
                 .setIcon('archive')
                 .onClick(async () => {
                     await this.sceneManager.archiveScene(scene.filePath);
@@ -2827,11 +2830,11 @@ export class BoardView extends ItemView {
         });
 
         menu.addItem(item => {
-            item.setTitle('Delete scene')
+            item.setTitle(legacyUi('Delete scene', 'Delete scene'))
                 .setIcon('trash')
                 .onClick(async () => {
                     openConfirmModal(this.app, {
-                        title: 'Delete Scene',
+                        title: legacyUi('Delete Scene', 'Delete Scene'),
                         message: `Delete scene "${scene.title || 'Untitled'}"?`,
                         confirmLabel: 'Delete',
                         onConfirm: () => this.deleteScene(scene),
@@ -2847,11 +2850,11 @@ export class BoardView extends ItemView {
      */
     private async openArchiveModal(): Promise<void> {
         const modal = new Modal(this.app);
-        modal.titleEl.setText('Archived scenes');
+        modal.titleEl.setText(legacyUi('Archived scenes', 'Archived scenes'));
 
         const archived = await this.sceneManager.getArchivedScenes();
         if (archived.length === 0) {
-            modal.contentEl.createEl('p', { text: 'No archived scenes.', cls: 'setting-item-description' });
+            modal.contentEl.createEl('p', { text: legacyUi('No archived scenes.', 'No archived scenes.'), cls: 'setting-item-description' });
         } else {
             for (const item of archived) {
                 const row = modal.contentEl.createDiv();
@@ -2863,7 +2866,7 @@ export class BoardView extends ItemView {
                     borderBottom: '1px solid var(--background-modifier-border)',
                 });
                 row.createSpan({ text: item.title });
-                const restoreBtn = row.createEl('button', { text: 'Restore', cls: 'mod-cta' });
+                const restoreBtn = row.createEl('button', { text: legacyUi('Restore', 'Restore'), cls: 'mod-cta' });
                 restoreBtn.setCssStyles({
                     fontSize: '11px',
                     padding: '2px 10px',
@@ -2876,9 +2879,9 @@ export class BoardView extends ItemView {
                     // Check if list is now empty
                     if (modal.contentEl.querySelectorAll('div').length === 0) {
                         modal.contentEl.empty();
-                        modal.contentEl.createEl('p', { text: 'No archived scenes.', cls: 'setting-item-description' });
+                        modal.contentEl.createEl('p', { text: legacyUi('No archived scenes.', 'No archived scenes.'), cls: 'setting-item-description' });
                     }
-                    new Notice('Scene restored');
+                    new Notice(legacyUi('Scene restored', 'Scene restored'));
                 });
             }
         }
@@ -2895,16 +2898,16 @@ export class BoardView extends ItemView {
         if (actMatch) {
             const actNum = parseInt(actMatch[1], 10);
             const label = this.sceneManager.getActLabel(actNum);
-            const actDisplay = getActDisplayLabel(actNum);
-            return label ? `${actDisplay}: ${label}` : actDisplay;
+            return formatActLabelWithSubtitle(actNum, getInterfaceLocale(), label);
         }
         const chMatch = groupKey.match(/^Chapter\s+(\d+)$/);
         if (chMatch) {
             const chNum = parseInt(chMatch[1], 10);
             const label = this.sceneManager.getChapterLabel(chNum);
-            return getChapterDisplayLabel(chNum, label);
+            return formatChapterLabel(chNum, getInterfaceLocale(), label);
         }
-        return groupKey;
+        if (this.groupBy === 'status') return trValue('statusLabel', groupKey);
+        return displayGroupKey(groupKey);
     }
 
     /**
@@ -2936,7 +2939,7 @@ export class BoardView extends ItemView {
             const currentLabel = this.sceneManager.getActLabel(actNum) || '';
 
             menu.addItem(item => {
-                item.setTitle('Rename act')
+                item.setTitle(legacyUi('Rename act', 'Rename act'))
                     .setIcon('pencil')
                     .onClick(() => {
                         this.openRenameModal('Act', actNum, currentLabel, async (newLabel) => {
@@ -2947,7 +2950,7 @@ export class BoardView extends ItemView {
             });
 
             menu.addItem(item => {
-                item.setTitle('Edit description')
+                item.setTitle(legacyUi('Edit description', 'Edit description'))
                     .setIcon('file-text')
                     .onClick(() => {
                         const currentDesc = this.sceneManager.getActDescription(actNum) || '';
@@ -2959,13 +2962,13 @@ export class BoardView extends ItemView {
             });
 
             menu.addItem(item => {
-                item.setTitle('Delete act')
+                item.setTitle(legacyUi('Delete act', 'Delete act'))
                     .setIcon('trash')
                     .onClick(() => {
                         const actDisplay = getActDisplayLabel(actNum);
                         if (scenes.length > 0) {
                             openConfirmModal(this.app, {
-                                title: 'Delete Act',
+                                title: legacyUi('Delete Act', 'Delete Act'),
                                 message: `${actDisplay} contains ${scenes.length} scene(s). Deleting the act removes the column but keeps the scenes (they'll become unassigned). Continue?`,
                                 onConfirm: async () => {
                                     // Unassign scenes from this act
@@ -2975,14 +2978,14 @@ export class BoardView extends ItemView {
                                     await this.sceneManager.removeAct(actNum);
                                     await this.sceneManager.setActLabel(actNum, '');
                                     this.refreshBoard();
-                                    new Notice(`Deleted ${actDisplay}`);
+                                    new Notice(legacyUi(`Deleted ${actDisplay}`, `Deleted ${actDisplay}`));
                                 },
                             });
                         } else {
                             this.sceneManager.removeAct(actNum).then(() => {
                                 this.sceneManager.setActLabel(actNum, '').then(() => {
                                     this.refreshBoard();
-                                    new Notice(`Deleted Act ${actNum}`);
+                                    new Notice(legacyUi(`Deleted Act ${actNum}`, `Deleted Act ${actNum}`));
                                 });
                             });
                         }
@@ -2992,7 +2995,7 @@ export class BoardView extends ItemView {
             // Add existing scenes to this act
             menu.addSeparator();
             menu.addItem(item => {
-                item.setTitle('Add existing scenes…')
+                item.setTitle(legacyUi('Add existing scenes…', 'Add existing scenes…'))
                     .setIcon('plus-circle')
                     .onClick(() => {
                         this.openAssignScenesModal('act', actNum);
@@ -3005,31 +3008,31 @@ export class BoardView extends ItemView {
             // Issue #220 — insert a new chapter before or after this column,
             // renumbering existing chapters (and their scenes) to make room.
             menu.addItem(item => {
-                item.setTitle('Insert chapter before')
+                item.setTitle(legacyUi('Insert chapter before', 'Insert chapter before'))
                     .setIcon('arrow-up-from-line')
                     .onClick(async () => {
                         await this.sceneManager.insertChapter(chNum);
                         await this.sceneManager.initialize();
                         this.refreshBoard();
-                        new Notice(`Inserted new Chapter ${chNum}`);
+                        new Notice(legacyUi(`Inserted new Chapter ${chNum}`, `Inserted new Chapter ${chNum}`));
                     });
             });
 
             menu.addItem(item => {
-                item.setTitle('Insert chapter after')
+                item.setTitle(legacyUi('Insert chapter after', 'Insert chapter after'))
                     .setIcon('arrow-down-from-line')
                     .onClick(async () => {
                         await this.sceneManager.insertChapter(chNum + 1);
                         await this.sceneManager.initialize();
                         this.refreshBoard();
-                        new Notice(`Inserted new Chapter ${chNum + 1}`);
+                        new Notice(legacyUi(`Inserted new Chapter ${chNum + 1}`, `Inserted new Chapter ${chNum + 1}`));
                     });
             });
 
             menu.addSeparator();
 
             menu.addItem(item => {
-                item.setTitle('Rename chapter')
+                item.setTitle(legacyUi('Rename chapter', 'Rename chapter'))
                     .setIcon('pencil')
                     .onClick(() => {
                         this.openRenameModal('Chapter', chNum, currentLabel, async (newLabel) => {
@@ -3040,7 +3043,7 @@ export class BoardView extends ItemView {
             });
 
             menu.addItem(item => {
-                item.setTitle('Edit description')
+                item.setTitle(legacyUi('Edit description', 'Edit description'))
                     .setIcon('file-text')
                     .onClick(() => {
                         const currentDesc = this.sceneManager.getChapterDescription(chNum) || '';
@@ -3052,7 +3055,7 @@ export class BoardView extends ItemView {
             });
 
             menu.addItem(item => {
-                item.setTitle('Delete chapter')
+                item.setTitle(legacyUi('Delete chapter', 'Delete chapter'))
                     .setIcon('trash')
                     .onClick(() => {
                         // Count chapters above this one so we can warn the
@@ -3070,18 +3073,18 @@ export class BoardView extends ItemView {
                             await this.sceneManager.deleteChapterAndShift(chNum);
                             await this.sceneManager.initialize();
                             this.refreshBoard();
-                            new Notice(`Deleted Chapter ${chNum}`);
+                            new Notice(legacyUi(`Deleted Chapter ${chNum}`, `Deleted Chapter ${chNum}`));
                         };
 
                         if (scenes.length > 0) {
                             openConfirmModal(this.app, {
-                                title: 'Delete Chapter',
+                                title: legacyUi('Delete Chapter', 'Delete Chapter'),
                                 message: `Chapter ${chNum} contains ${scenes.length} scene(s). Deleting the chapter removes the column but keeps those scenes (they'll become unassigned).${shiftMsg} Continue?`,
                                 onConfirm: runDelete,
                             });
                         } else if (shiftedCount > 0) {
                             openConfirmModal(this.app, {
-                                title: 'Delete Chapter',
+                                title: legacyUi('Delete Chapter', 'Delete Chapter'),
                                 message: `Delete Chapter ${chNum}?${shiftMsg}`,
                                 onConfirm: runDelete,
                             });
@@ -3094,7 +3097,7 @@ export class BoardView extends ItemView {
             // Add existing scenes to this chapter
             menu.addSeparator();
             menu.addItem(item => {
-                item.setTitle('Add existing scenes…')
+                item.setTitle(legacyUi('Add existing scenes…', 'Add existing scenes…'))
                     .setIcon('plus-circle')
                     .onClick(() => {
                         this.openAssignScenesModal('chapter', chNum);
@@ -3110,13 +3113,13 @@ export class BoardView extends ItemView {
      */
     private openDescriptionModal(type: string, num: number, current: string, onSave: (desc: string) => Promise<void>): void {
         const modal = new Modal(this.app);
-        modal.titleEl.setText(`${type} ${num} Description`);
+        modal.titleEl.setText(legacyUi(`${type} ${num} Description`, `${type} ${num} Description`));
         const { contentEl } = modal;
 
         let value = current;
         new Setting(contentEl)
-            .setName('Description')
-            .setDesc(`A short summary for ${type} ${num}. Leave blank to remove.`);
+            .setName(legacyUi('Description', 'Description'))
+            .setDesc(legacyUi(`A short summary for ${type} ${num}. Leave blank to remove.`, `A short summary for ${type} ${num}. Leave blank to remove.`));
         const textArea = contentEl.createEl('textarea', {
             cls: 'storyline-description-textarea',
         });
@@ -3131,12 +3134,12 @@ export class BoardView extends ItemView {
         window.setTimeout(() => textArea.focus(), 50);
 
         const btnRow = contentEl.createDiv('structure-close-row');
-        const saveBtn = btnRow.createEl('button', { text: 'Save', cls: 'mod-cta' });
+        const saveBtn = btnRow.createEl('button', { text: tr('common.saveButton'), cls: 'mod-cta' });
         saveBtn.addEventListener('click', async () => {
             await onSave(value);
             modal.close();
         });
-        const cancelBtn = btnRow.createEl('button', { text: 'Cancel' });
+        const cancelBtn = btnRow.createEl('button', { text: tr('common.cancelButton') });
         cancelBtn.addEventListener('click', () => modal.close());
 
         modal.open();
@@ -3163,12 +3166,12 @@ export class BoardView extends ItemView {
         const label = field === 'chapter'
             ? `Chapter ${value}` + (cleanChLbl ? ` — ${cleanChLbl}` : '')
             : actDisplay + (cleanActLbl ? ` — ${cleanActLbl}` : '');
-        modal.titleEl.setText(`Add scenes to ${label}`);
+        modal.titleEl.setText(legacyUi(`Add scenes to ${label}`, `Add scenes to ${label}`));
 
         const { contentEl } = modal;
         contentEl.createEl('p', {
             cls: 'setting-item-description',
-            text: `Select scenes to assign to ${label}. Only scenes not already in a ${field} are shown.`
+            text: legacyUi(`Select scenes to assign to ${label}. Only scenes not already in a ${field} are shown.`, `Select scenes to assign to ${label}. Only scenes not already in a ${field} are shown.`)
         });
 
         const allScenes = this.sceneManager.queryService.getFilteredScenes(
@@ -3182,9 +3185,9 @@ export class BoardView extends ItemView {
         });
 
         if (candidates.length === 0) {
-            contentEl.createEl('p', { text: 'All scenes are already assigned.' });
+            contentEl.createEl('p', { text: legacyUi('All scenes are already assigned.', 'All scenes are already assigned.') });
             const closeRow = contentEl.createDiv('structure-close-row');
-            closeRow.createEl('button', { text: 'Close', cls: 'mod-cta' })
+            closeRow.createEl('button', { text: tr('common.closeButton'), cls: 'mod-cta' })
                 .addEventListener('click', () => modal.close());
             modal.open();
             return;
@@ -3210,7 +3213,7 @@ export class BoardView extends ItemView {
             const cb = row.createEl('input', { type: 'checkbox' }) as HTMLInputElement;
             const currentVal = field === 'chapter' ? scene.chapter : scene.act;
             const info = currentVal !== undefined ? ` [${field} ${currentVal}]` : ' [unassigned]';
-            row.createSpan({ text: `${scene.title}${info}` });
+            row.createSpan({ text: legacyUi(`${scene.title}${info}`, `${scene.title}${info}`) });
 
             cb.addEventListener('change', () => {
                 if (cb.checked) selectedPaths.add(scene.filePath);
@@ -3224,10 +3227,10 @@ export class BoardView extends ItemView {
             gap: '8px',
             marginTop: '12px',
         });
-        const assignBtn = btnRow.createEl('button', { text: 'Assign selected', cls: 'mod-cta' });
+        const assignBtn = btnRow.createEl('button', { text: legacyUi('Assign selected', 'Assign selected'), cls: 'mod-cta' });
         assignBtn.addEventListener('click', async () => {
             if (selectedPaths.size === 0) {
-                new Notice('No scenes selected');
+                new Notice(legacyUi('No scenes selected', 'No scenes selected'));
                 return;
             }
             for (const fp of selectedPaths) {
@@ -3236,11 +3239,11 @@ export class BoardView extends ItemView {
                 else updates.act = value;
                 await this.sceneManager.updateScene(fp, updates);
             }
-            new Notice(`Assigned ${selectedPaths.size} scene(s) to ${label}`);
+            new Notice(legacyUi(`Assigned ${selectedPaths.size} scene(s) to ${label}`, `Assigned ${selectedPaths.size} scene(s) to ${label}`));
             modal.close();
             this.refreshBoard();
         });
-        const cancelBtn = btnRow.createEl('button', { text: 'Cancel' });
+        const cancelBtn = btnRow.createEl('button', { text: legacyUi('Cancel', 'Cancel') });
         cancelBtn.addEventListener('click', () => modal.close());
 
         modal.open();
@@ -3275,23 +3278,23 @@ export class BoardView extends ItemView {
      */
     private openStructureModal(): void {
         const modal = new Modal(this.app);
-        modal.titleEl.setText('Manage story structure');
+        modal.titleEl.setText(legacyUi('Manage story structure', 'Manage story structure'));
         modal.containerEl.addClass('sl-structure-modal');
 
         const { contentEl } = modal;
 
         // ── Beat Sheet Templates section ──
-        contentEl.createEl('h3', { text: 'Beat sheet templates' });
+        contentEl.createEl('h3', { text: legacyUi('Beat sheet templates', 'Beat sheet templates') });
         contentEl.createEl('p', {
             cls: 'setting-item-description',
-            text: 'Apply a template to pre-populate your act/chapter structure with named beats.'
+            text: legacyUi('Apply a template to pre-populate your act/chapter structure with named beats.', 'Apply a template to pre-populate your act/chapter structure with named beats.')
         });
 
         // Global toggle: create placeholder scenes from beats
         let createPlaceholderScenes = false;
         new Setting(contentEl)
-            .setName('Create placeholder scenes from beats')
-            .setDesc('When enabled, applying a beat sheet also creates one "idea" scene per beat with the beat\'s title, act, chapter, and synopsis.')
+            .setName(legacyUi('Create placeholder scenes from beats', 'Create placeholder scenes from beats'))
+            .setDesc(legacyUi('When enabled, applying a beat sheet also creates one "idea" scene per beat with the beat\'s title, act, chapter, and synopsis.', 'When enabled, applying a beat sheet also creates one "idea" scene per beat with the beat\'s title, act, chapter, and synopsis.'))
             .addToggle(toggle => {
                 toggle.setValue(false);
                 toggle.onChange(v => { createPlaceholderScenes = v; });
@@ -3299,23 +3302,23 @@ export class BoardView extends ItemView {
 
         // Render each template as a standard Setting item — avoids the custom
         // flex container that collapsed to zero height on mobile (issue #214).
-        for (const template of BUILTIN_BEAT_SHEETS) {
+        for (const template of getBuiltinBeatSheets(getContentLocale(this.sceneManager.getEffectiveLocale()))) {
             const parts = [`${template.beats.length} beats`, `${template.acts.length} acts`];
             if (template.chapters.length > 0) parts.push(`${template.chapters.length} chapters`);
 
             const s = new Setting(contentEl)
                 .setName(template.name)
                 .addButton(btn => {
-                    btn.setButtonText('Apply').setCta().onClick(async () => {
+                    btn.setButtonText(legacyUi('Apply', 'Apply')).setCta().onClick(async () => {
                         const doApply = async () => {
                             await this.sceneManager.applyBeatSheet(template);
                             if (createPlaceholderScenes) {
                                 const count = await this.sceneManager.createScenesFromBeats(template);
                                 new Notice(count > 0
                                     ? `Applied "${template.name}" \u2014 created ${count} placeholder scene(s)`
-                                    : `Applied "${template.name}" template`);
+                                    : legacyUi(`Applied "${template.name}" template`, `Applied "${template.name}" template`) );
                             } else {
-                                new Notice(`Applied "${template.name}" template`);
+                                new Notice(legacyUi(legacyUi(`Applied "${template.name}" template`, `Applied "${template.name}" template`) , legacyUi(`Applied "${template.name}" template`, `Applied "${template.name}" template`) ));
                             }
                             renderActsList();
                             renderChaptersList();
@@ -3324,7 +3327,7 @@ export class BoardView extends ItemView {
                         const existingChapters = this.sceneManager.getDefinedChapters();
                         if (existingActs.length > 0 || existingChapters.length > 0) {
                             openConfirmModal(this.app, {
-                                title: 'Apply Beat Sheet',
+                                title: legacyUi('Apply Beat Sheet', 'Apply Beat Sheet'),
                                 message: `Applying "${template.name}" will merge its acts, chapters, and labels into your existing structure. Existing scenes are not modified. Continue?`,
                                 confirmLabel: 'Apply',
                                 confirmClass: 'mod-cta',
@@ -3338,12 +3341,12 @@ export class BoardView extends ItemView {
 
             // Summary line + expandable beat list under the Setting description
             const descFrag: DocumentFragment = createFragment();
-            const summaryLine = descFrag.createDiv({ cls: 'beat-sheet-row-summary', text: `${template.summary} \u00b7 ${parts.join(' \u00b7 ')}` });
+            const summaryLine = descFrag.createDiv({ cls: 'beat-sheet-row-summary', text: legacyUi(`${template.summary} \u00b7 ${parts.join(' \u00b7 ')}`, `${template.summary} \u00b7 ${parts.join(' \u00b7 ')}`) });
             const details = descFrag.createEl('details', { cls: 'beat-sheet-details' });
-            details.createEl('summary', { cls: 'beat-sheet-details-summary', text: 'Show beats' });
+            details.createEl('summary', { cls: 'beat-sheet-details-summary', text: legacyUi('Show beats', 'Show beats') });
             for (const beat of template.beats) {
                 const item = details.createDiv({ cls: 'beat-sheet-beat-item' });
-                item.createSpan({ cls: 'beat-sheet-beat-act', text: `A${beat.act}` });
+                item.createSpan({ cls: 'beat-sheet-beat-act', text: legacyUi(`A${beat.act}`, `A${beat.act}`) });
                 item.createSpan({ cls: 'beat-sheet-beat-label', text: beat.label });
                 item.createSpan({ cls: 'beat-sheet-beat-desc', text: beat.description });
             }
@@ -3352,10 +3355,10 @@ export class BoardView extends ItemView {
         }
 
         // ── Acts section ──
-        contentEl.createEl('h3', { text: 'Acts' });
+        contentEl.createEl('h3', { text: legacyUi('Acts', 'Acts') });
         contentEl.createEl('p', {
             cls: 'setting-item-description',
-            text: 'Define acts for your story. Empty acts will appear as columns even without scenes.'
+            text: legacyUi('Define acts for your story. Empty acts will appear as columns even without scenes.', 'Define acts for your story. Empty acts will appear as columns even without scenes.')
         });
 
         const actsList = contentEl.createDiv('structure-list');
@@ -3372,7 +3375,7 @@ export class BoardView extends ItemView {
             const acts = this.sceneManager.getDefinedActs();
             const actLabels = this.sceneManager.getActLabels();
             if (acts.length === 0) {
-                actsList.createEl('p', { cls: 'structure-empty', text: 'No acts defined yet.' });
+                        actsList.createEl('p', { cls: 'structure-empty', text: tr('common.noActs') });
             }
             for (const act of acts) {
                 const count = scenesPerAct.get(act) || 0;
@@ -3382,7 +3385,7 @@ export class BoardView extends ItemView {
                 const actDisplay = getActDisplayLabel(act);
                 const labelText = cleanLabel ? `${actDisplay} — ${cleanLabel}` : actDisplay;
                 row.createSpan({ cls: 'structure-label', text: labelText });
-                row.createSpan({ cls: 'structure-count', text: `${count} scene${count !== 1 ? 's' : ''}` });
+                row.createSpan({ cls: 'structure-count', text: legacyUi(`${count} scene${count !== 1 ? 's' : ''}`, `${count} scene${count !== 1 ? 's' : ''}`) });
                 const removeBtn = row.createEl('button', {
                     cls: 'clickable-icon structure-remove',
                     attr: { 'aria-label': `Remove ${actDisplay}` }
@@ -3399,36 +3402,36 @@ export class BoardView extends ItemView {
         // Add acts controls
         const addActRow = contentEl.createDiv('structure-add-row');
         new Setting(addActRow)
-            .setName('Add acts')
-            .setDesc('Enter act numbers (e.g. "1,2,3,4,5" or "6" to add one)')
+            .setName(legacyUi('Add acts', 'Add acts'))
+            .setDesc(legacyUi('Enter act numbers (e.g. "1,2,3,4,5" or "6" to add one)', 'Enter act numbers (e.g. "1,2,3,4,5" or "6" to add one)'))
             .addText(text => {
-                text.setPlaceholder('1,2,3,4,5');
+                text.setPlaceholder(legacyUi('1,2,3,4,5', '1,2,3,4,5'));
                 text.inputEl.addClass('structure-input');
                 (text.inputEl as unknown as Record<string, unknown>)._ref = text;
             })
             .addButton(btn => {
-                btn.setButtonText('Add').setCta().onClick(async () => {
+                btn.setButtonText(legacyUi('Add', 'Add')).setCta().onClick(async () => {
                     const input = addActRow.querySelector('.structure-input') as HTMLInputElement;
                     if (!input?.value) return;
                     const nums = input.value.split(',')
                         .map(s => parseInt(s.trim()))
                         .filter(n => !isNaN(n) && n > 0);
                     if (nums.length === 0) {
-                        new Notice('Enter valid act numbers (e.g. 1,2,3)');
+                        new Notice(legacyUi('Enter valid act numbers (e.g. 1,2,3)', 'Enter valid act numbers (e.g. 1,2,3)'));
                         return;
                     }
                     await this.sceneManager.addActs(nums);
                     input.value = '';
                     renderActsList();
-                    new Notice(`Added ${nums.length} act(s)`);
+                    new Notice(legacyUi(`Added ${nums.length} act(s)`, `Added ${nums.length} act(s)`));
                 });
             });
 
         // ── Chapters section ──
-        contentEl.createEl('h3', { text: 'Chapters' });
+        contentEl.createEl('h3', { text: legacyUi('Chapters', 'Chapters') });
         contentEl.createEl('p', {
             cls: 'setting-item-description',
-            text: 'Define chapters. Empty chapters appear as columns when grouping by chapter.'
+            text: legacyUi('Define chapters. Empty chapters appear as columns when grouping by chapter.', 'Define chapters. Empty chapters appear as columns when grouping by chapter.')
         });
 
         const chaptersList = contentEl.createDiv('structure-list');
@@ -3448,7 +3451,7 @@ export class BoardView extends ItemView {
             const chapters = this.sceneManager.getDefinedChapters();
             const chLabels = this.sceneManager.getChapterLabels();
             if (chapters.length === 0) {
-                chaptersList.createEl('p', { cls: 'structure-empty', text: 'No chapters defined yet.' });
+                        chaptersList.createEl('p', { cls: 'structure-empty', text: tr('common.noChapters') });
             }
             for (const ch of chapters) {
                 const count = scenesPerChapter.get(ch) || 0;
@@ -3457,7 +3460,7 @@ export class BoardView extends ItemView {
                 const cleanChLabel = chLabel?.replace(/^Ch(?:apter)?\s*\d+\s*[—:]\s*/i, '');
                 const labelText = cleanChLabel ? `Chapter ${ch} — ${cleanChLabel}` : `Chapter ${ch}`;
                 row.createSpan({ cls: 'structure-label', text: labelText });
-                row.createSpan({ cls: 'structure-count', text: `${count} scene${count !== 1 ? 's' : ''}` });
+                row.createSpan({ cls: 'structure-count', text: legacyUi(`${count} scene${count !== 1 ? 's' : ''}`, `${count} scene${count !== 1 ? 's' : ''}`) });
                 const removeBtn = row.createEl('button', {
                     cls: 'clickable-icon structure-remove',
                     attr: { 'aria-label': `Remove Chapter ${ch}` }
@@ -3478,14 +3481,14 @@ export class BoardView extends ItemView {
         const addChapterRow = contentEl.createDiv('structure-add-row');
         let createScenesForChapters = false;
         new Setting(addChapterRow)
-            .setName('Add chapters')
-            .setDesc('Enter chapter numbers (e.g. "1-10" or "1,2,3")')
+            .setName(legacyUi('Add chapters', 'Add chapters'))
+            .setDesc(legacyUi('Enter chapter numbers (e.g. "1-10" or "1,2,3")', 'Enter chapter numbers (e.g. "1-10" or "1,2,3")'))
             .addText(text => {
-                text.setPlaceholder('1-10');
+                text.setPlaceholder(legacyUi('1-10', '1-10'));
                 text.inputEl.addClass('structure-input');
             })
             .addButton(btn => {
-                btn.setButtonText('Add').setCta().onClick(async () => {
+                btn.setButtonText(legacyUi('Add', 'Add')).setCta().onClick(async () => {
                     const input = addChapterRow.querySelector('.structure-input') as HTMLInputElement;
                     if (!input?.value) return;
                     let nums: number[] = [];
@@ -3502,7 +3505,7 @@ export class BoardView extends ItemView {
                             .filter(n => !isNaN(n) && n > 0);
                     }
                     if (nums.length === 0) {
-                        new Notice('Enter valid chapter numbers (e.g. 1-10 or 1,2,3)');
+                        new Notice(legacyUi('Enter valid chapter numbers (e.g. 1-10 or 1,2,3)', 'Enter valid chapter numbers (e.g. 1-10 or 1,2,3)'));
                         return;
                     }
                     await this.sceneManager.addChapters(nums);
@@ -3532,42 +3535,42 @@ export class BoardView extends ItemView {
             });
 
         new Setting(addChapterRow)
-            .setName('Create an empty scene per chapter')
-            .setDesc('Makes new chapters immediately visible in all views.')
+            .setName(legacyUi('Create an empty scene per chapter', 'Create an empty scene per chapter'))
+            .setDesc(legacyUi('Makes new chapters immediately visible in all views.', 'Makes new chapters immediately visible in all views.'))
             .addToggle(toggle => {
                 toggle.setValue(false);
                 toggle.onChange(v => { createScenesForChapters = v; });
             });
 
         // ── Saved custom beat sheets ──
-        contentEl.createEl('h3', { text: 'Saved custom beat sheets' });
+        contentEl.createEl('h3', { text: legacyUi('Saved custom beat sheets', 'Saved custom beat sheets') });
         contentEl.createEl('p', {
             cls: 'setting-item-description',
-            text: 'Save a custom act/chapter pattern here so it can be reused in another project.'
+            text: legacyUi('Save a custom act/chapter pattern here so it can be reused in another project.', 'Save a custom act/chapter pattern here so it can be reused in another project.')
         });
         const customBeatSheetsList = contentEl.createDiv('structure-list');
         const renderCustomBeatSheets = () => {
             customBeatSheetsList.empty();
             const templates = this.plugin.settings.customBeatSheets || [];
             if (templates.length === 0) {
-                customBeatSheetsList.createEl('p', { cls: 'structure-empty', text: 'No saved custom beat sheets.' });
+                customBeatSheetsList.createEl('p', { cls: 'structure-empty', text: legacyUi('No saved custom beat sheets.', 'No saved custom beat sheets.') });
             }
             for (const template of templates) {
                 const parts = [`${template.beats.length} beats`, `${template.acts.length} acts`];
                 if (template.chapters.length > 0) parts.push(`${template.chapters.length} chapters`);
                 const row = new Setting(customBeatSheetsList)
                     .setName(template.name)
-                    .setDesc(`${template.summary} · ${parts.join(' · ')}`)
-                    .addButton(btn => btn.setButtonText('Apply').setCta().onClick(async () => {
+                    .setDesc(legacyUi(`${template.summary} · ${parts.join(' · ')}`, `${template.summary} · ${parts.join(' · ')}`))
+                    .addButton(btn => btn.setButtonText(legacyUi('Apply', 'Apply')).setCta().onClick(async () => {
                         const doApply = async () => {
                             await this.sceneManager.applyBeatSheet(template);
                             if (createPlaceholderScenes) {
                                 const count = await this.sceneManager.createScenesFromBeats(template);
                                 new Notice(count > 0
-                                    ? `Applied "${template.name}" — created ${count} placeholder scene(s)`
-                                    : `Applied "${template.name}" template`);
+                                    ? legacyUi(legacyUi(`Applied "${template.name}" — created ${count} placeholder scene(s)`, `Applied "${template.name}" — created ${count} placeholder scene(s)`) , legacyUi(`Applied "${template.name}" — created ${count} placeholder scene(s)`, `Applied "${template.name}" — created ${count} placeholder scene(s)`) )
+                                    : legacyUi(legacyUi(`Applied "${template.name}" template`, `Applied "${template.name}" template`) , legacyUi(`Applied "${template.name}" template`, `Applied "${template.name}" template`) ));
                             } else {
-                                new Notice(`Applied "${template.name}" template`);
+                                new Notice(legacyUi(legacyUi(`Applied "${template.name}" template`, `Applied "${template.name}" template`) , legacyUi(`Applied "${template.name}" template`, `Applied "${template.name}" template`) ));
                             }
                             renderActsList();
                             renderChaptersList();
@@ -3576,7 +3579,7 @@ export class BoardView extends ItemView {
                         const existingChapters = this.sceneManager.getDefinedChapters();
                         if (existingActs.length > 0 || existingChapters.length > 0) {
                             openConfirmModal(this.app, {
-                                title: 'Apply Beat Sheet',
+                                title: legacyUi('Apply Beat Sheet', 'Apply Beat Sheet'),
                                 message: `Applying "${template.name}" will merge its acts, chapters, and labels into your existing structure. Existing scenes are not modified. Continue?`,
                                 confirmLabel: 'Apply',
                                 confirmClass: 'mod-cta',
@@ -3586,7 +3589,7 @@ export class BoardView extends ItemView {
                             await doApply();
                         }
                     }))
-                    .addButton(btn => btn.setButtonText('Delete').onClick(async () => {
+                    .addButton(btn => btn.setButtonText(legacyUi('Delete', 'Delete')).onClick(async () => {
                         const index = (this.plugin.settings.customBeatSheets || []).findIndex(item => item.name === template.name);
                         if (index >= 0) {
                             this.plugin.settings.customBeatSheets.splice(index, 1);
@@ -3600,10 +3603,10 @@ export class BoardView extends ItemView {
         renderCustomBeatSheets();
 
         // ── Custom Structure Builder ──
-        contentEl.createEl('h3', { text: 'Custom structure builder' });
+        contentEl.createEl('h3', { text: legacyUi('Custom structure builder', 'Custom structure builder') });
         contentEl.createEl('p', {
             cls: 'setting-item-description',
-            text: 'Name your acts and scene beats, choose how many beats belong in each act, then apply or save the structure.'
+            text: legacyUi('Name your acts and scene beats, choose how many beats belong in each act, then apply or save the structure.', 'Name your acts and scene beats, choose how many beats belong in each act, then apply or save the structure.')
         });
 
         let customTemplateName = '';
@@ -3623,10 +3626,10 @@ export class BoardView extends ItemView {
 
         const customRow = contentEl.createDiv('structure-add-row');
         new Setting(customRow)
-            .setName('Template name')
-            .setDesc('Optional name for saving this structure')
+            .setName(legacyUi('Template name', 'Template name'))
+            .setDesc(legacyUi('Optional name for saving this structure', 'Optional name for saving this structure'))
             .addText(text => {
-                text.setPlaceholder('My story structure');
+                text.setPlaceholder(legacyUi('My story structure', 'My story structure'));
                 text.onChange(value => { customTemplateName = value.trim(); });
             });
 
@@ -3636,11 +3639,11 @@ export class BoardView extends ItemView {
             customActsDraft.forEach((act, actIndex) => {
                 const actBlock = customEditor.createDiv('structure-custom-act');
                 const actHeader = actBlock.createDiv('structure-custom-act-header');
-                actHeader.createSpan({ cls: 'structure-custom-act-number', text: `Act ${actIndex + 1}` });
+                actHeader.createSpan({ cls: 'structure-custom-act-number', text: legacyUi(`Act ${actIndex + 1}`, `Act ${actIndex + 1}`) });
                 const actInput = actHeader.createEl('input', {
                     type: 'text',
                     cls: 'structure-custom-name-input',
-                    placeholder: `Act ${actIndex + 1} name`,
+                    placeholder: legacyUi(`Act ${actIndex + 1} name`, `Act ${actIndex + 1} name`),
                 });
                 actInput.value = act.label;
                 actInput.addEventListener('input', () => { act.label = actInput.value; });
@@ -3659,26 +3662,26 @@ export class BoardView extends ItemView {
                 const beatsList = actBlock.createDiv('structure-custom-beats');
                 act.beats.forEach((beat, beatIndex) => {
                     const beatRow = beatsList.createDiv('structure-custom-beat');
-                    const beatNumber = beatRow.createSpan({ cls: 'structure-custom-beat-number', text: `${beatIndex + 1}.` });
+                    const beatNumber = beatRow.createSpan({ cls: 'structure-custom-beat-number', text: legacyUi(`${beatIndex + 1}.`, `${beatIndex + 1}.`) });
                     beatNumber.setAttr('aria-hidden', 'true');
                     const beatFields = beatRow.createDiv('structure-custom-beat-fields');
                     const nameInput = beatFields.createEl('input', {
                         type: 'text',
                         cls: 'structure-custom-name-input',
-                        placeholder: 'Scene / beat name',
+                        placeholder: legacyUi('Scene / beat name', 'Scene / beat name'),
                     });
                     nameInput.value = beat.label;
                     nameInput.addEventListener('input', () => { beat.label = nameInput.value; });
                     const subtitleInput = beatFields.createEl('input', {
                         type: 'text',
                         cls: 'structure-custom-subtitle-input',
-                        placeholder: 'Optional subtitle',
+                        placeholder: legacyUi('Optional subtitle', 'Optional subtitle'),
                     });
                     subtitleInput.value = beat.subtitle;
                     subtitleInput.addEventListener('input', () => { beat.subtitle = subtitleInput.value; });
                     const descriptionInput = beatFields.createEl('textarea', {
                         cls: 'structure-custom-description-input',
-                        placeholder: 'Optional synopsis / beat description',
+                        placeholder: legacyUi('Optional synopsis / beat description', 'Optional synopsis / beat description'),
                     });
                     descriptionInput.value = beat.description;
                     descriptionInput.rows = 2;
@@ -3688,7 +3691,7 @@ export class BoardView extends ItemView {
                     const arcInput = arcLabel.createEl('input', { type: 'checkbox' });
                     arcInput.checked = beat.arcAnchor;
                     arcInput.addEventListener('change', () => { beat.arcAnchor = arcInput.checked; });
-                    arcLabel.createSpan({ text: 'Arc Point' });
+                    arcLabel.createSpan({ text: legacyUi('Arc Point', 'Arc Point') });
                     const removeBeat = beatOptions.createEl('button', {
                         cls: 'clickable-icon structure-remove',
                         attr: { 'aria-label': `Remove scene ${beatIndex + 1}` },
@@ -3700,7 +3703,7 @@ export class BoardView extends ItemView {
                     });
                 });
 
-                const addBeat = actBlock.createEl('button', { text: 'Add scene beat', cls: 'mod-muted' });
+                const addBeat = actBlock.createEl('button', { text: legacyUi('Add scene beat', 'Add scene beat'), cls: 'mod-muted' });
                 addBeat.addEventListener('click', () => {
                     act.beats.push({
                         label: `Scene ${act.beats.length + 1}`,
@@ -3712,7 +3715,7 @@ export class BoardView extends ItemView {
                 });
             });
 
-            const addAct = customEditor.createEl('button', { text: 'Add act', cls: 'mod-muted' });
+            const addAct = customEditor.createEl('button', { text: legacyUi('Add act', 'Add act'), cls: 'mod-muted' });
             addAct.addEventListener('click', () => {
                 const actNumber = customActsDraft.length + 1;
                 customActsDraft.push({
@@ -3725,8 +3728,8 @@ export class BoardView extends ItemView {
         renderCustomEditor();
 
         new Setting(contentEl)
-            .setName('Create placeholder scenes')
-            .setDesc('Generate one "idea" scene for every named beat, using its name, subtitle, act, and arc point setting.')
+            .setName(legacyUi('Create placeholder scenes', 'Create placeholder scenes'))
+            .setDesc(legacyUi('Generate one "idea" scene for every named beat, using its name, subtitle, act, and arc point setting.', 'Generate one "idea" scene for every named beat, using its name, subtitle, act, and arc point setting.'))
             .addToggle(toggle => {
                 toggle.setValue(false);
                 toggle.onChange(v => { customCreateScenes = v; });
@@ -3763,7 +3766,7 @@ export class BoardView extends ItemView {
             }
 
             if (acts.length === 0 || beats.length === 0) {
-                new Notice('Add at least one act with one scene beat.');
+                new Notice(legacyUi('Add at least one act with one scene beat.', 'Add at least one act with one scene beat.'));
                 return null;
             }
 
@@ -3780,7 +3783,7 @@ export class BoardView extends ItemView {
         };
 
         const customApplyRow = contentEl.createDiv('structure-close-row');
-        customApplyRow.createEl('button', { text: 'Apply custom structure', cls: 'mod-cta' })
+        customApplyRow.createEl('button', { text: legacyUi('Apply custom structure', 'Apply custom structure'), cls: 'mod-cta' })
             .addEventListener('click', async () => {
                 const template = buildCustomTemplate();
                 if (!template) return;
@@ -3791,14 +3794,14 @@ export class BoardView extends ItemView {
                     renderActsList();
                     renderChaptersList();
                     new Notice(customCreateScenes
-                        ? `Applied "${template.name}" — created ${count} placeholder scene(s).`
-                        : `Applied "${template.name}" template.`);
+                        ? legacyUi(`Applied "${template.name}" — created ${count} placeholder scene(s).`, `Applied "${template.name}" — created ${count} placeholder scene(s).`)
+                        : legacyUi(`Applied "${template.name}" template.`, `Applied "${template.name}" template.`) );
                 };
                 const existingActs = this.sceneManager.getDefinedActs();
                 const existingChapters = this.sceneManager.getDefinedChapters();
                 if (existingActs.length > 0 || existingChapters.length > 0) {
                     openConfirmModal(this.app, {
-                        title: 'Apply custom structure',
+                        title: legacyUi('Apply custom structure', 'Apply custom structure'),
                         message: `Applying "${template.name}" will merge its acts, chapters, and labels into your existing structure. Existing scenes are not modified. Continue?`,
                         confirmLabel: 'Apply',
                         confirmClass: 'mod-cta',
@@ -3808,24 +3811,24 @@ export class BoardView extends ItemView {
                     await doApply();
                 }
             });
-        customApplyRow.createEl('button', { text: 'Save as beat sheet' })
+        customApplyRow.createEl('button', { text: legacyUi('Save as beat sheet', 'Save as beat sheet') })
             .addEventListener('click', async () => {
                 const template = buildCustomTemplate();
                 if (!template) return;
                 const templates = this.plugin.settings.customBeatSheets || (this.plugin.settings.customBeatSheets = []);
                 if (templates.some(item => item.name.toLowerCase() === template.name.toLowerCase())) {
-                    new Notice(`A beat sheet named "${template.name}" already exists.`);
+                    new Notice(legacyUi(`A beat sheet named "${template.name}" already exists.`, `A beat sheet named "${template.name}" already exists.`));
                     return;
                 }
                 templates.push(template);
                 await this.plugin.saveSettings();
                 renderCustomBeatSheets();
-                new Notice(`Saved beat sheet "${template.name}".`);
+                new Notice(legacyUi(`Saved beat sheet "${template.name}".`, `Saved beat sheet "${template.name}".`));
             });
 
         // Close button
         const closeRow = contentEl.createDiv('structure-close-row');
-        const closeBtn = closeRow.createEl('button', { text: 'Done', cls: 'mod-cta' });
+        const closeBtn = closeRow.createEl('button', { text: legacyUi('Done', 'Done'), cls: 'mod-cta' });
         closeBtn.addEventListener('click', () => {
             modal.close();
             this.refreshBoard();
@@ -4081,7 +4084,7 @@ export class BoardView extends ItemView {
         const captionPreview = editorWrap.createDiv('story-line-corkboard-note-caption markdown-rendered');
         const captionInput = editorWrap.createEl('textarea', {
             cls: 'story-line-corkboard-note-caption-input',
-            attr: { placeholder: 'Add a caption…', rows: '2' },
+            attr: { placeholder: legacyUi('Add a caption…', 'Add a caption…'), rows: '2' },
         });
         captionInput.value = caption;
         captionInput.setCssStyles({ display: 'none' });
@@ -4090,7 +4093,7 @@ export class BoardView extends ItemView {
             captionPreview.empty();
             const text = captionInput.value.trim();
             if (!text) {
-                captionPreview.createSpan({ cls: 'story-line-corkboard-note-caption-empty', text: 'Add a caption…' });
+                captionPreview.createSpan({ cls: 'story-line-corkboard-note-caption-empty', text: legacyUi('Add a caption…', 'Add a caption…') });
                 return;
             }
             await MarkdownRenderer.render(this.app, text, captionPreview, scene.filePath, this);
@@ -4192,7 +4195,7 @@ export class BoardView extends ItemView {
         // Titlebar
         const titlebar = win.createDiv('gallery-lightbox-titlebar');
         titlebar.createSpan({ cls: 'gallery-lightbox-title', text: caption || 'Image' });
-        const closeBtn = titlebar.createEl('button', { cls: 'gallery-lightbox-close', attr: { title: 'Close' } });
+        const closeBtn = titlebar.createEl('button', { cls: 'gallery-lightbox-close', attr: { title: legacyUi('Close', 'Close') } });
         obsidian.setIcon(closeBtn, 'x');
         closeBtn.addEventListener('click', () => { cleanup(); win.remove(); });
 
@@ -4361,7 +4364,7 @@ export class BoardView extends ItemView {
         }
 
         await this.app.vault.createBinary(targetPath, buffer);
-        new Notice(`Image imported: ${targetPath.split('/').pop()}`);
+        new Notice(legacyUi(`Image imported: ${targetPath.split('/').pop()}`, `Image imported: ${targetPath.split('/').pop()}`));
         await this.createImageNoteAtPosition(targetPath, worldX, worldY);
     }
 

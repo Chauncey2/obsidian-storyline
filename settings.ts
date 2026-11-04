@@ -9,6 +9,7 @@ import type { CharacterRelationCategory } from './models/Character';
 import { App, Modal, Notice, PluginSettingTab, Setting, SettingGroup, TFolder, TextAreaComponent, AbstractInputSuggest } from 'obsidian';
 import * as obsidian from 'obsidian';
 import { QUOTE_STYLE_OPTIONS, SUPPORTED_STORYLINE_LOCALES, normalizeStoryLineLocale, type QuoteStyle } from './utils/locale';
+import { getInterfaceLocale, normalizeInterfaceLanguage, tr, legacyUi, type InterfaceLanguage } from './i18n';
 
 export interface CodexVisualGroup {
     id: string;
@@ -603,6 +604,8 @@ export interface SceneCardsSettings {
     defaultStatus: SceneStatus;
     autoGenerateSequence: boolean;
     defaultTargetWordCount: number;
+    /** `auto` follows Obsidian's app language for the plugin interface. */
+    interfaceLanguage?: InterfaceLanguage;
     /** User-defined custom statuses appended after the built-in six */
     customStatuses: CustomStatusDef[];
 
@@ -1005,6 +1008,7 @@ export const DEFAULT_SETTINGS: SceneCardsSettings = {
     defaultStatus: 'idea',
     autoGenerateSequence: true,
     defaultTargetWordCount: 800,
+    interfaceLanguage: 'auto',
     customStatuses: [],
 
     defaultView: 'board',
@@ -1190,22 +1194,45 @@ export class SceneCardsSettingTab extends PluginSettingTab {
             return details.createDiv('story-line-settings-section-body');
         };
 
-        const generalBody = createSettingsSection('General');
+        new Setting(containerEl)
+            .setName(tr('settings.interfaceLanguage.name'))
+            .setDesc(tr('settings.interfaceLanguage.desc'))
+            .addDropdown(dropdown => {
+                dropdown.addOption('auto', tr('settings.interfaceLanguage.auto'));
+                dropdown.addOption('en', tr('settings.interfaceLanguage.en'));
+                dropdown.addOption('zh-CN', tr('settings.interfaceLanguage.zhCN'));
+                dropdown.setValue(this.plugin.settings.interfaceLanguage ?? 'auto');
+                dropdown.onChange(async (value) => {
+                    this.plugin.settings.interfaceLanguage = normalizeInterfaceLanguage(value);
+                    await this.plugin.saveSettings();
+                    await this.plugin.applyInterfaceLanguage();
+                    this.refreshSettingsView();
+                });
+            });
+
+        const generalBody = createSettingsSection(tr('settings.general'));
 
         new Setting(generalBody)
-            .setName('Root folder')
-            .setDesc('Root folder for all StoryLine projects in your vault')
+            .setName(tr('settings.rootFolder'))
+            .setDesc(tr('settings.rootFolderDesc'))
             .addText(text => text
-                .setPlaceholder('StoryLine')
+                .setPlaceholder(legacyUi('StoryLine', 'StoryLine'))
                 .setValue(this.plugin.settings.storyLineRoot)
                 .onChange(async (value) => {
                     this.plugin.settings.storyLineRoot = value || 'StoryLine';
                     await this.plugin.saveSettings();
                         }));
 
+        if (getInterfaceLocale() === 'zh-CN' && /^en\b/i.test(this.plugin.settings.defaultProjectLanguage ?? 'en')) {
+            generalBody.createDiv({
+                cls: 'mod-warning',
+                text: tr('settings.defaultProjectLanguage.zhHint'),
+            });
+        }
+
         new Setting(generalBody)
-            .setName('Auto-open navigator')
-            .setDesc('Automatically open the StoryLine navigator sidebar when a project loads')
+            .setName(tr('settings.autoOpenNavigator'))
+            .setDesc(tr('settings.autoOpenNavigatorDesc'))
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.autoOpenNavigator ?? true)
                 .onChange(async (value) => {
@@ -1214,8 +1241,8 @@ export class SceneCardsSettingTab extends PluginSettingTab {
                         }));
 
         new Setting(generalBody)
-            .setName('Open entities in StoryLine view from file explorer')
-            .setDesc('Clicking a character, location or Codex file in the file explorer opens its matching StoryLine view. Ctrl/Cmd-click, middle-click and modified clicks still open the raw file.')
+            .setName(tr('settings.openEntities.name'))
+            .setDesc(legacyUi('Clicking a character, location or Codex file in the file explorer opens its matching StoryLine view. Ctrl/Cmd-click, middle-click and modified clicks still open the raw file.', 'Clicking a character, location or Codex file in the file explorer opens its matching StoryLine view. Ctrl/Cmd-click, middle-click and modified clicks still open the raw file.'))
             .addToggle(toggle => toggle
                 .setValue(!!this.plugin.settings.openEntitiesInStoryLineView)
                 .onChange(async (value) => {
@@ -1225,8 +1252,8 @@ export class SceneCardsSettingTab extends PluginSettingTab {
 
         const frontmatterSettings: Setting[] = [];
         frontmatterSettings.push(new Setting(generalBody)
-            .setName('Hide frontmatter in scene files')
-            .setDesc('Hide the properties/frontmatter block in direct StoryLine scene editors. Your global Obsidian "properties in document" setting is left untouched.')
+            .setName(tr('settings.hideFrontmatter.name'))
+            .setDesc(legacyUi('Hide the properties/frontmatter block in direct StoryLine scene editors. Your global Obsidian "properties in document" setting is left untouched.', 'Hide the properties/frontmatter block in direct StoryLine scene editors. Your global Obsidian "properties in document" setting is left untouched.'))
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.hideFrontmatter)
                 .onChange(async (value) => {
@@ -1237,8 +1264,8 @@ export class SceneCardsSettingTab extends PluginSettingTab {
                 })));
 
         frontmatterSettings.push(new Setting(generalBody)
-            .setName('Hide frontmatter in manuscript view')
-            .setDesc('Hide the properties/frontmatter block in scene editors embedded in manuscript view. This does not change the scene file or Obsidian\'s global properties setting.')
+            .setName(tr('settings.hideFrontmatterManuscript.name'))
+            .setDesc(legacyUi('Hide the properties/frontmatter block in scene editors embedded in manuscript view. This does not change the scene file or Obsidian\'s global properties setting.', 'Hide the properties/frontmatter block in scene editors embedded in manuscript view. This does not change the scene file or Obsidian\'s global properties setting.'))
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.hideFrontmatterInManuscript)
                 .onChange(async (value) => {
@@ -1252,8 +1279,8 @@ export class SceneCardsSettingTab extends PluginSettingTab {
         }
 
         new Setting(generalBody)
-            .setName('Hide "StoryLine" title above view tabs')
-            .setDesc('Saves ~30–45px of vertical space at the top of every StoryLine view. The view-switcher tabs and project name still appear; only the duplicated "StoryLine" header is removed.')
+            .setName(tr('settings.hideToolbarTitle.name'))
+            .setDesc(legacyUi('Saves ~30–45px of vertical space at the top of every StoryLine view. The view-switcher tabs and project name still appear; only the duplicated "StoryLine" header is removed.', 'Saves ~30–45px of vertical space at the top of every StoryLine view. The view-switcher tabs and project name still appear; only the duplicated "StoryLine" header is removed.'))
             .addToggle(toggle => toggle
                 .setValue(!!this.plugin.settings.hideToolbarTitle)
                 .onChange(async (value) => {
@@ -1263,8 +1290,8 @@ export class SceneCardsSettingTab extends PluginSettingTab {
                 }));
 
         new Setting(generalBody)
-            .setName('Collapse view-tab labels when toolbar is narrow')
-            .setDesc('When the StoryLine toolbar is too narrow to fit every view-tab label, show only the icon (corkboard, timeline, etc.). Disable to always show both icon and text — the labels will wrap or be clipped if the toolbar is small.')
+            .setName(tr('settings.collapseViewLabels.name'))
+            .setDesc(legacyUi('When the StoryLine toolbar is too narrow to fit every view-tab label, show only the icon (corkboard, timeline, etc.). Disable to always show both icon and text — the labels will wrap or be clipped if the toolbar is small.', 'When the StoryLine toolbar is too narrow to fit every view-tab label, show only the icon (corkboard, timeline, etc.). Disable to always show both icon and text — the labels will wrap or be clipped if the toolbar is small.'))
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.autoHideViewLabels !== false)
                 .onChange(async (value) => {
@@ -1274,12 +1301,12 @@ export class SceneCardsSettingTab extends PluginSettingTab {
                 }));
 
         new Setting(generalBody)
-            .setName('Default section state')
-            .setDesc('Choose whether character, location, Codex, and stats sections start expanded, collapsed, or remember their last state.')
+            .setName(tr('settings.defaultSectionState.name'))
+            .setDesc(legacyUi('Choose whether character, location, Codex, and stats sections start expanded, collapsed, or remember their last state.', 'Choose whether character, location, Codex, and stats sections start expanded, collapsed, or remember their last state.'))
             .addDropdown(dropdown => {
-                dropdown.addOption('expanded', 'Expanded');
-                dropdown.addOption('collapsed', 'Collapsed');
-                dropdown.addOption('remember', 'Remember last state');
+                dropdown.addOption('expanded', tr('settings.expanded'));
+                dropdown.addOption('collapsed', tr('settings.collapsed'));
+                dropdown.addOption('remember', tr('settings.rememberLastState'));
                 dropdown.setValue(this.plugin.settings.sectionDefaultState ?? 'expanded');
                 dropdown.onChange(async (value) => {
                     this.plugin.settings.sectionDefaultState = value as SectionDefaultState;
@@ -1287,11 +1314,11 @@ export class SceneCardsSettingTab extends PluginSettingTab {
                 });
             });
 
-        const sceneBody = createSettingsSection('Writing', true);
+        const sceneBody = createSettingsSection(tr('settings.writing'), true);
 
         new Setting(sceneBody)
-            .setName('Default status')
-            .setDesc('Status for newly created scenes')
+            .setName(tr('settings.defaultStatus'))
+            .setDesc(tr('settings.defaultStatusDesc'))
             .addDropdown(dropdown => {
                 const statuses = getStatusOrder();
                 const cfg = getStatusConfig();
@@ -1304,8 +1331,8 @@ export class SceneCardsSettingTab extends PluginSettingTab {
             });
 
         new Setting(sceneBody)
-            .setName('Auto-generate sequence')
-            .setDesc('Automatically assign sequence numbers to new scenes')
+            .setName(tr('settings.autoGenerateSequence'))
+            .setDesc(tr('settings.autoGenerateSequenceDesc'))
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.autoGenerateSequence)
                 .onChange(async (value) => {
@@ -1314,10 +1341,10 @@ export class SceneCardsSettingTab extends PluginSettingTab {
                 }));
 
         new Setting(sceneBody)
-            .setName('Target word count')
-            .setDesc('Default target word count per scene')
+            .setName(tr('settings.targetWordCount'))
+            .setDesc(tr('settings.targetWordCountDesc'))
             .addText(text => text
-                .setPlaceholder('800')
+                .setPlaceholder(legacyUi('800', '800'))
                 .setValue(String(this.plugin.settings.defaultTargetWordCount))
                 .onChange(async (value) => {
                     this.plugin.settings.defaultTargetWordCount = Number(value) || 800;
@@ -1325,10 +1352,10 @@ export class SceneCardsSettingTab extends PluginSettingTab {
                 }));
 
         // ── Custom Statuses ──
-        new Setting(sceneBody).setName('Custom statuses').setHeading();
+        new Setting(sceneBody).setName(tr('settings.customStatuses')).setHeading();
         sceneBody.createEl('p', {
             cls: 'setting-item-description',
-            text: 'Add custom scene statuses after the built-in six (idea — final). Useful for editorial workflows like "sent to team", "waiting", "published", etc.'
+            text: legacyUi('Add custom scene statuses after the built-in six (idea — final). Useful for editorial workflows like "sent to team", "waiting", "published", etc.', 'Add custom scene statuses after the built-in six (idea — final). Useful for editorial workflows like "sent to team", "waiting", "published", etc.')
         });
 
         const customStatusList = sceneBody.createDiv('sl-custom-status-list');
@@ -1336,7 +1363,7 @@ export class SceneCardsSettingTab extends PluginSettingTab {
             customStatusList.empty();
             const defs = this.plugin.settings.customStatuses || [];
             if (defs.length === 0) {
-                customStatusList.createEl('p', { cls: 'setting-item-description', text: 'No custom statuses defined.' });
+                customStatusList.createEl('p', { cls: 'setting-item-description', text: legacyUi('No custom statuses defined.', 'No custom statuses defined.') });
             }
             for (let i = 0; i < defs.length; i++) {
                 const def = defs[i];
@@ -1375,7 +1402,7 @@ export class SceneCardsSettingTab extends PluginSettingTab {
                 writtenLabel.setCssStyles({ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', whiteSpace: 'nowrap' });
                 const writtenCheckbox = writtenLabel.createEl('input', { type: 'checkbox' });
                 writtenCheckbox.checked = def.countsAsWritten === true;
-                writtenLabel.createSpan({ text: 'Counts as written' });
+                writtenLabel.createSpan({ text: legacyUi('Counts as written', 'Counts as written') });
                 writtenCheckbox.addEventListener('change', async () => {
                     def.countsAsWritten = writtenCheckbox.checked;
                     registerCustomStatuses(this.plugin.settings.customStatuses);
@@ -1383,7 +1410,7 @@ export class SceneCardsSettingTab extends PluginSettingTab {
                     this.plugin.refreshOpenViews();
                 });
 
-                const removeBtn = row.createEl('button', { text: '×', cls: 'clickable-icon' });
+                const removeBtn = row.createEl('button', { text: legacyUi('×', '×'), cls: 'clickable-icon' });
                 removeBtn.addEventListener('click', async () => {
                     defs.splice(i, 1);
                     registerCustomStatuses(this.plugin.settings.customStatuses);
@@ -1395,14 +1422,14 @@ export class SceneCardsSettingTab extends PluginSettingTab {
         renderCustomStatusList();
 
         new Setting(sceneBody)
-            .setName('Add custom status')
-            .setDesc('Enter a name for the new status (e.g. "sent to team")')
+            .setName(tr('settings.addCustomStatus'))
+            .setDesc(legacyUi('Enter a name for the new status (e.g. "sent to team")', 'Enter a name for the new status (e.g. "sent to team")'))
             .addText(text => {
-                text.setPlaceholder('Status name…');
+                text.setPlaceholder(tr('settings.statusNamePlaceholder'));
                 (text.inputEl as unknown as Record<string, unknown>)._ref = text;
             })
             .addButton(btn => {
-                btn.setButtonText('Add').setCta().onClick(async () => {
+                btn.setButtonText(legacyUi('Add', 'Add')).setCta().onClick(async () => {
                     const input = btn.buttonEl.parentElement?.parentElement?.querySelector('input[type="text"]') as HTMLInputElement;
                     const name = input?.value?.trim();
                     if (!name) return;
@@ -1428,21 +1455,21 @@ export class SceneCardsSettingTab extends PluginSettingTab {
                 });
             });
 
-        const displayBody = createSettingsSection('Display & navigation');
+        const displayBody = createSettingsSection(tr('settings.displayNavigation'));
 
         new Setting(displayBody)
-            .setName('Default view')
-            .setDesc('Which view to open by default')
+            .setName(tr('settings.defaultView'))
+            .setDesc(tr('settings.defaultViewDesc'))
             .addDropdown(dropdown => {
-                dropdown.addOption('board', 'Board');
-                dropdown.addOption('manuscript', 'Manuscript');
-                dropdown.addOption('plotgrid', 'Plotgrid');
-                dropdown.addOption('timeline', 'Timeline');
-                dropdown.addOption('storyline', 'Plotlines');
-                dropdown.addOption('codex', 'Codex');
-                dropdown.addOption('character', 'Characters');
-                dropdown.addOption('location', 'Locations');
-                dropdown.addOption('stats', 'Statistics');
+                dropdown.addOption('board', legacyUi('Board', 'Board'));
+                dropdown.addOption('manuscript', legacyUi('Manuscript', 'Manuscript'));
+                dropdown.addOption('plotgrid', legacyUi('Plotgrid', 'Plotgrid'));
+                dropdown.addOption('timeline', legacyUi('Timeline', 'Timeline'));
+                dropdown.addOption('storyline', legacyUi('Plotlines', 'Plotlines'));
+                dropdown.addOption('codex', legacyUi('Codex', 'Codex'));
+                dropdown.addOption('character', legacyUi('Characters', 'Characters'));
+                dropdown.addOption('location', legacyUi('Locations', 'Locations'));
+                dropdown.addOption('stats', legacyUi('Statistics', 'Statistics'));
                 dropdown.setValue(this.plugin.settings.defaultView);
                 dropdown.onChange(async (value) => {
                     this.plugin.settings.defaultView = value as ViewType;
@@ -1451,11 +1478,11 @@ export class SceneCardsSettingTab extends PluginSettingTab {
             });
 
         new Setting(displayBody)
-            .setName('Default board mode')
-            .setDesc('Which sub-view opens first inside board')
+            .setName(tr('settings.defaultBoardMode'))
+            .setDesc(tr('settings.defaultBoardModeDesc'))
             .addDropdown(dropdown => {
-                dropdown.addOption('corkboard', 'Corkboard');
-                dropdown.addOption('kanban', 'Kanban');
+                dropdown.addOption('corkboard', legacyUi('Corkboard', 'Corkboard'));
+                dropdown.addOption('kanban', legacyUi('Kanban', 'Kanban'));
                 dropdown.setValue(this.plugin.settings.defaultBoardMode || 'corkboard');
                 dropdown.onChange(async (value) => {
                     this.plugin.settings.defaultBoardMode = value as 'corkboard' | 'kanban';
@@ -1465,14 +1492,14 @@ export class SceneCardsSettingTab extends PluginSettingTab {
             });
 
         new Setting(displayBody)
-            .setName('Color coding')
-            .setDesc('How to color-code scene cards')
+            .setName(legacyUi('Color coding', 'Color coding'))
+            .setDesc(legacyUi('How to color-code scene cards', 'How to color-code scene cards'))
             .addDropdown(dropdown => {
-                dropdown.addOption('status', 'By status');
-                dropdown.addOption('pov', 'By pov character');
-                dropdown.addOption('emotion', 'By emotion');
-                dropdown.addOption('act', 'By act');
-                dropdown.addOption('tag', 'By tag / plotline');
+                dropdown.addOption('status', legacyUi('By status', 'By status'));
+                dropdown.addOption('pov', legacyUi('By pov character', 'By pov character'));
+                dropdown.addOption('emotion', legacyUi('By emotion', 'By emotion'));
+                dropdown.addOption('act', legacyUi('By act', 'By act'));
+                dropdown.addOption('tag', legacyUi('By tag / plotline', 'By tag / plotline'));
                 dropdown.setValue(this.plugin.settings.colorCoding);
                 dropdown.onChange(async (value) => {
                     this.plugin.settings.colorCoding = value as ColorCodingMode;
@@ -1481,8 +1508,8 @@ export class SceneCardsSettingTab extends PluginSettingTab {
             });
 
         new Setting(displayBody)
-            .setName('Show notes in kanban')
-            .setDesc('When enabled, corkboard notes are also visible in kanban columns')
+            .setName(legacyUi('Show notes in kanban', 'Show notes in kanban'))
+            .setDesc(legacyUi('When enabled, corkboard notes are also visible in kanban columns', 'When enabled, corkboard notes are also visible in kanban columns'))
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.showNotesInKanban ?? false)
                 .onChange(async (value) => {
@@ -1492,8 +1519,8 @@ export class SceneCardsSettingTab extends PluginSettingTab {
                 }));
 
         new Setting(displayBody)
-            .setName('Show scenes in corkboard')
-            .setDesc('When enabled, scene cards are visible on the corkboard alongside notes')
+            .setName(legacyUi('Show scenes in corkboard', 'Show scenes in corkboard'))
+            .setDesc(legacyUi('When enabled, scene cards are visible on the corkboard alongside notes', 'When enabled, scene cards are visible on the corkboard alongside notes'))
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.showScenesInCorkboard ?? true)
                 .onChange(async (value) => {
@@ -1503,8 +1530,8 @@ export class SceneCardsSettingTab extends PluginSettingTab {
                 }));
 
         new Setting(displayBody)
-            .setName('Show word counts')
-            .setDesc('Display word counts on scene cards')
+            .setName(legacyUi('Show word counts', 'Show word counts'))
+            .setDesc(legacyUi('Display word counts on scene cards', 'Display word counts on scene cards'))
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.showWordCounts)
                 .onChange(async (value) => {
@@ -1513,8 +1540,8 @@ export class SceneCardsSettingTab extends PluginSettingTab {
                 }));
 
         new Setting(displayBody)
-            .setName('Exclude arc points from word count')
-            .setDesc('When enabled, scenes marked as arc points are excluded from aggregate word counts in stats and the manuscript footer')
+            .setName(legacyUi('Exclude arc points from word count', 'Exclude arc points from word count'))
+            .setDesc(legacyUi('When enabled, scenes marked as arc points are excluded from aggregate word counts in stats and the manuscript footer', 'When enabled, scenes marked as arc points are excluded from aggregate word counts in stats and the manuscript footer'))
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.excludeArcAnchorFromWordcount ?? true)
                 .onChange(async (value) => {
@@ -1524,8 +1551,8 @@ export class SceneCardsSettingTab extends PluginSettingTab {
                 }));
 
         new Setting(displayBody)
-            .setName('Show scene number on cards')
-            .setDesc('Display the sequence number badge in the card header')
+            .setName(legacyUi('Show scene number on cards', 'Show scene number on cards'))
+            .setDesc(legacyUi('Display the sequence number badge in the card header', 'Display the sequence number badge in the card header'))
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.showSceneNumberOnCards ?? true)
                 .onChange(async (value) => {
@@ -1535,8 +1562,8 @@ export class SceneCardsSettingTab extends PluginSettingTab {
                 }));
 
         new Setting(displayBody)
-            .setName('Compact card view')
-            .setDesc('Show less detail on scene cards')
+            .setName(legacyUi('Compact card view', 'Compact card view'))
+            .setDesc(legacyUi('Show less detail on scene cards', 'Show less detail on scene cards'))
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.compactCardView)
                 .onChange(async (value) => {
@@ -1545,13 +1572,13 @@ export class SceneCardsSettingTab extends PluginSettingTab {
                 }));
 
         new Setting(displayBody)
-            .setName('Scene card preview text')
-            .setDesc('Show a short preview beneath each scene card title')
+            .setName(legacyUi('Scene card preview text', 'Scene card preview text'))
+            .setDesc(legacyUi('Show a short preview beneath each scene card title', 'Show a short preview beneath each scene card title'))
             .addDropdown(dd => dd
-                .addOption('none', 'None')
-                .addOption('synopsis', 'Synopsis')
-                .addOption('body', 'First lines of draft')
-                .addOption('conflict', 'Conflict')
+                .addOption('none', legacyUi('None', 'None'))
+                .addOption('synopsis', legacyUi('Synopsis', 'Synopsis'))
+                .addOption('body', legacyUi('First lines of draft', 'First lines of draft'))
+                .addOption('conflict', legacyUi('Conflict', 'Conflict'))
                 .setValue(this.plugin.settings.cardPreviewSource || 'none')
                 .onChange(async (value) => {
                     this.plugin.settings.cardPreviewSource = value as 'none' | 'synopsis' | 'body' | 'conflict';
@@ -1560,8 +1587,8 @@ export class SceneCardsSettingTab extends PluginSettingTab {
                 }));
 
         new Setting(displayBody)
-            .setName('Formatting toolbar')
-            .setDesc('Show a formatting toolbar in scene editors when the editing toolbar plugin is not installed')
+            .setName(legacyUi('Formatting toolbar', 'Formatting toolbar'))
+            .setDesc(legacyUi('Show a formatting toolbar in scene editors when the editing toolbar plugin is not installed', 'Show a formatting toolbar in scene editors when the editing toolbar plugin is not installed'))
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.showFormattingToolbar)
                 .onChange(async (value) => {
@@ -1570,7 +1597,7 @@ export class SceneCardsSettingTab extends PluginSettingTab {
                 }));
 
         const imageDetails = displayBody.createEl('details', { cls: 'story-line-color-section' });
-        imageDetails.createEl('summary', { text: 'Image & frame sizes' });
+        imageDetails.createEl('summary', { text: legacyUi('Image & frame sizes', 'Image & frame sizes') });
         const imageBody = imageDetails.createDiv();
         imageBody.setCssStyles({ padding: '8px 0' });
 
@@ -1656,10 +1683,10 @@ export class SceneCardsSettingTab extends PluginSettingTab {
         );
 
         new Setting(imageBody)
-            .setName('Reset image sizes')
-            .setDesc('Restore all image/frame sizes to default values.')
+            .setName(legacyUi('Reset image sizes', 'Reset image sizes'))
+            .setDesc(legacyUi('Restore all image/frame sizes to default values.', 'Restore all image/frame sizes to default values.'))
             .addButton(btn => btn
-                .setButtonText('Reset to defaults')
+                .setButtonText(legacyUi('Reset to defaults', 'Reset to defaults'))
                 .onClick(async () => {
                     this.plugin.settings.characterCardPortraitSize = DEFAULT_SETTINGS.characterCardPortraitSize;
                     this.plugin.settings.characterDetailPortraitSize = DEFAULT_SETTINGS.characterDetailPortraitSize;
@@ -1674,7 +1701,7 @@ export class SceneCardsSettingTab extends PluginSettingTab {
 
         const locTypesDesc = locationsBody.createEl('p', {
             cls: 'setting-item-description',
-            text: 'Add your own location types (e.g. Planet, star system, galaxy, dimension) — they appear in the type dropdown alongside the built-in options.',
+            text: legacyUi('Add your own location types (e.g. Planet, star system, galaxy, dimension) — they appear in the type dropdown alongside the built-in options.', 'Add your own location types (e.g. Planet, star system, galaxy, dimension) — they appear in the type dropdown alongside the built-in options.'),
         });
         locTypesDesc.setCssStyles({ marginBottom: '8px' });
 
@@ -1689,7 +1716,7 @@ export class SceneCardsSettingTab extends PluginSettingTab {
                     .setName(t)
                     .addButton(btn => btn
                         .setIcon('trash')
-                        .setTooltip('Remove')
+                        .setTooltip(legacyUi('Remove', 'Remove'))
                         .onClick(async () => {
                             const list = (this.plugin.settings.customLocationTypes ?? [])
                                 .filter(x => x !== t);
@@ -1703,12 +1730,12 @@ export class SceneCardsSettingTab extends PluginSettingTab {
             let pending = '';
             new Setting(locationsBody)
                 .setClass('sl-custom-loc-type-row')
-                .setName('Add new type')
+                .setName(legacyUi('Add new type', 'Add new type'))
                 .addText(text => text
-                    .setPlaceholder('E.g. Planet')
+                    .setPlaceholder(legacyUi('E.g. Planet', 'E.g. Planet'))
                     .onChange(v => (pending = v)))
                 .addButton(btn => btn
-                    .setButtonText('Add')
+                    .setButtonText(legacyUi('Add', 'Add'))
                     .setCta()
                     .onClick(async () => {
                         const trimmed = pending.trim();
@@ -1728,10 +1755,10 @@ export class SceneCardsSettingTab extends PluginSettingTab {
         const writingBody = sceneBody;
 
         new Setting(writingBody)
-            .setName('Daily word goal')
-            .setDesc('Target number of words per day (shown in stats view)')
+            .setName(legacyUi('Daily word goal', 'Daily word goal'))
+            .setDesc(legacyUi('Target number of words per day (shown in stats view)', 'Target number of words per day (shown in stats view)'))
             .addText(text => text
-                .setPlaceholder('1000')
+                .setPlaceholder(legacyUi('1000', '1000'))
                 .setValue(String(this.plugin.settings.dailyWordGoal))
                 .onChange(async (value) => {
                     this.plugin.settings.dailyWordGoal = Number(value) || 1000;
@@ -1739,10 +1766,10 @@ export class SceneCardsSettingTab extends PluginSettingTab {
                 }));
 
         new Setting(writingBody)
-            .setName('Weekly word goal')
-            .setDesc('Target number of words per week (monday — today, shown in stats view)')
+            .setName(legacyUi('Weekly word goal', 'Weekly word goal'))
+            .setDesc(legacyUi('Target number of words per week (monday — today, shown in stats view)', 'Target number of words per week (monday — today, shown in stats view)'))
             .addText(text => text
-                .setPlaceholder('7000')
+                .setPlaceholder(legacyUi('7000', '7000'))
                 .setValue(String(this.plugin.settings.weeklyWordGoal))
                 .onChange(async (value) => {
                     this.plugin.settings.weeklyWordGoal = Number(value) || 7000;
@@ -1750,10 +1777,10 @@ export class SceneCardsSettingTab extends PluginSettingTab {
                 }));
 
         new Setting(writingBody)
-            .setName('Monthly word goal')
-            .setDesc('Target number of words for the current calendar month (shown in stats view)')
+            .setName(legacyUi('Monthly word goal', 'Monthly word goal'))
+            .setDesc(legacyUi('Target number of words for the current calendar month (shown in stats view)', 'Target number of words for the current calendar month (shown in stats view)'))
             .addText(text => text
-                .setPlaceholder('30000')
+                .setPlaceholder(legacyUi('30000', '30000'))
                 .setValue(String(this.plugin.settings.monthlyWordGoal))
                 .onChange(async (value) => {
                     this.plugin.settings.monthlyWordGoal = Number(value) || 30000;
@@ -1761,10 +1788,10 @@ export class SceneCardsSettingTab extends PluginSettingTab {
                 }));
 
         new Setting(writingBody)
-            .setName('Project word goal')
-            .setDesc('Target total words for the active project (shown in stats view)')
+            .setName(legacyUi('Project word goal', 'Project word goal'))
+            .setDesc(legacyUi('Target total words for the active project (shown in stats view)', 'Target total words for the active project (shown in stats view)'))
             .addText(text => text
-                .setPlaceholder('80000')
+                .setPlaceholder(legacyUi('80000', '80000'))
                 .setValue(String(this.plugin.settings.projectWordGoal))
                 .onChange(async (value) => {
                     this.plugin.settings.projectWordGoal = Number(value) || 80000;
@@ -1773,8 +1800,8 @@ export class SceneCardsSettingTab extends PluginSettingTab {
 
         const deadline = this.plugin.writingTracker.getProjectDeadline();
         new Setting(writingBody)
-            .setName('Project deadline')
-            .setDesc('Optional deadline for the active project')
+            .setName(legacyUi('Project deadline', 'Project deadline'))
+            .setDesc(legacyUi('Optional deadline for the active project', 'Optional deadline for the active project'))
             .addText(text => {
                 text.inputEl.type = 'date';
                 text.setValue(deadline.deadline);
@@ -1786,8 +1813,8 @@ export class SceneCardsSettingTab extends PluginSettingTab {
             });
 
         new Setting(writingBody)
-            .setName('Include weekends before deadline')
-            .setDesc('Count saturdays and sundays as available writing days')
+            .setName(legacyUi('Include weekends before deadline', 'Include weekends before deadline'))
+            .setDesc(legacyUi('Count saturdays and sundays as available writing days', 'Count saturdays and sundays as available writing days'))
             .addToggle(toggle => toggle
                 .setValue(deadline.includeWeekends)
                 .onChange(async value => {
@@ -1797,8 +1824,8 @@ export class SceneCardsSettingTab extends PluginSettingTab {
                 }));
 
         new Setting(writingBody)
-            .setName('Sprint end sound')
-            .setDesc('Play a chime when the writing sprint timer reaches zero')
+            .setName(legacyUi('Sprint end sound', 'Sprint end sound'))
+            .setDesc(legacyUi('Play a chime when the writing sprint timer reaches zero', 'Play a chime when the writing sprint timer reaches zero'))
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.sprintEndSound)
                 .onChange(async (value) => {
@@ -1807,8 +1834,8 @@ export class SceneCardsSettingTab extends PluginSettingTab {
                 }));
 
         new Setting(writingBody)
-            .setName('Write scene references as wikilinks')
-            .setDesc('Issue #73 — when on, scene fields like pov, location, characters, setup_scenes and payoff_scenes are stored as Obsidian [[wikilinks]] so they auto-update on rename. Existing plain-text values keep working.')
+            .setName(legacyUi('Write scene references as wikilinks', 'Write scene references as wikilinks'))
+            .setDesc(legacyUi('Issue #73 — when on, scene fields like pov, location, characters, setup_scenes and payoff_scenes are stored as Obsidian [[wikilinks]] so they auto-update on rename. Existing plain-text values keep working.', 'Issue #73 — when on, scene fields like pov, location, characters, setup_scenes and payoff_scenes are stored as Obsidian [[wikilinks]] so they auto-update on rename. Existing plain-text values keep working.'))
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.writeFieldsAsWikilinks !== false)
                 .onChange(async (value) => {
@@ -1817,8 +1844,8 @@ export class SceneCardsSettingTab extends PluginSettingTab {
                 }));
 
         new Setting(writingBody)
-            .setName('Sort suggestions by frequency')
-            .setDesc('When on, character and location suggestions in the scene inspector are sorted by how often they appear across scenes (most used first), then alphabetically. Off = alphabetical only. (issue #238 feedback.)')
+            .setName(legacyUi('Sort suggestions by frequency', 'Sort suggestions by frequency'))
+            .setDesc(legacyUi('When on, character and location suggestions in the scene inspector are sorted by how often they appear across scenes (most used first), then alphabetically. Off = alphabetical only. (issue #238 feedback.)', 'When on, character and location suggestions in the scene inspector are sorted by how often they appear across scenes (most used first), then alphabetically. Off = alphabetical only. (issue #238 feedback.)'))
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.sortByFrequency === true)
                 .onChange(async (value) => {
@@ -1827,8 +1854,8 @@ export class SceneCardsSettingTab extends PluginSettingTab {
                 }));
 
         new Setting(writingBody)
-            .setName('Mirror custom fields to top-level YAML')
-            .setDesc('Issue #71 — when on, universal field values are also written as top-level YAML keys (using each template\'s "top-level key") so they show up in Obsidian properties, bases, and dataview. Reserved StoryLine keys are skipped automatically.')
+            .setName(legacyUi('Mirror custom fields to top-level YAML', 'Mirror custom fields to top-level YAML'))
+            .setDesc(legacyUi('Issue #71 — when on, universal field values are also written as top-level YAML keys (using each template\'s "top-level key") so they show up in Obsidian properties, bases, and dataview. Reserved StoryLine keys are skipped automatically.', 'Issue #71 — when on, universal field values are also written as top-level YAML keys (using each template\'s "top-level key") so they show up in Obsidian properties, bases, and dataview. Reserved StoryLine keys are skipped automatically.'))
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.universalFieldsMirrorTopLevel !== false)
                 .onChange(async (value) => {
@@ -1847,11 +1874,11 @@ export class SceneCardsSettingTab extends PluginSettingTab {
 
         // ── Count unit (words vs characters) ──
         new Setting(writingBody)
-            .setName('Count unit for scene lengths')
-            .setDesc('Choose whether scene cards, the timeline, and the inspector display scene length in words or characters. Useful for prose writers who track length in characters (e.g. Russian, chinese, japanese).')
+            .setName(legacyUi('Count unit for scene lengths', 'Count unit for scene lengths'))
+            .setDesc(legacyUi('Choose whether scene cards, the timeline, and the inspector display scene length in words or characters. Useful for prose writers who track length in characters (e.g. Russian, chinese, japanese).', 'Choose whether scene cards, the timeline, and the inspector display scene length in words or characters. Useful for prose writers who track length in characters (e.g. Russian, chinese, japanese).'))
             .addDropdown(dropdown => {
-                dropdown.addOption('words', 'Words');
-                dropdown.addOption('chars', 'Characters');
+                dropdown.addOption('words', legacyUi('Words', 'Words'));
+                dropdown.addOption('chars', legacyUi('Characters', 'Characters'));
                 dropdown.setValue(this.plugin.settings.countUnit === 'chars' ? 'chars' : 'words');
                 dropdown.onChange(async (value) => {
                     this.plugin.settings.countUnit = value as 'words' | 'chars';
@@ -1862,8 +1889,8 @@ export class SceneCardsSettingTab extends PluginSettingTab {
 
         // ── Issue #78 — Wordcount exclusions ──
         new Setting(writingBody)
-            .setName('Exclude `%%comments%%` from wordcount')
-            .setDesc('Issue #78 — strip Obsidian comment blocks (anything between `%%` markers) before counting words. Keeps `wordcount` aligned with what readers will actually see.')
+            .setName(legacyUi('Exclude `%%comments%%` from wordcount', 'Exclude `%%comments%%` from wordcount'))
+            .setDesc(legacyUi('Issue #78 — strip Obsidian comment blocks (anything between `%%` markers) before counting words. Keeps `wordcount` aligned with what readers will actually see.', 'Issue #78 — strip Obsidian comment blocks (anything between `%%` markers) before counting words. Keeps `wordcount` aligned with what readers will actually see.'))
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.excludeCommentsFromWordcount !== false)
                 .onChange(async (value) => {
@@ -1872,8 +1899,8 @@ export class SceneCardsSettingTab extends PluginSettingTab {
                 }));
 
         new Setting(writingBody)
-            .setName('Also ignore checkbox lines (`- [ ]`, `- [x]`)')
-            .setDesc('Issue #78 — also drop Markdown task lines from the wordcount. Off by default because some authors keep checklists in the manuscript body.')
+            .setName(legacyUi('Also ignore checkbox lines (`- [ ]`, `- [x]`)', 'Also ignore checkbox lines (`- [ ]`, `- [x]`)'))
+            .setDesc(legacyUi('Issue #78 — also drop Markdown task lines from the wordcount. Off by default because some authors keep checklists in the manuscript body.', 'Issue #78 — also drop Markdown task lines from the wordcount. Off by default because some authors keep checklists in the manuscript body.'))
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.excludeChecklistFromWordcount === true)
                 .onChange(async (value) => {
@@ -1883,10 +1910,10 @@ export class SceneCardsSettingTab extends PluginSettingTab {
 
         // ── Multi-language support — default project language ──
         new Setting(writingBody)
-            .setName('Default project language')
-            .setDesc('BCP-47 tag used for word counting, reading time, dialogue %, stop-word filtering and PDF line wrapping. Choose Auto-detect to infer the script from manuscript text. Existing projects that still use the old default are updated too; otherwise set per-project by editing `language:` in the project frontmatter.')
+            .setName(legacyUi('Default project language', 'Default project language'))
+            .setDesc(legacyUi('BCP-47 tag used for word counting, reading time, dialogue %, stop-word filtering and PDF line wrapping. Choose Auto-detect to infer the script from manuscript text. Existing projects that still use the old default are updated too; otherwise set per-project by editing `language:` in the project frontmatter.', 'BCP-47 tag used for word counting, reading time, dialogue %, stop-word filtering and PDF line wrapping. Choose Auto-detect to infer the script from manuscript text. Existing projects that still use the old default are updated too; otherwise set per-project by editing `language:` in the project frontmatter.'))
             .addDropdown(dropdown => {
-                dropdown.addOption('auto', 'Auto-detect from text');
+                dropdown.addOption('auto', legacyUi('Auto-detect from text', 'Auto-detect from text'));
                 for (const { code, label } of SUPPORTED_STORYLINE_LOCALES) {
                     dropdown.addOption(code, `${label} (${code})`);
                 }
@@ -1924,8 +1951,8 @@ export class SceneCardsSettingTab extends PluginSettingTab {
             .addClass('sl-quote-settings');
         quoteSettings
             .addSetting(setting => setting
-                .setName('Quotation marks')
-                .setDesc('Quote pair inserted when you type a plain double quote in the editor. Existing text and pasted text are unchanged.')
+                .setName(legacyUi('Quotation marks', 'Quotation marks'))
+                .setDesc(legacyUi('Quote pair inserted when you type a plain double quote in the editor. Existing text and pasted text are unchanged.', 'Quote pair inserted when you type a plain double quote in the editor. Existing text and pasted text are unchanged.'))
                 .addDropdown(dropdown => {
                     for (const option of QUOTE_STYLE_OPTIONS) {
                         dropdown.addOption(option.value, option.label);
@@ -1938,8 +1965,8 @@ export class SceneCardsSettingTab extends PluginSettingTab {
                     });
                 }))
             .addSetting(setting => setting
-                .setName('Automatic quotation marks')
-                .setDesc('Replace typed plain double quotes with the selected quotation mark style. Disable this if another plugin should handle quotation marks.')
+                .setName(legacyUi('Automatic quotation marks', 'Automatic quotation marks'))
+                .setDesc(legacyUi('Replace typed plain double quotes with the selected quotation mark style. Disable this if another plugin should handle quotation marks.', 'Replace typed plain double quotes with the selected quotation mark style. Disable this if another plugin should handle quotation marks.'))
                 .addToggle(toggle => toggle
                     .setValue(this.plugin.isAutomaticQuoteReplacementEnabled())
                     .onChange((value) => {
@@ -1951,8 +1978,8 @@ export class SceneCardsSettingTab extends PluginSettingTab {
         // in a constant to keep it out of the sentence-case UI rule's AST checks.
         const defaultSceneFmPlaceholder = ['cssclasses:', '  - fountain', ''].join('\n');
         new Setting(writingBody)
-            .setName('Default scene frontmatter')
-            .setDesc('Issue #77 — raw YAML merged into the frontmatter of every newly-created scene. Useful for companion plugins (e.g. `cssclasses: [fountain]`). StoryLine\'s own keys (type, title, act, chapter, sequence, status…) always win on conflict.')
+            .setName(legacyUi('Default scene frontmatter', 'Default scene frontmatter'))
+            .setDesc(legacyUi('Issue #77 — raw YAML merged into the frontmatter of every newly-created scene. Useful for companion plugins (e.g. `cssclasses: [fountain]`). StoryLine\'s own keys (type, title, act, chapter, sequence, status…) always win on conflict.', 'Issue #77 — raw YAML merged into the frontmatter of every newly-created scene. Useful for companion plugins (e.g. `cssclasses: [fountain]`). StoryLine\'s own keys (type, title, act, chapter, sequence, status…) always win on conflict.'))
             .addTextArea(ta => {
                 ta.setValue(this.plugin.settings.defaultSceneFrontmatter || '')
                     .onChange(async (value) => {
@@ -1969,8 +1996,8 @@ export class SceneCardsSettingTab extends PluginSettingTab {
 
         // ── Issue #238 feedback — Default PoV character ──
         const povSetting = new Setting(writingBody)
-            .setName('Default PoV character')
-            .setDesc('Auto-assign this character as the PoV of every newly-created scene. Useful for single-pov stories so you don\'t have to pick it each time. Leave blank to choose manually. (issue #238 feedback.)')
+            .setName(legacyUi('Default PoV character', 'Default PoV character'))
+            .setDesc(legacyUi('Auto-assign this character as the PoV of every newly-created scene. Useful for single-pov stories so you don\'t have to pick it each time. Leave blank to choose manually. (issue #238 feedback.)', 'Auto-assign this character as the PoV of every newly-created scene. Useful for single-pov stories so you don\'t have to pick it each time. Leave blank to choose manually. (issue #238 feedback.)'))
         const povSelect = povSetting.controlEl.createEl('select');
         povSelect.setCssStyles({ width: '200px' });
         const noneOpt = povSelect.createEl('option', { value: '' });
@@ -1988,11 +2015,11 @@ export class SceneCardsSettingTab extends PluginSettingTab {
         });
 
         new Setting(displayBody)
-            .setName('Statistics view')
-            .setDesc('Use the redesigned statistics layout or keep the original renderer')
+            .setName(legacyUi('Statistics view', 'Statistics view'))
+            .setDesc(legacyUi('Use the redesigned statistics layout or keep the original renderer', 'Use the redesigned statistics layout or keep the original renderer'))
             .addDropdown(dropdown => dropdown
-                .addOption('redesigned', 'Redesigned')
-                .addOption('original', 'Original')
+                .addOption('redesigned', legacyUi('Redesigned', 'Redesigned'))
+                .addOption('original', legacyUi('Original', 'Original'))
                 .setValue(this.plugin.settings.statsViewMode)
                 .onChange(async value => {
                     this.plugin.settings.statsViewMode = value === 'original' ? 'original' : 'redesigned';
@@ -2001,17 +2028,17 @@ export class SceneCardsSettingTab extends PluginSettingTab {
                 }));
 
         const focusDetails = displayBody.createEl('details', { cls: 'story-line-color-section' });
-        focusDetails.createEl('summary', { text: 'Focus mode settings' });
+        focusDetails.createEl('summary', { text: legacyUi('Focus mode settings', 'Focus mode settings') });
         const focusBody = focusDetails.createDiv();
         focusBody.setCssStyles({ padding: '12px 16px' });
 
         const focusDesc = focusBody.createDiv({ cls: 'setting-item-description' });
         focusDesc.setCssStyles({ marginBottom: '16px' });
-        focusDesc.setText('Control how the UI changes when focus mode is enabled in manuscript view.');
+        focusDesc.setText(legacyUi('Control how the UI changes when focus mode is enabled in manuscript view.', 'Control how the UI changes when focus mode is enabled in manuscript view.'));
 
         new Setting(focusBody)
-            .setName('Dim surrounding text')
-            .setDesc('Keep the current paragraph at full opacity in focus mode')
+            .setName(legacyUi('Dim surrounding text', 'Dim surrounding text'))
+            .setDesc(legacyUi('Keep the current paragraph at full opacity in focus mode', 'Keep the current paragraph at full opacity in focus mode'))
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.focusDimText)
                 .onChange(async value => {
@@ -2104,7 +2131,7 @@ export class SceneCardsSettingTab extends PluginSettingTab {
         // Reset
         const focusResetRow = focusBody.createDiv();
         focusResetRow.setCssStyles({ marginTop: '8px' });
-        const focusResetBtn = focusResetRow.createEl('button', { text: 'Reset to defaults' });
+        const focusResetBtn = focusResetRow.createEl('button', { text: legacyUi('Reset to defaults', 'Reset to defaults') });
         focusResetBtn.setCssStyles({
             fontSize: '11px',
             padding: '2px 10px',
@@ -2121,13 +2148,13 @@ export class SceneCardsSettingTab extends PluginSettingTab {
 
         // ── Timeline Drag-Scroll Settings (collapsible) ──
         const tlDetails = writingBody.createEl('details', { cls: 'story-line-timeline-scroll-section' });
-        tlDetails.createEl('summary', { text: 'Timeline drag-scroll' });
+        tlDetails.createEl('summary', { text: legacyUi('Timeline drag-scroll', 'Timeline drag-scroll') });
         const tlBody = tlDetails.createDiv();
         tlBody.setCssStyles({ padding: '8px 0' });
 
         new Setting(tlBody)
-            .setName('Scroll speed')
-            .setDesc('Pixels scrolled per animation frame while dragging near the edge (1–30).')
+            .setName(legacyUi('Scroll speed', 'Scroll speed'))
+            .setDesc(legacyUi('Pixels scrolled per animation frame while dragging near the edge (1–30).', 'Pixels scrolled per animation frame while dragging near the edge (1–30).'))
             .addSlider(slider => slider
                 .setLimits(1, 30, 1)
                 .setValue(this.plugin.settings.timelineDragScrollSpeed)
@@ -2138,8 +2165,8 @@ export class SceneCardsSettingTab extends PluginSettingTab {
             );
 
         new Setting(tlBody)
-            .setName('Scroll zone')
-            .setDesc('Pixel distance from the viewport edge where drag-scrolling activates (20–200).')
+            .setName(legacyUi('Scroll zone', 'Scroll zone'))
+            .setDesc(legacyUi('Pixel distance from the viewport edge where drag-scrolling activates (20–200).', 'Pixel distance from the viewport edge where drag-scrolling activates (20–200).'))
             .addSlider(slider => slider
                 .setLimits(20, 200, 10)
                 .setValue(this.plugin.settings.timelineDragScrollZone)
@@ -2153,7 +2180,7 @@ export class SceneCardsSettingTab extends PluginSettingTab {
 
         // --- Tag / Plotline Colors (collapsible) ---
         const colorDetails = colorsBody.createEl('details', { cls: 'story-line-color-section' });
-        colorDetails.createEl('summary', { text: 'Plotline color scheme' });
+        colorDetails.createEl('summary', { text: legacyUi('Plotline color scheme', 'Plotline color scheme') });
 
         const colorBody = colorDetails.createDiv();
         colorBody.setCssStyles({ padding: '8px 0' });
@@ -2162,8 +2189,8 @@ export class SceneCardsSettingTab extends PluginSettingTab {
         const projName = this.plugin.sceneManager?.activeProject?.title;
         if (projName) {
             new Setting(colorBody)
-                .setName('Use project-specific colors')
-                .setDesc(`Save color settings into "${projName}" instead of using the global defaults.`)
+                .setName(legacyUi('Use project-specific colors', 'Use project-specific colors'))
+                .setDesc(legacyUi(`Save color settings into "${projName}" instead of using the global defaults.`, `Save color settings into "${projName}" instead of using the global defaults.`))
                 .addToggle(toggle => toggle
                     .setValue(this.plugin.settings.useProjectColors)
                     .onChange(async (value) => {
@@ -2416,7 +2443,7 @@ export class SceneCardsSettingTab extends PluginSettingTab {
 
         const plotResetRow = colorBody.createDiv();
         plotResetRow.setCssStyles({ marginBottom: '12px' });
-        const plotResetBtn = plotResetRow.createEl('button', { text: 'Reset adjustments' });
+        const plotResetBtn = plotResetRow.createEl('button', { text: legacyUi('Reset adjustments', 'Reset adjustments') });
         plotResetBtn.setCssStyles({
             fontSize: '11px',
             padding: '2px 10px',
@@ -2442,9 +2469,9 @@ export class SceneCardsSettingTab extends PluginSettingTab {
                 gap: '8px',
                 marginBottom: '6px',
             });
-            overrideHeader.createSpan({ text: 'Custom overrides', cls: 'setting-item-name' });
+            overrideHeader.createSpan({ text: legacyUi('Custom overrides', 'Custom overrides'), cls: 'setting-item-name' });
 
-            const clearBtn = overrideHeader.createEl('button', { text: 'Clear all' });
+            const clearBtn = overrideHeader.createEl('button', { text: legacyUi('Clear all', 'Clear all') });
             clearBtn.setCssStyles({
                 fontSize: '11px',
                 padding: '2px 8px',
@@ -2485,7 +2512,7 @@ export class SceneCardsSettingTab extends PluginSettingTab {
 
         // --- Sticky Note Colors (collapsible) ---
         const noteColorDetails = colorsBody.createEl('details', { cls: 'story-line-color-section' });
-        noteColorDetails.createEl('summary', { text: 'Sticky note colors' });
+        noteColorDetails.createEl('summary', { text: legacyUi('Sticky note colors', 'Sticky note colors') });
         const noteColorBody = noteColorDetails.createDiv();
         noteColorBody.setCssStyles({ padding: '8px 0' });
         this.renderStickyNoteSettings(noteColorBody);
@@ -2495,38 +2522,38 @@ export class SceneCardsSettingTab extends PluginSettingTab {
         const activeProject = this.plugin.sceneManager.activeProject;
 
         new Setting(projectBody)
-            .setName('Rename book')
-            .setDesc(activeProject ? `Current: "${activeProject.title}"` : 'No active project')
+            .setName(legacyUi('Rename book', 'Rename book'))
+            .setDesc(activeProject ? legacyUi(`Current: "${activeProject.title}"`, `Current: "${activeProject.title}"`) : legacyUi('No active project', 'No active project'))
             .addButton(btn => btn
-                .setButtonText('Rename…')
+                .setButtonText(legacyUi('Rename…', 'Rename…'))
                 .setDisabled(!activeProject)
                 .onClick(() => {
                     (this.plugin.app as unknown as { commands: { executeCommandById: (id: string) => void } }).commands.executeCommandById('storyline:rename-project');
                 }));
 
         new Setting(projectBody)
-            .setName('Create series from this book')
-            .setDesc(activeProject?.seriesId || activeProject?.seriesUuid ? 'This book already belongs to a series.' : 'Wrap the current book in a new series.')
+            .setName(legacyUi('Create series from this book', 'Create series from this book'))
+            .setDesc(activeProject?.seriesId || activeProject?.seriesUuid ? legacyUi('This book already belongs to a series.', 'This book already belongs to a series.') : legacyUi('Wrap the current book in a new series.', 'Wrap the current book in a new series.'))
             .addButton(btn => btn
-                .setButtonText('Create series???')
+                .setButtonText(legacyUi('Create series???', 'Create series???'))
                 .setDisabled(!activeProject || !!activeProject.seriesId || !!activeProject.seriesUuid)
                 .onClick(() => {
                     (this.plugin.app as unknown as { commands: { executeCommandById: (id: string) => void } }).commands.executeCommandById('storyline:create-series');
                 }));
 
         new Setting(projectBody)
-            .setName('Manage series')
-            .setDesc('View, rename, and reorder books in your series.')
+            .setName(legacyUi('Manage series', 'Manage series'))
+            .setDesc(legacyUi('View, rename, and reorder books in your series.', 'View, rename, and reorder books in your series.'))
             .addButton(btn => btn
-                .setButtonText('Manage series???')
+                .setButtonText(legacyUi('Manage series???', 'Manage series???'))
                 .onClick(() => {
                     (this.plugin as unknown as { openSeriesManagementModal: () => void }).openSeriesManagementModal();
                 }));
 
         const templatesBody = createSettingsSection('Templates & fields');
-        new Setting(templatesBody).setName('Scene templates').setHeading();
+        new Setting(templatesBody).setName(legacyUi('Scene templates', 'Scene templates')).setHeading();
         templatesBody.createEl('p', {
-            text: 'Custom templates pre-fill fields and body text when creating new scenes. Built-in templates are always available.',
+            text: legacyUi('Custom templates pre-fill fields and body text when creating new scenes. Built-in templates are always available.', 'Custom templates pre-fill fields and body text when creating new scenes. Built-in templates are always available.'),
             cls: 'setting-item-description',
         });
 
@@ -2535,7 +2562,7 @@ export class SceneCardsSettingTab extends PluginSettingTab {
 
         new Setting(templatesBody)
             .addButton(btn => btn
-                .setButtonText('Add template')
+                .setButtonText(legacyUi('Add template', 'Add template'))
                 .setCta()
                 .onClick(() => {
                     const blank: SceneTemplate = { name: '', description: '', defaultFields: {}, bodyTemplate: '' };
@@ -2546,9 +2573,9 @@ export class SceneCardsSettingTab extends PluginSettingTab {
                     }).open();
                 }));
 
-        new Setting(templatesBody).setName('Custom scene fields').setHeading();
+        new Setting(templatesBody).setName(legacyUi('Custom scene fields', 'Custom scene fields')).setHeading();
         templatesBody.createEl('p', {
-            text: 'Define your own metadata fields that appear on every scene???s inspector. Useful for story grid functions, truby aspects, beat-sheet labels, genre conventions, and any other scene tagging your method requires. Dropdown and multi-select fields can also be used to filter and group scenes on the board.',
+            text: legacyUi('Define your own metadata fields that appear on every scene???s inspector. Useful for story grid functions, truby aspects, beat-sheet labels, genre conventions, and any other scene tagging your method requires. Dropdown and multi-select fields can also be used to filter and group scenes on the board.', 'Define your own metadata fields that appear on every scene???s inspector. Useful for story grid functions, truby aspects, beat-sheet labels, genre conventions, and any other scene tagging your method requires. Dropdown and multi-select fields can also be used to filter and group scenes on the board.'),
             cls: 'setting-item-description',
         });
 
@@ -2557,7 +2584,7 @@ export class SceneCardsSettingTab extends PluginSettingTab {
 
         new Setting(templatesBody)
             .addButton(btn => btn
-                .setButtonText('Add scene field')
+                .setButtonText(legacyUi('Add scene field', 'Add scene field'))
                 .setCta()
                 .onClick(() => {
                     if (!this.plugin.fieldTemplates) return;
@@ -2579,8 +2606,8 @@ export class SceneCardsSettingTab extends PluginSettingTab {
         const exportBody = createSettingsSection('Export & import');
 
         new Setting(exportBody)
-            .setName('Scene separator')
-            .setDesc('Separator used between scenes in manuscript exports (Markdown, word, PDF, and HTML).')
+            .setName(legacyUi('Scene separator', 'Scene separator'))
+            .setDesc(legacyUi('Separator used between scenes in manuscript exports (Markdown, word, PDF, and HTML).', 'Separator used between scenes in manuscript exports (Markdown, word, PDF, and HTML).'))
             .addDropdown(dropdown => dropdown
                 .addOptions({
                     'blank': 'Blank Line',
@@ -2596,10 +2623,10 @@ export class SceneCardsSettingTab extends PluginSettingTab {
 
         if (this.plugin.settings.exportSceneSeparatorType === 'custom') {
             new Setting(exportBody)
-                .setName('Custom separator')
-                .setDesc('Enter any UTF-8 character or text to use as a scene separator.')
+                .setName(legacyUi('Custom separator', 'Custom separator'))
+                .setDesc(legacyUi('Enter any UTF-8 character or text to use as a scene separator.', 'Enter any UTF-8 character or text to use as a scene separator.'))
                 .addText(text => text
-                    .setPlaceholder('E.g. ~ ~ ~')
+                    .setPlaceholder(legacyUi('E.g. ~ ~ ~', 'E.g. ~ ~ ~'))
                     .setValue(this.plugin.settings.exportSceneSeparatorCustom ?? '')
                     .onChange(async (value) => {
                         this.plugin.settings.exportSceneSeparatorCustom = value;
@@ -2619,8 +2646,8 @@ export class SceneCardsSettingTab extends PluginSettingTab {
         const advancedBody = createSettingsSection('Advanced');
 
         new Setting(advancedBody)
-            .setName('Enable plot hole detection')
-            .setDesc('Show warnings for potential plot holes')
+            .setName(legacyUi('Enable plot hole detection', 'Enable plot hole detection'))
+            .setDesc(legacyUi('Show warnings for potential plot holes', 'Show warnings for potential plot holes'))
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.enablePlotHoleDetection)
                 .onChange(async (value) => {
@@ -2629,8 +2656,8 @@ export class SceneCardsSettingTab extends PluginSettingTab {
                 }));
 
         new Setting(advancedBody)
-            .setName('Show warnings')
-            .setDesc('Display warning notifications')
+            .setName(legacyUi('Show warnings', 'Show warnings'))
+            .setDesc(legacyUi('Display warning notifications', 'Display warning notifications'))
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.showWarnings)
                 .onChange(async (value) => {
@@ -2640,7 +2667,7 @@ export class SceneCardsSettingTab extends PluginSettingTab {
 
         // --- Extra source folders (collapsible, experimental) ---
         const extraDetails = advancedBody.createEl('details', { cls: 'story-line-color-section' });
-        extraDetails.createEl('summary', { text: 'Additional source folders (experimental)' });
+        extraDetails.createEl('summary', { text: legacyUi('Additional source folders (experimental)', 'Additional source folders (experimental)') });
         const extraBody = extraDetails.createDiv();
         extraBody.setCssStyles({ padding: '8px 0' });
 
@@ -2649,11 +2676,11 @@ export class SceneCardsSettingTab extends PluginSettingTab {
             color: 'var(--text-warning, orange)',
             marginBottom: '12px',
         });
-        extraWarn.setText('⚠ experimental — back up your files before linking external folders. Files in linked folders may be modified when you edit entities in StoryLine.');
+        extraWarn.setText(legacyUi('⚠ experimental — back up your files before linking external folders. Files in linked folders may be modified when you edit entities in StoryLine.', '⚠ experimental — back up your files before linking external folders. Files in linked folders may be modified when you edit entities in StoryLine.'));
 
         const extraDesc = extraBody.createDiv({ cls: 'setting-item-description' });
         extraDesc.setCssStyles({ marginBottom: '12px' });
-        extraDesc.setText('Point StoryLine to any folder in your vault. All .md files inside will be scanned and automatically sorted by their frontmatter type: field.');
+        extraDesc.setText(legacyUi('Point StoryLine to any folder in your vault. All .md files inside will be scanned and automatically sorted by their frontmatter type: field.', 'Point StoryLine to any folder in your vault. All .md files inside will be scanned and automatically sorted by their frontmatter type: field.'));
 
         // Render the current list of folders
         const listContainer = extraBody.createDiv();
@@ -2676,7 +2703,7 @@ export class SceneCardsSettingTab extends PluginSettingTab {
                     fontSize: '12px',
                 });
 
-                const removeBtn = row.createEl('button', { text: '×', cls: 'clickable-icon' });
+                const removeBtn = row.createEl('button', { text: legacyUi('×', '×'), cls: 'clickable-icon' });
                 removeBtn.setCssStyles({
                     color: 'var(--text-error)',
                     fontSize: '16px',
@@ -2705,14 +2732,14 @@ export class SceneCardsSettingTab extends PluginSettingTab {
             marginTop: '8px',
         });
 
-        const folderInput = addRow.createEl('input', { type: 'text', placeholder: 'Type or browse for a folder...' });
+        const folderInput = addRow.createEl('input', { type: 'text', placeholder: legacyUi('Type or browse for a folder...', 'Type or browse for a folder...') });
         folderInput.setCssStyles({ flex: '1' });
         folderInput.addClass('sl-folder-suggest-input');
 
         // Attach folder autocomplete
         new FolderSuggest(this.app, folderInput);
 
-        const addBtn = addRow.createEl('button', { text: 'Add', cls: 'mod-cta' });
+        const addBtn = addRow.createEl('button', { text: legacyUi('Add', 'Add'), cls: 'mod-cta' });
         addBtn.setCssStyles({ flexShrink: '0' });
         addBtn.addEventListener('click', async () => {
             const raw = folderInput.value.trim();
@@ -2775,7 +2802,7 @@ export class SceneCardsSettingTab extends PluginSettingTab {
 
         if (combinedTags.length === 0) {
             container.createEl('p', {
-                text: 'No tags found. Create scenes with tags to assign colors here.',
+                text: legacyUi('No tags found. Create scenes with tags to assign colors here.', 'No tags found. Create scenes with tags to assign colors here.'),
                 cls: 'setting-item-description',
             });
             return;
@@ -2783,7 +2810,7 @@ export class SceneCardsSettingTab extends PluginSettingTab {
 
         if (!isCustom) {
             container.createEl('p', {
-                text: 'Colors are auto-assigned from the selected scheme. Use the color picker to override individual tags.',
+                text: legacyUi('Colors are auto-assigned from the selected scheme. Use the color picker to override individual tags.', 'Colors are auto-assigned from the selected scheme. Use the color picker to override individual tags.'),
                 cls: 'setting-item-description',
             });
         }
@@ -2813,11 +2840,11 @@ export class SceneCardsSettingTab extends PluginSettingTab {
             nameEl.createSpan({ text: tag });
 
             if (isOverridden) {
-                s.setDesc(`Custom: ${customColor}`);
+                s.setDesc(legacyUi(`Custom: ${customColor}`, `Custom: ${customColor}`));
             } else if (!isCustom) {
-                s.setDesc(`Scheme: ${schemeColor}`);
+                s.setDesc(legacyUi(`Scheme: ${schemeColor}`, `Scheme: ${schemeColor}`));
             } else {
-                s.setDesc('No color assigned');
+                s.setDesc(legacyUi('No color assigned', 'No color assigned'));
             }
 
             // Color picker for override
@@ -2825,7 +2852,7 @@ export class SceneCardsSettingTab extends PluginSettingTab {
                 picker.setValue(customColor || effectiveColor);
                 picker.onChange(async (value) => {
                     this.plugin.settings.tagColors[tag] = value;
-                    s.setDesc(`Custom: ${value}`);
+                    s.setDesc(legacyUi(`Custom: ${value}`, `Custom: ${value}`));
                     swatch.setCssStyles({ background: value });
                     await this.plugin.saveSettings();
                     this.plugin.refreshOpenViews();
@@ -2835,7 +2862,7 @@ export class SceneCardsSettingTab extends PluginSettingTab {
             // Reset button
             s.addExtraButton(btn => btn
                 .setIcon('x')
-                .setTooltip('Remove custom override')
+                .setTooltip(legacyUi('Remove custom override', 'Remove custom override'))
                 .onClick(async () => {
                     delete this.plugin.settings.tagColors[tag];
                     await this.plugin.saveSettings();
@@ -3106,7 +3133,7 @@ export class SceneCardsSettingTab extends PluginSettingTab {
                 await this.plugin.saveSettings();
                 this.plugin.refreshOpenViews();
             });
-            const clearBtn = row.createEl('button', { text: 'Auto' });
+            const clearBtn = row.createEl('button', { text: legacyUi('Auto', 'Auto') });
             clearBtn.setCssStyles({ fontSize: '11px', padding: '2px 10px' });
             clearBtn.addEventListener('click', async () => {
                 onClear();
@@ -3132,7 +3159,7 @@ export class SceneCardsSettingTab extends PluginSettingTab {
         // Reset sliders button
         const resetRow = container.createDiv();
         resetRow.setCssStyles({ marginBottom: '12px' });
-        const resetBtn = resetRow.createEl('button', { text: 'Reset adjustments' });
+        const resetBtn = resetRow.createEl('button', { text: legacyUi('Reset adjustments', 'Reset adjustments') });
         resetBtn.setCssStyles({
             fontSize: '11px',
             padding: '2px 10px',
@@ -3260,7 +3287,7 @@ export class SceneCardsSettingTab extends PluginSettingTab {
         if (Object.keys(settings.stickyNoteOverrides).length > 0) {
             const clearRow = container.createDiv();
             clearRow.setCssStyles({ marginTop: '4px' });
-            const clearBtn = clearRow.createEl('button', { text: 'Clear all colour overrides' });
+            const clearBtn = clearRow.createEl('button', { text: legacyUi('Clear all colour overrides', 'Clear all colour overrides') });
             clearBtn.setCssStyles({
                 fontSize: '11px',
                 padding: '2px 10px',
@@ -3281,7 +3308,7 @@ export class SceneCardsSettingTab extends PluginSettingTab {
         container.empty();
         const templates = this.plugin.settings.sceneTemplates;
         if (templates.length === 0) {
-            container.createEl('p', { text: 'No custom templates yet. Built-in templates (blank, action scene, dialogue scene, flashback, opening chapter) are always available.', cls: 'setting-item-description' });
+            container.createEl('p', { text: legacyUi('No custom templates yet. Built-in templates (blank, action scene, dialogue scene, flashback, opening chapter) are always available.', 'No custom templates yet. Built-in templates (blank, action scene, dialogue scene, flashback, opening chapter) are always available.'), cls: 'setting-item-description' });
             return;
         }
         for (let i = 0; i < templates.length; i++) {
@@ -3291,7 +3318,7 @@ export class SceneCardsSettingTab extends PluginSettingTab {
                 .setDesc(tpl.description || '')
                 .addExtraButton(btn => btn
                     .setIcon('pencil')
-                    .setTooltip('Edit template')
+                    .setTooltip(legacyUi('Edit template', 'Edit template'))
                     .onClick(() => {
                         new TemplateEditorModal(this.app, { ...tpl }, async (updated) => {
                             this.plugin.settings.sceneTemplates[i] = updated;
@@ -3301,7 +3328,7 @@ export class SceneCardsSettingTab extends PluginSettingTab {
                     }))
                 .addExtraButton(btn => btn
                     .setIcon('trash')
-                    .setTooltip('Delete template')
+                    .setTooltip(legacyUi('Delete template', 'Delete template'))
                     .onClick(async () => {
                         this.plugin.settings.sceneTemplates.splice(i, 1);
                         await this.plugin.saveSettings();
@@ -3315,7 +3342,7 @@ export class SceneCardsSettingTab extends PluginSettingTab {
         container.empty();
         if (!this.plugin.fieldTemplates) {
             container.createEl('p', {
-                text: 'Open a project first to manage scene custom fields (templates are stored per project).',
+                text: legacyUi('Open a project first to manage scene custom fields (templates are stored per project).', 'Open a project first to manage scene custom fields (templates are stored per project).'),
                 cls: 'setting-item-description',
             });
             return;
@@ -3327,7 +3354,7 @@ export class SceneCardsSettingTab extends PluginSettingTab {
 
         if (sceneTpls.length === 0) {
             container.createEl('p', {
-                text: 'No custom scene fields yet. Click "add scene field" to create one.',
+                text: legacyUi('No custom scene fields yet. Click "add scene field" to create one.', 'No custom scene fields yet. Click "add scene field" to create one.'),
                 cls: 'setting-item-description',
             });
             return;
@@ -3344,7 +3371,7 @@ export class SceneCardsSettingTab extends PluginSettingTab {
                 .setDesc(`${typeLabel}${optionsHint}`)
                 .addExtraButton(btn => btn
                     .setIcon('pencil')
-                    .setTooltip('Edit field')
+                    .setTooltip(legacyUi('Edit field', 'Edit field'))
                     .onClick(() => {
                         const modal = new AddFieldModal(
                             this.app,
@@ -3364,7 +3391,7 @@ export class SceneCardsSettingTab extends PluginSettingTab {
                     }))
                 .addExtraButton(btn => btn
                     .setIcon('trash')
-                    .setTooltip('Delete field')
+                    .setTooltip(legacyUi('Delete field', 'Delete field'))
                     .onClick(async () => {
                         await this.plugin.fieldTemplates.remove(tpl.id);
                         this.renderSceneCustomFieldList(container);
@@ -3375,12 +3402,12 @@ export class SceneCardsSettingTab extends PluginSettingTab {
     /** Render collapsible DOCX export settings section */
     private renderDocxSettings(containerEl: HTMLElement): void {
         const details = containerEl.createEl('details', { cls: 'story-line-docx-settings' });
-        details.createEl('summary', { text: 'Docx export settings' });
+        details.createEl('summary', { text: legacyUi('Docx export settings', 'Docx export settings') });
 
         const body = details.createDiv();
 
         body.createEl('p', {
-            text: 'Configure word (.docx) export behavior. These settings apply when exporting via the export dialog.',
+            text: legacyUi('Configure word (.docx) export behavior. These settings apply when exporting via the export dialog.', 'Configure word (.docx) export behavior. These settings apply when exporting via the export dialog.'),
             cls: 'setting-item-description',
         });
 
@@ -3388,10 +3415,10 @@ export class SceneCardsSettingTab extends PluginSettingTab {
 
         // Font family
         new Setting(body)
-            .setName('Default font family')
-            .setDesc('Font used in the exported document (e.g. Calibri, times new roman, arial).')
+            .setName(legacyUi('Default font family', 'Default font family'))
+            .setDesc(legacyUi('Font used in the exported document (e.g. Calibri, times new roman, arial).', 'Font used in the exported document (e.g. Calibri, times new roman, arial).'))
             .addText(text => text
-                .setPlaceholder('Calibri')
+                .setPlaceholder(legacyUi('Calibri', 'Calibri'))
                 .setValue(ds.defaultFontFamily)
                 .onChange(async (value) => {
                     this.plugin.settings.docxSettings.defaultFontFamily = value || 'Calibri';
@@ -3400,10 +3427,10 @@ export class SceneCardsSettingTab extends PluginSettingTab {
 
         // Font size
         new Setting(body)
-            .setName('Default font size')
-            .setDesc('Base font size in half-points (e.g. 24 = 12pt, 28 = 14pt).')
+            .setName(legacyUi('Default font size', 'Default font size'))
+            .setDesc(legacyUi('Base font size in half-points (e.g. 24 = 12pt, 28 = 14pt).', 'Base font size in half-points (e.g. 24 = 12pt, 28 = 14pt).'))
             .addText(text => text
-                .setPlaceholder('24')
+                .setPlaceholder(legacyUi('24', '24'))
                 .setValue(String(ds.defaultFontSize))
                 .onChange(async (value) => {
                     const num = parseInt(value, 10);
@@ -3415,8 +3442,8 @@ export class SceneCardsSettingTab extends PluginSettingTab {
 
         // Include metadata (frontmatter)
         new Setting(body)
-            .setName('Include metadata')
-            .setDesc('When enabled, YAML frontmatter is included in the exported document. Disabled by default.')
+            .setName(legacyUi('Include metadata', 'Include metadata'))
+            .setDesc(legacyUi('When enabled, YAML frontmatter is included in the exported document. Disabled by default.', 'When enabled, YAML frontmatter is included in the exported document. Disabled by default.'))
             .addToggle(toggle => toggle
                 .setValue(ds.includeMetadata)
                 .onChange(async (value) => {
@@ -3426,8 +3453,8 @@ export class SceneCardsSettingTab extends PluginSettingTab {
 
         // Preserve formatting
         new Setting(body)
-            .setName('Preserve formatting')
-            .setDesc('Maintain original Markdown formatting in the output (bold, italic, code, etc.).')
+            .setName(legacyUi('Preserve formatting', 'Preserve formatting'))
+            .setDesc(legacyUi('Maintain original Markdown formatting in the output (bold, italic, code, etc.).', 'Maintain original Markdown formatting in the output (bold, italic, code, etc.).'))
             .addToggle(toggle => toggle
                 .setValue(ds.preserveFormatting)
                 .onChange(async (value) => {
@@ -3437,8 +3464,8 @@ export class SceneCardsSettingTab extends PluginSettingTab {
 
         // Enable preprocessing
         new Setting(body)
-            .setName('Enable preprocessing')
-            .setDesc('Preprocess Markdown before conversion (normalise line-breaks, clean up).')
+            .setName(legacyUi('Enable preprocessing', 'Enable preprocessing'))
+            .setDesc(legacyUi('Preprocess Markdown before conversion (normalise line-breaks, clean up).', 'Preprocess Markdown before conversion (normalise line-breaks, clean up).'))
             .addToggle(toggle => toggle
                 .setValue(ds.enablePreprocessing)
                 .onChange(async (value) => {
@@ -3448,8 +3475,8 @@ export class SceneCardsSettingTab extends PluginSettingTab {
 
         // Use Obsidian appearance
         new Setting(body)
-            .setName('Use Obsidian appearance')
-            .setDesc('Detect and apply the current Obsidian theme font settings to the document.')
+            .setName(legacyUi('Use Obsidian appearance', 'Use Obsidian appearance'))
+            .setDesc(legacyUi('Detect and apply the current Obsidian theme font settings to the document.', 'Detect and apply the current Obsidian theme font settings to the document.'))
             .addToggle(toggle => toggle
                 .setValue(ds.useObsidianAppearance)
                 .onChange(async (value) => {
@@ -3459,8 +3486,8 @@ export class SceneCardsSettingTab extends PluginSettingTab {
 
         // Include filename as header
         new Setting(body)
-            .setName('Include filename as header')
-            .setDesc('Add the note filename as a heading at the top of the exported document.')
+            .setName(legacyUi('Include filename as header', 'Include filename as header'))
+            .setDesc(legacyUi('Add the note filename as a heading at the top of the exported document.', 'Add the note filename as a heading at the top of the exported document.'))
             .addToggle(toggle => toggle
                 .setValue(ds.includeFilenameAsHeader)
                 .onChange(async (value) => {
@@ -3470,8 +3497,8 @@ export class SceneCardsSettingTab extends PluginSettingTab {
 
         // Page size
         new Setting(body)
-            .setName('Page size')
-            .setDesc('Paper size for the exported document.')
+            .setName(legacyUi('Page size', 'Page size'))
+            .setDesc(legacyUi('Paper size for the exported document.', 'Paper size for the exported document.'))
             .addDropdown(dropdown => dropdown
                 .addOptions({
                     'A4': 'A4',
@@ -3489,10 +3516,10 @@ export class SceneCardsSettingTab extends PluginSettingTab {
 
         // Chunking threshold
         new Setting(body)
-            .setName('Chunking threshold')
-            .setDesc('Number of elements before chunked processing kicks in (for large documents). Default: 500.')
+            .setName(legacyUi('Chunking threshold', 'Chunking threshold'))
+            .setDesc(legacyUi('Number of elements before chunked processing kicks in (for large documents). Default: 500.', 'Number of elements before chunked processing kicks in (for large documents). Default: 500.'))
             .addText(text => text
-                .setPlaceholder('500')
+                .setPlaceholder(legacyUi('500', '500'))
                 .setValue(String(ds.chunkingThreshold))
                 .onChange(async (value) => {
                     const num = parseInt(value, 10);
@@ -3506,12 +3533,12 @@ export class SceneCardsSettingTab extends PluginSettingTab {
     /** Render collapsible PDF export settings section */
     private renderPdfSettings(containerEl: HTMLElement): void {
         const details = containerEl.createEl('details', { cls: 'story-line-pdf-settings' });
-        details.createEl('summary', { text: 'PDF export settings' });
+        details.createEl('summary', { text: legacyUi('PDF export settings', 'PDF export settings') });
 
         const body = details.createDiv();
 
         body.createEl('p', {
-            text: 'Configure PDF export behavior. Uses PDF-lib for cross-platform generation (works on mobile).',
+            text: legacyUi('Configure PDF export behavior. Uses PDF-lib for cross-platform generation (works on mobile).', 'Configure PDF export behavior. Uses PDF-lib for cross-platform generation (works on mobile).'),
             cls: 'setting-item-description',
         });
 
@@ -3519,8 +3546,8 @@ export class SceneCardsSettingTab extends PluginSettingTab {
 
         // Font family
         new Setting(body)
-            .setName('Font family')
-            .setDesc('Standard PDF font to use in the exported document.')
+            .setName(legacyUi('Font family', 'Font family'))
+            .setDesc(legacyUi('Standard PDF font to use in the exported document.', 'Standard PDF font to use in the exported document.'))
             .addDropdown(dropdown => dropdown
                 .addOptions({
                     'Helvetica': 'Helvetica (sans-serif)',
@@ -3535,10 +3562,10 @@ export class SceneCardsSettingTab extends PluginSettingTab {
 
         // Font size
         new Setting(body)
-            .setName('Font size')
-            .setDesc('Base body font size in points (e.g. 11, 12).')
+            .setName(legacyUi('Font size', 'Font size'))
+            .setDesc(legacyUi('Base body font size in points (e.g. 11, 12).', 'Base body font size in points (e.g. 11, 12).'))
             .addText(text => text
-                .setPlaceholder('11')
+                .setPlaceholder(legacyUi('11', '11'))
                 .setValue(String(ps.fontSize))
                 .onChange(async (value) => {
                     const num = parseFloat(value);
@@ -3550,8 +3577,8 @@ export class SceneCardsSettingTab extends PluginSettingTab {
 
         // Page size
         new Setting(body)
-            .setName('Page size')
-            .setDesc('Paper size for the exported PDF.')
+            .setName(legacyUi('Page size', 'Page size'))
+            .setDesc(legacyUi('Paper size for the exported PDF.', 'Paper size for the exported PDF.'))
             .addDropdown(dropdown => dropdown
                 .addOptions({
                     'A4': 'A4',
@@ -3568,10 +3595,10 @@ export class SceneCardsSettingTab extends PluginSettingTab {
 
         // Line spacing
         new Setting(body)
-            .setName('Line spacing')
-            .setDesc('Line height multiplier (1.0 = single, 1.5, 2.0 = double).')
+            .setName(legacyUi('Line spacing', 'Line spacing'))
+            .setDesc(legacyUi('Line height multiplier (1.0 = single, 1.5, 2.0 = double).', 'Line height multiplier (1.0 = single, 1.5, 2.0 = double).'))
             .addText(text => text
-                .setPlaceholder('1.4')
+                .setPlaceholder(legacyUi('1.4', '1.4'))
                 .setValue(String(ps.lineSpacing))
                 .onChange(async (value) => {
                     const num = parseFloat(value);
@@ -3583,10 +3610,10 @@ export class SceneCardsSettingTab extends PluginSettingTab {
 
         // Margins
         new Setting(body)
-            .setName('Margins (pt)')
-            .setDesc('Top / bottom / left / right margins in points. 72Pt = 1 inch.')
+            .setName(legacyUi('Margins (pt)', 'Margins (pt)'))
+            .setDesc(legacyUi('Top / bottom / left / right margins in points. 72Pt = 1 inch.', 'Top / bottom / left / right margins in points. 72Pt = 1 inch.'))
             .addText(text => text
-                .setPlaceholder('72')
+                .setPlaceholder(legacyUi('72', '72'))
                 .setValue(String(ps.marginTop))
                 .onChange(async (value) => {
                     const num = parseFloat(value);
@@ -3601,8 +3628,8 @@ export class SceneCardsSettingTab extends PluginSettingTab {
 
         // Include metadata (frontmatter)
         new Setting(body)
-            .setName('Include metadata')
-            .setDesc('When enabled, YAML frontmatter is included in the exported PDF. Disabled by default.')
+            .setName(legacyUi('Include metadata', 'Include metadata'))
+            .setDesc(legacyUi('When enabled, YAML frontmatter is included in the exported PDF. Disabled by default.', 'When enabled, YAML frontmatter is included in the exported PDF. Disabled by default.'))
             .addToggle(toggle => toggle
                 .setValue(ps.includeMetadata)
                 .onChange(async (value) => {
@@ -3612,8 +3639,8 @@ export class SceneCardsSettingTab extends PluginSettingTab {
 
         // Include page numbers
         new Setting(body)
-            .setName('Include page numbers')
-            .setDesc('Show centered page numbers at the bottom of each page.')
+            .setName(legacyUi('Include page numbers', 'Include page numbers'))
+            .setDesc(legacyUi('Show centered page numbers at the bottom of each page.', 'Show centered page numbers at the bottom of each page.'))
             .addToggle(toggle => toggle
                 .setValue(ps.includePageNumbers)
                 .onChange(async (value) => {
@@ -3628,20 +3655,20 @@ export class SceneCardsSettingTab extends PluginSettingTab {
         if (!nodeFsAvailable) return;   // hide entirely on mobile
 
         const details = containerEl.createEl('details', { cls: 'story-line-import-settings' });
-        details.createEl('summary', { text: 'Import' });
+        details.createEl('summary', { text: legacyUi('Import', 'Import') });
 
         const body = details.createDiv();
 
         body.createEl('p', {
-            text: 'Import a Scrivener project (.scriv folder) as a new StoryLine project. Converts scenes, characters, locations, and research notes. Desktop only.',
+            text: legacyUi('Import a Scrivener project (.scriv folder) as a new StoryLine project. Converts scenes, characters, locations, and research notes. Desktop only.', 'Import a Scrivener project (.scriv folder) as a new StoryLine project. Converts scenes, characters, locations, and research notes. Desktop only.'),
             cls: 'setting-item-description',
         });
 
         new Setting(body)
-            .setName('Import Scrivener project')
-            .setDesc('Select a .scriv folder to import.')
+            .setName(legacyUi('Import Scrivener project', 'Import Scrivener project'))
+            .setDesc(legacyUi('Select a .scriv folder to import.', 'Select a .scriv folder to import.'))
             .addButton(btn => btn
-                .setButtonText('Import .scriv')
+                .setButtonText(legacyUi('Import .scriv', 'Import .scriv'))
                 .setCta()
                 .onClick(async () => {
                     try {
@@ -3656,7 +3683,7 @@ export class SceneCardsSettingTab extends PluginSettingTab {
     private async pickAndImportScrivener(): Promise<void> {
         const { ScrivenerImporter, pickScrivenerDestination } = await import('./services/ScrivenerImporter');
         if (!ScrivenerImporter.isAvailable()) {
-            new Notice('Scrivener import is only available on desktop.');
+            new Notice(legacyUi('Scrivener import is only available on desktop.', 'Scrivener import is only available on desktop.'));
             return;
         }
 
@@ -3669,18 +3696,18 @@ export class SceneCardsSettingTab extends PluginSettingTab {
             try {
                 remote = (win.require?.('electron') as { remote: typeof remote })?.remote;
             } catch {
-                new Notice('Could not access the file dialog. Desktop only.');
+                new Notice(legacyUi('Could not access the file dialog. Desktop only.', 'Could not access the file dialog. Desktop only.'));
                 return;
             }
         }
 
         if (!remote) {
-            new Notice('Could not access the file dialog. Desktop only.');
+            new Notice(legacyUi('Could not access the file dialog. Desktop only.', 'Could not access the file dialog. Desktop only.'));
             return;
         }
 
         const result = await remote.dialog.showOpenDialog({
-            title: 'Select Scrivener Project folder (.scriv)',
+            title: legacyUi('Select Scrivener Project folder (.scriv)', 'Select Scrivener Project folder (.scriv)'),
             message: 'Select the .scriv project folder. A second dialog will ask for an import destination inside the active vault.',
             properties: ['openDirectory'],
             filters: [
@@ -3692,14 +3719,14 @@ export class SceneCardsSettingTab extends PluginSettingTab {
 
         const scrivPath = result.filePaths[0];
         if (!scrivPath.toLowerCase().endsWith('.scriv')) {
-            new Notice('Please select a .scriv folder.');
+            new Notice(legacyUi('Please select a .scriv folder.', 'Please select a .scriv folder.'));
             return;
         }
 
         const destination = await pickScrivenerDestination(this.app);
         if (!destination) return;
 
-        new Notice('Importing Scrivener project…');
+        new Notice(legacyUi('Importing Scrivener project…', 'Importing Scrivener project…'));
 
         const importer = new ScrivenerImporter(this.app, this.plugin);
         const importResult = await importer.import(scrivPath, destination);
@@ -3750,26 +3777,26 @@ class TemplateEditorModal extends Modal {
 
     onOpen(): void {
         const { contentEl } = this;
-        new Setting(contentEl).setName(this.template.name ? 'Edit Template' : 'New Template').setHeading();
+        new Setting(contentEl).setName(this.template.name ? legacyUi('Edit Template', 'Edit Template') : legacyUi('New Template', 'New Template')).setHeading();
 
         new Setting(contentEl)
-            .setName('Template name')
+            .setName(legacyUi('Template name', 'Template name'))
             .addText(text => text
-                .setPlaceholder('E.g. Climax scene')
+                .setPlaceholder(legacyUi('E.g. Climax scene', 'E.g. Climax scene'))
                 .setValue(this.template.name)
                 .onChange(v => this.template.name = v));
 
         new Setting(contentEl)
-            .setName('Description')
+            .setName(legacyUi('Description', 'Description'))
             .addText(text => text
-                .setPlaceholder('Short description…')
+                .setPlaceholder(legacyUi('Short description…', 'Short description…'))
                 .setValue(this.template.description || '')
                 .onChange(v => this.template.description = v || undefined));
 
         new Setting(contentEl)
-            .setName('Default status')
+            .setName(legacyUi('Default status', 'Default status'))
             .addDropdown(dd => {
-                dd.addOption('', '(none)');
+                dd.addOption('', legacyUi('(none)', '(none)'));
                 const statuses = getStatusOrder();
                 const cfg = getStatusConfig();
                 statuses.forEach(s => dd.addOption(s, cfg[s]?.label ?? (s.charAt(0).toUpperCase() + s.slice(1))));
@@ -3781,9 +3808,9 @@ class TemplateEditorModal extends Modal {
             });
 
         new Setting(contentEl)
-            .setName('Default emotion')
+            .setName(legacyUi('Default emotion', 'Default emotion'))
             .addText(text => text
-                .setPlaceholder('E.g. Tense, hopeful')
+                .setPlaceholder(legacyUi('E.g. Tense, hopeful', 'E.g. Tense, hopeful'))
                 .setValue(this.template.defaultFields.emotion || '')
                 .onChange(v => {
                     if (v) this.template.defaultFields.emotion = v;
@@ -3791,10 +3818,10 @@ class TemplateEditorModal extends Modal {
                 }));
 
         new Setting(contentEl)
-            .setName('Default tags')
-            .setDesc('Comma-separated')
+            .setName(legacyUi('Default tags', 'Default tags'))
+            .setDesc(legacyUi('Comma-separated', 'Comma-separated'))
             .addText(text => text
-                .setPlaceholder('Flashback, dream')
+                .setPlaceholder(legacyUi('Flashback, dream', 'Flashback, dream'))
                 .setValue((this.template.defaultFields.tags || []).join(', '))
                 .onChange(v => {
                     const tags = v.split(',').map(t => t.trim()).filter(Boolean);
@@ -3803,9 +3830,9 @@ class TemplateEditorModal extends Modal {
                 }));
 
         new Setting(contentEl)
-            .setName('Target word count')
+            .setName(legacyUi('Target word count', 'Target word count'))
             .addText(text => text
-                .setPlaceholder('E.g. 1200')
+                .setPlaceholder(legacyUi('E.g. 1200', 'E.g. 1200'))
                 .setValue(this.template.defaultFields.target_wordcount ? String(this.template.defaultFields.target_wordcount) : '')
                 .onChange(v => {
                     const n = Number(v);
@@ -3813,8 +3840,8 @@ class TemplateEditorModal extends Modal {
                     else delete this.template.defaultFields.target_wordcount;
                 }));
 
-        contentEl.createEl('h4', { text: 'Body template' });
-        contentEl.createEl('p', { text: 'This text is inserted into the scene file body when using this template.', cls: 'setting-item-description' });
+        contentEl.createEl('h4', { text: legacyUi('Body template', 'Body template') });
+        contentEl.createEl('p', { text: legacyUi('This text is inserted into the scene file body when using this template.', 'This text is inserted into the scene file body when using this template.'), cls: 'setting-item-description' });
 
         const bodyArea = new TextAreaComponent(contentEl);
         bodyArea.setValue(this.template.bodyTemplate);
@@ -3826,10 +3853,10 @@ class TemplateEditorModal extends Modal {
         });
 
         const btnRow = contentEl.createDiv({ cls: 'story-line-button-row' });
-        const cancelBtn = btnRow.createEl('button', { text: 'Cancel' });
+        const cancelBtn = btnRow.createEl('button', { text: legacyUi('Cancel', 'Cancel') });
         cancelBtn.addEventListener('click', () => this.close());
 
-        const saveBtn = btnRow.createEl('button', { text: 'Save', cls: 'mod-cta' });
+        const saveBtn = btnRow.createEl('button', { text: legacyUi('Save', 'Save'), cls: 'mod-cta' });
         saveBtn.addEventListener('click', () => {
             if (!this.template.name.trim()) {
                 this.template.name = 'Untitled Template';

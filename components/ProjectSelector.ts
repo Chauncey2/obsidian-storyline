@@ -3,6 +3,7 @@ import * as obsidian from 'obsidian';
 import type SceneCardsPlugin from '../main';
 import { pickImage } from './ImagePicker';
 import { attachTooltip } from './Tooltip';
+import { tr } from '../i18n';
 
 /**
  * Renders a project selector dropdown into a toolbar container.
@@ -31,7 +32,7 @@ export function renderProjectSelector(
     // Cover image thumbnail — clickable to pick/change
     if (active) {
         const coverEl = wrapper.createDiv({ cls: 'project-selector-cover' });
-        attachTooltip(coverEl, 'Click to set cover image');
+        attachTooltip(coverEl, tr('common.setCoverImage'));
         coverEl.setCssStyles({ cursor: 'pointer' });
 
         if (active.coverImage) {
@@ -100,7 +101,7 @@ export function renderProjectSelector(
     // "New project" button
     const newBtn = wrapper.createEl('button', {
         cls: 'clickable-icon project-selector-new',
-        attr: { 'aria-label': 'New StoryLine project', title: 'New project' },
+        attr: { 'aria-label': tr('common.newStoryLineProject'), title: tr('common.newProject') },
     });
     obsidian.setIcon(newBtn, 'plus');
 

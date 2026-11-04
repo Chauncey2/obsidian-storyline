@@ -1,4 +1,5 @@
 import { App, FuzzySuggestModal, TFolder } from 'obsidian';
+import { tr } from '../i18n';
 
 /** Open a searchable picker for folders in the current vault. */
 export function pickVaultFolder(
@@ -19,7 +20,7 @@ class VaultFolderPickerModal extends FuzzySuggestModal<TFolder> {
         super(app);
         this.folders = folders;
         this.onSelect = onSelect;
-        this.setPlaceholder('Search for a vault folder...');
+        this.setPlaceholder(tr('common.searchVaultFolder'));
     }
 
     getItems(): TFolder[] {

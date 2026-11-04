@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-floating-promises, @typescript-eslint/no-misused-promises -- Obsidian's API surface and several untyped third-party libraries force dynamic dispatch; floating promises are intentional in DOM/event handlers; matching enable at end of file */
 import { ItemView, WorkspaceLeaf, TFile, Notice, Modal, Setting, FuzzySuggestModal } from 'obsidian';
+import { tr, legacyUi } from '../i18n';
 import * as obsidian from 'obsidian';
 import type SceneCardsPlugin from '../main';
 import { ResearchManager } from '../services/ResearchManager';
@@ -89,12 +90,12 @@ export class ResearchView extends ItemView {
 
         // ── Header ──
         const header = container.createDiv('sl-research-header');
-        header.createSpan({ cls: 'sl-research-title', text: 'Research' });
+        header.createSpan({ cls: 'sl-research-title', text: legacyUi('Research', 'Research') });
 
         const openQ = this.manager.getOpenQuestionCount();
         if (openQ > 0) {
             const badge = header.createSpan({ cls: 'sl-research-question-badge' });
-            badge.setText(`${openQ}`);
+            badge.setText(legacyUi(`${openQ}`, `${openQ}`));
             badge.title = `${openQ} open question${openQ > 1 ? 's' : ''}`;
         }
 
@@ -112,7 +113,7 @@ export class ResearchView extends ItemView {
         const searchRow = container.createDiv('sl-research-search-row');
         const searchInput = searchRow.createEl('input', {
             cls: 'sl-research-search-input',
-            attr: { type: 'text', placeholder: 'Search research…' },
+            attr: { type: 'text', placeholder: legacyUi('Search research…', 'Search research…') },
         });
         searchInput.value = this.searchQuery;
         searchInput.addEventListener('input', () => {
@@ -144,7 +145,7 @@ export class ResearchView extends ItemView {
             for (const tag of allTags) {
                 const chip = tagRow.createSpan({
                     cls: `sl-research-tag-chip ${this.activeTag === tag ? 'is-active' : ''}`,
-                    text: `#${tag}`,
+                    text: legacyUi(`#${tag}`, `#${tag}`),
                 });
                 chip.addEventListener('click', () => {
                     this.activeTag = this.activeTag === tag ? null : tag;
@@ -195,7 +196,7 @@ export class ResearchView extends ItemView {
             if (keywords.length === 0) {
                 container.createDiv({
                     cls: 'sl-research-empty',
-                    text: 'Open a scene to see auto-suggestions.',
+                    text: legacyUi('Open a scene to see auto-suggestions.', 'Open a scene to see auto-suggestions.'),
                 });
                 return;
             }
@@ -220,8 +221,8 @@ export class ResearchView extends ItemView {
             container.createDiv({
                 cls: 'sl-research-empty',
                 text: this.searchQuery || this.activeTag || this.activeType
-                    ? 'No matching posts.'
-                    : 'No research posts yet. Click + to create one.',
+                    ? legacyUi('No matching posts.', 'No matching posts.')
+                    : legacyUi('No research posts yet. Click + to create one.', 'No research posts yet. Click + to create one.'),
             });
             return;
         }
@@ -254,7 +255,7 @@ export class ResearchView extends ItemView {
             obsidian.setIcon(icon, 'folder');
             summary.createSpan({ text: folderName });
             const count = grouped.get(folderName)!.length;
-            summary.createSpan({ cls: 'sl-research-folder-count', text: `${count}` });
+            summary.createSpan({ cls: 'sl-research-folder-count', text: legacyUi(`${count}`, `${count}`) });
             for (const post of grouped.get(folderName)!) {
                 this.renderPostCard(section, post);
             }
@@ -297,7 +298,7 @@ export class ResearchView extends ItemView {
         if (post.tags.length > 0) {
             const tags = card.createDiv('sl-research-card-tags');
             for (const tag of post.tags) {
-                tags.createSpan({ cls: 'sl-research-mini-tag', text: `#${tag}` });
+                tags.createSpan({ cls: 'sl-research-mini-tag', text: legacyUi(`#${tag}`, `#${tag}`) });
             }
         }
 
@@ -307,7 +308,7 @@ export class ResearchView extends ItemView {
             if (post.researchType === 'image') {
                 const imagePreviewEl = card.createDiv('sl-research-card-image-preview');
                 // Extract image path from body (format: ![[path]] or ![](path))
-                const wikiMatch = post.body.match(/!\[\[([^\]]+)\]\]/);
+                const wikiMatch = post.body.match(/!\[\[([^]]+)\]\]/);
                 const mdMatch = post.body.match(/!\[.*?\]\(([^)]+)\)/);
                 const imgPath = wikiMatch ? wikiMatch[1] : mdMatch ? mdMatch[1] : null;
                 if (imgPath) {
@@ -323,13 +324,13 @@ export class ResearchView extends ItemView {
                         });
                         img.onerror = () => {
                             img.remove();
-                            imagePreviewEl.createDiv({ cls: 'sl-research-image-not-found', text: 'Image not found in vault' });
+                            imagePreviewEl.createDiv({ cls: 'sl-research-image-not-found', text: legacyUi('Image not found in vault', 'Image not found in vault') });
                         };
                     } catch {
-                        imagePreviewEl.createDiv({ cls: 'sl-research-image-not-found', text: 'Image not found in vault' });
+                        imagePreviewEl.createDiv({ cls: 'sl-research-image-not-found', text: legacyUi('Image not found in vault', 'Image not found in vault') });
                     }
                 } else {
-                    imagePreviewEl.createDiv({ cls: 'sl-research-image-not-found', text: 'No image reference found' });
+                    imagePreviewEl.createDiv({ cls: 'sl-research-image-not-found', text: tr('common.noImageReference') });
                 }
             }
 
@@ -354,7 +355,7 @@ export class ResearchView extends ItemView {
             // Source URL
             if (post.sourceUrl) {
                 const srcRow = card.createDiv('sl-research-card-source');
-                srcRow.createSpan({ text: 'Source: ' });
+                srcRow.createSpan({ text: legacyUi('Source: ', 'Source: ') });
                 srcRow.createEl('a', {
                     text: post.sourceUrl.substring(0, 60) + (post.sourceUrl.length > 60 ? '…' : ''),
                     attr: { href: post.sourceUrl },
@@ -366,14 +367,14 @@ export class ResearchView extends ItemView {
 
             // Open URL in browser (webclips with a sourceUrl)
             if (post.sourceUrl) {
-                const openUrlBtn = actions.createEl('button', { cls: 'sl-research-action-btn', text: 'Open' });
+                const openUrlBtn = actions.createEl('button', { cls: 'sl-research-action-btn', text: legacyUi('Open', 'Open') });
                 openUrlBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     if (post.sourceUrl) window.open(post.sourceUrl);
                 });
             } else {
                 // Open file in editor
-                const openBtn = actions.createEl('button', { cls: 'sl-research-action-btn', text: 'Open' });
+                const openBtn = actions.createEl('button', { cls: 'sl-research-action-btn', text: legacyUi('Open', 'Open') });
                 openBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     const file = this.app.vault.getAbstractFileByPath(post.filePath);
@@ -384,7 +385,7 @@ export class ResearchView extends ItemView {
             }
 
             // Edit metadata
-            const editBtn = actions.createEl('button', { cls: 'sl-research-action-btn', text: 'Edit' });
+            const editBtn = actions.createEl('button', { cls: 'sl-research-action-btn', text: legacyUi('Edit', 'Edit') });
             editBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 this.openEditModal(post);
@@ -394,7 +395,7 @@ export class ResearchView extends ItemView {
             if (post.researchType === 'question') {
                 const resolveBtn = actions.createEl('button', {
                     cls: 'sl-research-action-btn',
-                    text: post.resolved ? 'Reopen' : 'Resolve',
+                    text: post.resolved ? legacyUi('Reopen', 'Reopen') : legacyUi('Resolve', 'Resolve'),
                 });
                 resolveBtn.addEventListener('click', async (e) => {
                     e.stopPropagation();
@@ -405,7 +406,7 @@ export class ResearchView extends ItemView {
 
             // Delete or Unlink
             if (post.isLinked) {
-                const unlinkBtn = actions.createEl('button', { cls: 'sl-research-action-btn mod-destructive', text: 'Unlink' });
+                const unlinkBtn = actions.createEl('button', { cls: 'sl-research-action-btn mod-destructive', text: legacyUi('Unlink', 'Unlink') });
                 unlinkBtn.addEventListener('click', async (e) => {
                     e.stopPropagation();
                     await this.manager.unlinkNote(post.filePath);
@@ -413,7 +414,7 @@ export class ResearchView extends ItemView {
                     this.refresh();
                 });
             } else {
-                const delBtn = actions.createEl('button', { cls: 'sl-research-action-btn mod-destructive', text: 'Delete' });
+                const delBtn = actions.createEl('button', { cls: 'sl-research-action-btn mod-destructive', text: legacyUi('Delete', 'Delete') });
                 delBtn.addEventListener('click', async (e) => {
                     e.stopPropagation();
                     await this.manager.deletePost(post.filePath);
@@ -473,7 +474,7 @@ export class ResearchView extends ItemView {
         const picker = new VaultNotePickerModal(this.app, candidates, async (file) => {
             await this.manager.linkNote(file.path);
             this.refresh();
-            new Notice(`Linked "${file.basename}" to Research`);
+            new Notice(legacyUi(`Linked "${file.basename}" to Research`, `Linked "${file.basename}" to Research`));
         });
         picker.open();
     }
@@ -484,7 +485,7 @@ export class ResearchView extends ItemView {
 
     private openCreateModal(): void {
         const modal = new Modal(this.app);
-        modal.titleEl.setText('New research post');
+        modal.titleEl.setText(legacyUi('New research post', 'New research post'));
         modal.contentEl.addClass('sl-research-create-modal');
 
         let title = '';
@@ -501,29 +502,29 @@ export class ResearchView extends ItemView {
             dynamicContainer.empty();
 
             new Setting(dynamicContainer)
-                .setName('Title')
+                .setName(legacyUi('Title', 'Title'))
                 .addText(text => {
                     text.setPlaceholder(
-                        researchType === 'question' ? 'Your question…'
-                            : researchType === 'webclip' ? 'Page title or description'
-                            : researchType === 'image' ? 'Image title or caption'
-                            : 'Research topic'
+                        researchType === 'question' ? legacyUi('Your question…', 'Your question…')
+                            : researchType === 'webclip' ? legacyUi('Page title or description', 'Page title or description')
+                            : researchType === 'image' ? legacyUi('Image title or caption', 'Image title or caption')
+                            : legacyUi('Research topic', 'Research topic')
                     ).setValue(title).onChange(v => { title = v; });
                     if (!title) window.setTimeout(() => text.inputEl.focus(), 50);
                 });
 
             new Setting(dynamicContainer)
-                .setName('Tags')
+                .setName(legacyUi('Tags', 'Tags'))
                 .addText(text => {
-                    text.setPlaceholder('Sailing, history, 1800s')
+                    text.setPlaceholder(legacyUi('Sailing, history, 1800s', 'Sailing, history, 1800s'))
                         .setValue(tags).onChange(v => { tags = v; });
                 });
 
             if (researchType === 'webclip') {
                 new Setting(dynamicContainer)
-                    .setName('URL')
+                    .setName(legacyUi('URL', 'URL'))
                     .addText(text => {
-                        text.setPlaceholder('HTTPS://...')
+                        text.setPlaceholder(legacyUi('HTTPS://...', 'HTTPS://...'))
                             .setValue(sourceUrl).onChange(v => { sourceUrl = v; });
                     });
             }
@@ -531,8 +532,8 @@ export class ResearchView extends ItemView {
             if (researchType === 'image') {
                 // Image picker setting
                 const imageSetting = new Setting(dynamicContainer)
-                    .setName('Image')
-                    .setDesc(imagePath ? `Selected: ${imagePath.split('/').pop()}` : 'No image selected');
+                    .setName(legacyUi('Image', 'Image'))
+                    .setDesc(imagePath ? `Selected: ${imagePath.split('/').pop()}` : legacyUi('No image selected', 'No image selected'));
                 
                 // Image preview
                 if (imagePath) {
@@ -547,12 +548,12 @@ export class ResearchView extends ItemView {
                             objectFit: 'cover',
                             border: '1px solid var(--background-modifier-border)',
                         });
-                        img.onerror = () => { img.remove(); previewEl.setText('Image not found'); };
-                    } catch { previewEl.setText('Image not found'); }
+                        img.onerror = () => { img.remove(); previewEl.setText(legacyUi('Image not found', 'Image not found')); };
+                    } catch { previewEl.setText(legacyUi('Image not found', 'Image not found')); }
                 }
 
                 imageSetting.addButton(btn => {
-                    btn.setButtonText(imagePath ? 'Change Image' : 'Select Image');
+                    btn.setButtonText(imagePath ? legacyUi('Change Image', 'Change Image') : legacyUi('Select Image', 'Select Image'));
                     btn.setClass('mod-cta');
                     btn.onClick(async () => {
                         const project = this.plugin.sceneManager?.activeProject;
@@ -567,7 +568,7 @@ export class ResearchView extends ItemView {
 
                 if (imagePath) {
                     imageSetting.addButton(btn => {
-                        btn.setButtonText('Remove');
+                        btn.setButtonText(legacyUi('Remove', 'Remove'));
                         btn.setClass('mod-destructive');
                         btn.onClick(() => {
                             imagePath = '';
@@ -578,9 +579,9 @@ export class ResearchView extends ItemView {
 
                 // Optional notes for image
                 new Setting(dynamicContainer)
-                    .setName('Notes')
+                    .setName(legacyUi(legacyUi('Notes', 'Notes'), 'Notes'))
                     .addTextArea(text => {
-                        text.setPlaceholder('Optional notes about this image…')
+                        text.setPlaceholder(legacyUi('Optional notes about this image…', 'Optional notes about this image…'))
                             .setValue(body).onChange(v => { body = v; });
                         text.inputEl.rows = 3;
                         text.inputEl.setCssStyles({ width: '100%' });
@@ -589,12 +590,12 @@ export class ResearchView extends ItemView {
 
             if (researchType === 'note' || researchType === 'question') {
                 new Setting(dynamicContainer)
-                    .setName(researchType === 'question' ? 'Details' : 'Notes')
+                    .setName(researchType === 'question' ? legacyUi('Details', 'Details') : 'Notes')
                     .addTextArea(text => {
                         text.setPlaceholder(
                             researchType === 'question'
-                                ? 'Context or details about the question…'
-                                : 'Your research notes…'
+                                ? legacyUi('Context or details about the question…', 'Context or details about the question…')
+                                : legacyUi('Your research notes…', 'Your research notes…')
                         ).setValue(body).onChange(v => { body = v; });
                         text.inputEl.rows = 6;
                         text.inputEl.setCssStyles({ width: '100%' });
@@ -626,14 +627,14 @@ export class ResearchView extends ItemView {
         rebuildFields();
 
         const btnRow = modal.contentEl.createDiv('sl-research-modal-buttons');
-        const saveBtn = btnRow.createEl('button', { cls: 'mod-cta', text: 'Create' });
+        const saveBtn = btnRow.createEl('button', { cls: 'mod-cta', text: legacyUi('Create', 'Create') });
         saveBtn.addEventListener('click', async () => {
             if (!title.trim()) {
-                new Notice('Title is required');
+                new Notice(legacyUi('Title is required', 'Title is required'));
                 return;
             }
             if (researchType === 'image' && !imagePath) {
-                new Notice('Please select an image');
+                new Notice(legacyUi('Please select an image', 'Please select an image'));
                 return;
             }
             const tagList = tags.split(',').map(t => t.trim()).filter(Boolean);
@@ -646,9 +647,9 @@ export class ResearchView extends ItemView {
             await this.manager.createPost(title.trim(), researchType, finalBody, tagList, sourceUrl || undefined);
             modal.close();
             this.refresh();
-            new Notice(`Research post "${title.trim()}" created`);
+            new Notice(legacyUi(`Research post "${title.trim()}" created`, `Research post "${title.trim()}" created`));
         });
-        const cancelBtn = btnRow.createEl('button', { text: 'Cancel' });
+        const cancelBtn = btnRow.createEl('button', { text: legacyUi('Cancel', 'Cancel') });
         cancelBtn.addEventListener('click', () => modal.close());
 
         modal.open();
@@ -656,7 +657,7 @@ export class ResearchView extends ItemView {
 
     private openEditModal(post: ResearchPost): void {
         const modal = new Modal(this.app);
-        modal.titleEl.setText('Edit research post');
+        modal.titleEl.setText(legacyUi('Edit research post', 'Edit research post'));
         modal.contentEl.addClass('sl-research-create-modal');
 
         let title = post.title;
@@ -672,32 +673,32 @@ export class ResearchView extends ItemView {
         }
 
         new Setting(modal.contentEl)
-            .setName('Title')
+            .setName(legacyUi('Title', 'Title'))
             .addText(text => {
-                text.setPlaceholder('Title')
+                text.setPlaceholder(legacyUi('Title', 'Title'))
                     .setValue(title).onChange(v => { title = v; });
                 window.setTimeout(() => text.inputEl.focus(), 50);
             });
 
         new Setting(modal.contentEl)
-            .setName('Tags')
+            .setName(legacyUi('Tags', 'Tags'))
             .addText(text => {
-                text.setPlaceholder('Sailing, history, 1800s')
+                text.setPlaceholder(legacyUi('Sailing, history, 1800s', 'Sailing, history, 1800s'))
                     .setValue(tags).onChange(v => { tags = v; });
             });
 
         if (post.researchType === 'webclip') {
             new Setting(modal.contentEl)
-                .setName('URL')
+                .setName(legacyUi('URL', 'URL'))
                 .addText(text => {
-                    text.setPlaceholder('HTTPS://...')
+                    text.setPlaceholder(legacyUi('HTTPS://...', 'HTTPS://...'))
                         .setValue(sourceUrl).onChange(v => { sourceUrl = v; });
                 });
         }
 
         if (post.researchType === 'image') {
             const imageSetting = new Setting(modal.contentEl)
-                .setName('Image')
+                .setName(legacyUi('Image', 'Image'))
                 .setDesc(imagePath ? `Selected: ${imagePath.split('/').pop()}` : 'No image selected');
 
             if (imagePath) {
@@ -712,8 +713,8 @@ export class ResearchView extends ItemView {
                         objectFit: 'cover',
                         border: '1px solid var(--background-modifier-border)',
                     });
-                    img.onerror = () => { img.remove(); previewEl.setText('Image not found'); };
-                } catch { previewEl.setText('Image not found'); }
+                    img.onerror = () => { img.remove(); previewEl.setText(legacyUi('Image not found', 'Image not found')); };
+                } catch { previewEl.setText(legacyUi('Image not found', 'Image not found')); }
             }
 
             imageSetting.addButton(btn => {
@@ -733,10 +734,10 @@ export class ResearchView extends ItemView {
         }
 
         const btnRow = modal.contentEl.createDiv('sl-research-modal-buttons');
-        const saveBtn = btnRow.createEl('button', { cls: 'mod-cta', text: 'Save' });
+        const saveBtn = btnRow.createEl('button', { cls: 'mod-cta', text: legacyUi('Save', 'Save') });
         saveBtn.addEventListener('click', async () => {
             if (!title.trim()) {
-                new Notice('Title is required');
+                new Notice(legacyUi('Title is required', 'Title is required'));
                 return;
             }
             const tagList = tags.split(',').map(t => t.trim()).filter(Boolean);
@@ -752,7 +753,7 @@ export class ResearchView extends ItemView {
                 const wikiMatch = post.body.match(/!\[\[([^\]]+)\]\]/);
                 const oldPath = wikiMatch ? wikiMatch[1] : '';
                 if (oldPath !== imagePath) {
-                    const newBody = post.body.replace(/!\[\[[^\]]+\]\]/, `![[${imagePath}]]`);
+                    const newBody = post.body.replace(/!\[\[[^]]+\]\]/, `![[${imagePath}]]`);
                     // Need to write the file directly since updatePost doesn't handle body
                     const file = this.app.vault.getAbstractFileByPath(post.filePath);
                     if (file instanceof TFile) {
@@ -769,7 +770,7 @@ export class ResearchView extends ItemView {
             modal.close();
             this.refresh();
         });
-        const cancelBtn2 = btnRow.createEl('button', { text: 'Cancel' });
+        const cancelBtn2 = btnRow.createEl('button', { text: legacyUi('Cancel', 'Cancel') });
         cancelBtn2.addEventListener('click', () => modal.close());
 
         modal.open();
@@ -785,7 +786,7 @@ class VaultNotePickerModal extends FuzzySuggestModal<TFile> {
         super(app);
         this.files = files;
         this.onSelect = onSelect;
-        this.setPlaceholder('Search for a note to link…');
+        this.setPlaceholder(legacyUi('Search for a note to link…', 'Search for a note to link…'));
     }
 
     getItems(): TFile[] {

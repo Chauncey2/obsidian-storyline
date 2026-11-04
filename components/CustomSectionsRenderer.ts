@@ -18,6 +18,7 @@ import { openConfirmModal } from './ConfirmModal';
 import { pickVaultFolder } from './FolderPicker';
 import { getVaultMarkdownFiles } from '../utils/vault';
 import { displayFolderSourceValue, serializeFolderSourceValue } from '../services/FieldTemplateService';
+import { tr } from '../i18n';
 
 /** Composite-key separator used to namespace fields inside custom sections. */
 export const CUSTOM_SECTION_KEY_SEP = ' :: ';
@@ -310,14 +311,14 @@ export function renderAddCustomSectionButton<T extends { custom?: Record<string,
     const addSectionRow = container.createDiv('codex-add-custom-section-row');
     const addSectionBtn = addSectionRow.createEl('button', {
         cls: 'codex-add-custom-section-btn',
-        text: '+ add custom section',
+        text: tr('custom.addSection'),
     });
     addSectionBtn.addEventListener('click', () => {
         const modal = new AddCustomSectionModal(app, '', (title) => {
             const trimmed = title.trim();
             if (!trimmed) return;
             if (sections.some(s => s.title === trimmed)) {
-                new Notice(`A section called "${trimmed}" already exists.`);
+                new Notice(tr('custom.sectionExists', { name: trimmed }));
                 return;
             }
             // New sections land at the end (legacy default).
@@ -436,7 +437,7 @@ function renderOneSection<T extends { custom?: Record<string, CustomFieldValue> 
                 const trimmed = newTitle.trim();
                 if (!trimmed || trimmed === sec.title) return;
                 if (sections.some(s => s !== sec && s.title === trimmed)) {
-                    new Notice(`A section called "${trimmed}" already exists.`);
+                    new Notice(tr('custom.sectionExists', { name: trimmed }));
                     return;
                 }
                 // Migrate composite keys in draft.custom from old → new title.
@@ -600,7 +601,8 @@ function renderOneSection<T extends { custom?: Record<string, CustomFieldValue> 
                         suggestList.empty();
                         suggestList.removeClass('is-hidden');
                         for (const m of matches) {
-                            const item = suggestList.createDiv('codex-custom-multi-suggest-item', { text: m });
+                            const item = suggestList.createDiv('codex-custom-multi-suggest-item');
+                            item.setText(m);
                             item.addEventListener('click', (ev) => {
                                 ev.stopPropagation();
                                 if (!values.includes(m)) {
@@ -648,7 +650,7 @@ function renderOneSection<T extends { custom?: Record<string, CustomFieldValue> 
                             const v = inp.value.trim();
                             if (!v) return;
                             if (allowed.length > 0 && !allowed.includes(v)) {
-                                new Notice(`"${v}" is not one of the allowed options.`);
+                                new Notice(tr('custom.invalidOption', { value: v }));
                                 return;
                             }
                             if (!values.includes(v)) {
@@ -742,7 +744,7 @@ function renderOneSection<T extends { custom?: Record<string, CustomFieldValue> 
                     if (!trimmedName) return;
                     // Detect rename
                     if (trimmedName !== fname && sec.fields.some(f => fieldName(f) === trimmedName)) {
-                        new Notice(`Field "${trimmedName}" already exists in this section.`);
+                        new Notice(tr('custom.fieldExists', { name: trimmedName }));
                         return;
                     }
                     // Migrate composite key if renamed
@@ -819,7 +821,7 @@ function renderOneSection<T extends { custom?: Record<string, CustomFieldValue> 
                         .setIcon('layout-grid')
                         .onClick(() => {
                             if (target.fields.some(f => fieldName(f) === fname)) {
-                                new Notice(`Field "${fname}" already exists in section "${target.title}".`);
+                                new Notice(tr('custom.fieldExistsSection', { name: fname, section: target.title }));
                                 return;
                             }
                             const [moved] = sec.fields.splice(fIdx, 1);
@@ -862,7 +864,7 @@ function renderOneSection<T extends { custom?: Record<string, CustomFieldValue> 
         const addRow = body.createDiv('codex-add-custom-field-row');
         const addFieldBtn = addRow.createEl('button', {
             cls: 'codex-add-custom-btn',
-            text: '+ add field to this section',
+            text: tr('custom.addField'),
         });
         addFieldBtn.addEventListener('click', () => {
             const modal = new AddSectionFieldModal(app, (result) => {
@@ -870,7 +872,7 @@ function renderOneSection<T extends { custom?: Record<string, CustomFieldValue> 
                 const trimmed = result.name.trim();
                 if (!trimmed) return;
                 if (sec.fields.some(f => fieldName(f) === trimmed)) {
-                    new Notice(`Field "${trimmed}" already exists in this section.`);
+                    new Notice(tr('custom.fieldExists', { name: trimmed }));
                     return;
                 }
                 sec.fields.push({
@@ -907,13 +909,13 @@ export class AddCustomSectionModal extends Modal {
     }
 
     onOpen(): void {
-        this.titleEl.setText(this.initialTitle ? 'Rename Section' : 'Add Custom Section');
+        this.titleEl.setText(this.initialTitle ? tr('custom.renameSection') : tr('custom.addSectionTitle'));
         let title = this.initialTitle;
         let nameInput: HTMLInputElement | null = null;
         new Setting(this.contentEl)
-            .setName('Section title')
+            .setName(tr('custom.sectionTitle'))
             .addText(text => {
-                text.setPlaceholder('E.g. Misbelief, voice, wardrobe???');
+                text.setPlaceholder(tr('custom.sectionTitlePlaceholder'));
                 text.setValue(this.initialTitle);
                 text.onChange(v => { title = v; });
                 nameInput = text.inputEl;
@@ -932,7 +934,7 @@ export class AddCustomSectionModal extends Modal {
 
         new Setting(this.contentEl)
             .addButton(btn => btn
-                .setButtonText(this.initialTitle ? 'Save' : 'Add')
+                .setButtonText(this.initialTitle ? tr('common.save') : tr('common.add'))
                 .setCta()
                 .onClick(() => {
                     const v = (nameInput?.value || title).trim();
@@ -969,7 +971,7 @@ export class AddSectionFieldModal extends Modal {
 
     onOpen(): void {
         const isEdit = !!this.existing;
-        this.titleEl.setText(isEdit ? 'Edit Field' : 'Add Field to Section');
+        this.titleEl.setText(isEdit ? tr('custom.editField') : tr('custom.addFieldTitle'));
 
         let name = this.existing?.name ?? '';
         let type: CustomFieldType = this.existing?.type ?? 'text';
@@ -982,9 +984,9 @@ export class AddSectionFieldModal extends Modal {
         let folderSourceInput: HTMLInputElement | null = null;
 
         new Setting(this.contentEl)
-            .setName('Field name')
+            .setName(tr('custom.fieldName'))
             .addText(text => {
-                text.setPlaceholder('E.g. The lie, the truth???');
+                text.setPlaceholder(tr('custom.fieldNamePlaceholder'));
                 text.setValue(name);
                 text.onChange(v => { name = v; });
                 nameInput = text.inputEl;
@@ -1001,15 +1003,15 @@ export class AddSectionFieldModal extends Modal {
             });
 
         new Setting(this.contentEl)
-            .setName('Type')
-            .setDesc('Pick the input type for this field.')
+            .setName(tr('common.type'))
+            .setDesc(tr('custom.typeDesc'))
             .addDropdown(dd => {
-                dd.addOption('text', 'Text');
-                dd.addOption('textarea', 'Text block');
-                dd.addOption('dropdown', 'Dropdown');
-                dd.addOption('multi-select', 'Multi-select (tags)');
-                dd.addOption('checkbox', 'Checkbox (yes/no)');
-                dd.addOption('number', 'Number');
+                dd.addOption('text', tr('common.typeText'));
+                dd.addOption('textarea', tr('common.typeTextBlock'));
+                dd.addOption('dropdown', tr('common.typeDropdown'));
+                dd.addOption('multi-select', tr('common.typeMultiSelect'));
+                dd.addOption('checkbox', tr('common.typeCheckbox'));
+                dd.addOption('number', tr('common.typeNumber'));
                 dd.setValue(type);
                 dd.onChange(v => {
                     type = v as CustomFieldType;
@@ -1018,10 +1020,10 @@ export class AddSectionFieldModal extends Modal {
             });
 
         new Setting(this.contentEl)
-            .setName('Placeholder')
-            .setDesc('Hint text shown in empty inputs (optional).')
+            .setName(tr('common.placeholder'))
+            .setDesc(tr('custom.placeholderDesc'))
             .addText(t => {
-                t.setPlaceholder('E.g. ???what does this character lie to themselves about????');
+                t.setPlaceholder(tr('custom.placeholderPlaceholder'));
                 t.setValue(placeholder);
                 t.onChange(v => { placeholder = v; });
             });
@@ -1034,19 +1036,19 @@ export class AddSectionFieldModal extends Modal {
                 return;
             }
             new Setting(optionsContainer)
-                .setName('Options')
-                .setDesc('Comma-separated list of choices.')
+                .setName(tr('common.options'))
+                .setDesc(tr('custom.optionsDesc'))
                 .addTextArea(ta => {
-                    ta.setPlaceholder('Option 1, option 2, option 3');
+                    ta.setPlaceholder(tr('custom.optionsPlaceholder'));
                     ta.setValue(optionsCsv);
                     ta.onChange(v => { optionsCsv = v; });
                     ta.inputEl.rows = 2;
                 });
             new Setting(optionsContainer)
-                .setName('Selectable notes folder (optional)')
-                .setDesc('Vault folder whose Markdown notes become selectable entries.')
+                .setName(tr('common.selectableNotesFolder'))
+                .setDesc(tr('custom.folderDesc'))
                 .addText(text => {
-                    text.setPlaceholder('E.g. World/traits');
+                    text.setPlaceholder(tr('custom.folderPlaceholder'));
                     text.setValue(folderSource);
                     text.onChange(v => {
                         folderSource = v.trim();
@@ -1056,7 +1058,7 @@ export class AddSectionFieldModal extends Modal {
                 })
                 .addButton(button => button
                     .setIcon('folder-open')
-                    .setTooltip('Browse vault folders')
+                    .setTooltip(tr('common.browseFolders'))
                     .onClick(() => {
                         pickVaultFolder(this.app, path => {
                             folderSource = path;
@@ -1069,8 +1071,8 @@ export class AddSectionFieldModal extends Modal {
         refreshOptionsRow();
 
         const linkTargetSetting = new Setting(this.contentEl)
-            .setName('Link selected notes')
-            .setDesc('Save each selected note as an Obsidian wikilink. The folder only supplies the choices; the link points to the note.')
+            .setName(tr('common.linkSelectedNotes'))
+            .setDesc(tr('custom.linkDesc'))
             .addToggle(toggle => {
                 toggle.setValue(linkTarget);
                 toggle.onChange(value => { linkTarget = value; });
@@ -1084,7 +1086,7 @@ export class AddSectionFieldModal extends Modal {
 
         new Setting(this.contentEl)
             .addButton(btn => btn
-                .setButtonText(isEdit ? 'Save' : 'Add')
+                .setButtonText(isEdit ? tr('common.save') : tr('common.add'))
                 .setCta()
                 .onClick(() => this.submit()));
 
@@ -1107,7 +1109,7 @@ export class AddSectionFieldModal extends Modal {
         this.submit = () => {
             const result = buildResult();
             if (!result) {
-                new Notice('Please enter a field name.');
+                new Notice(tr('custom.fieldNameRequired'));
                 return;
             }
             this.close();

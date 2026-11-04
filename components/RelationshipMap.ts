@@ -8,6 +8,7 @@
 
 import type { Character } from '../models/Character';
 import { RELATION_BASE_TYPE_BY_CATEGORY, getRoleDisplay } from '../models/Character';
+import { tr } from '../i18n';
 
 export type RelationshipType = 'ally' | 'enemy' | 'romantic' | 'family' | 'mentor' | 'other';
 
@@ -109,7 +110,7 @@ export class RelationshipMap {
 
         if (this.nodes.length === 0) {
             const empty = this.container.createDiv('relationship-map-empty');
-            empty.createEl('p', { text: 'No relationships to display. Add allies, enemies, or romantic history to your characters.' });
+            empty.createEl('p', { text: tr('common.noRelationships') });
             return;
         }
 

@@ -10,6 +10,7 @@ import { App, Notice, TFile } from 'obsidian';
 import { Scene, resolveStatusCfg } from '../models/Scene';
 import { getRoleDisplay, relationDisplayLabel } from '../models/Character';
 import { StoryLocation } from '../models/Location';
+import { tr } from '../i18n';
 
 export type ExportFormat = 'md' | 'json' | 'html' | 'csv' | 'docx' | 'pdf';
 export type ExportScope = 'manuscript' | 'outline';
@@ -108,13 +109,13 @@ export class ExportService {
     async export(format: ExportFormat, scope: ExportScope): Promise<string | void> {
         const project = this.sceneManager.activeProject;
         if (!project) {
-            new Notice('No active project');
+            new Notice(tr('export.noActiveProject'));
             return;
         }
 
         const scenes = this.getSortedScenes();
         if (scenes.length === 0) {
-            new Notice('No scenes to export');
+            new Notice(tr('export.noScenes'));
             return;
         }
 
@@ -206,7 +207,7 @@ export class ExportService {
 
         const filename = `${project.title} - ${this.getExportLabel(scope)} (${this.timestamp()}).md`;
         const filePath = await this.writeExportFile(project, filename, lines.join('\n'));
-        new Notice(`Exported to ${filename}`);
+        new Notice(tr('export.exportedTo', { path: filename }));
         return filePath;
     }
 
@@ -502,7 +503,7 @@ export class ExportService {
 
         const filename = `${project.title} - ${this.getExportLabel(scope)} (${this.timestamp()}).json`;
         const filePath = await this.writeExportFile(project, filename, JSON.stringify(data, null, 2));
-        new Notice(`Exported to ${filename}`);
+        new Notice(tr('export.exportedTo', { path: filename }));
         return filePath;
     }
 
@@ -526,7 +527,7 @@ export class ExportService {
         const printWindow = window.open(blobUrl, '_blank');
         if (!printWindow) {
             URL.revokeObjectURL(blobUrl);
-            new Notice(`Saved as ${filename} — open it in a browser to print as PDF`);
+            new Notice(tr('export.savedBrowserPdf', { path: filename }));
             return filePath;
         }
 
@@ -538,7 +539,7 @@ export class ExportService {
             }
         }, 800);
 
-        new Notice(`Exported to ${filename}`);
+        new Notice(tr('export.exportedTo', { path: filename }));
         return filePath;
     }
 
@@ -785,7 +786,7 @@ ${body}
         // sep=, hint for Excel locale delimiter detection
         const csvWithBom = 'sep=,\r\n' + csv;
         const filePath = await this.writeCsvExportFile(project, filename, csvWithBom);
-        new Notice(`CSV exported → ${filePath}`);
+        new Notice(tr('export.csvExported', { path: filePath }));
         return filePath;
     }
 
@@ -1061,7 +1062,7 @@ ${body}
             }
         };
 
-        new Notice('Exporting to word...');
+        new Notice(tr('export.exportingWord'));
 
         const blob = await converter.convert(
             markdown,
@@ -1084,7 +1085,7 @@ ${body}
         const filePath = `${exportFolder}/${filename}`;
         await this.app.vault.adapter.writeBinary(filePath, arrayBuffer);
 
-        new Notice(`Exported to ${filename}`, 5000);
+        new Notice(tr('export.exportedTo', { path: filename }), 5000);
         return filePath;
     }
 
@@ -1211,7 +1212,7 @@ ${body}
             headerFontSize: 24,
         };
 
-        new Notice('Exporting to PDF...');
+        new Notice(tr('export.exportingPdf'));
 
         // Uses Electron's <webview>.printToPDF() — Chrome's rendering engine
         // handles all Unicode/fonts natively. Only available on desktop.
@@ -1219,7 +1220,7 @@ ${body}
         const pdfBytes = await this.tryElectronPrintToPdf(html, settings);
 
         if (!pdfBytes) {
-            new Notice('PDF export requires the Obsidian desktop app.', 6000);
+            new Notice(tr('export.desktopPdfRequired'), 6000);
             return '';
         }
 
@@ -1236,7 +1237,7 @@ ${body}
         const filePath = `${exportFolder}/${filename}`;
         await this.app.vault.adapter.writeBinary(filePath, pdfBytes);
 
-        new Notice(`Exported to ${filename}`, 5000);
+        new Notice(tr('export.exportedTo', { path: filename }), 5000);
         return filePath;
     }
 
@@ -1254,7 +1255,7 @@ ${body}
             try {
                 // `<webview>` is an Electron-only tag. Use createEl on body
                 // (supports arbitrary tag names) rather than createElement.
-                const webview = activeDocument.body.createEl('webview') as unknown as {
+                const webview = activeDocument.createElement('webview' as keyof HTMLElementTagNameMap) as unknown as {
                     setCssStyles: (s: Record<string, string>) => void;
                     setAttribute: (k: string, v: string) => void;
                     addEventListener: (ev: string, cb: (...args: unknown[]) => void) => void;

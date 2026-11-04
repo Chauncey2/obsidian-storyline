@@ -1,10 +1,12 @@
 /* eslint-disable @typescript-eslint/no-misused-promises, @typescript-eslint/no-unnecessary-type-assertion -- Obsidian's API surface and several untyped third-party libraries force dynamic dispatch; floating promises are intentional in DOM/event handlers; matching enable at end of file */
-import { Scene, SceneStatus, SceneTemplate, BUILTIN_SCENE_TEMPLATES, getStatusOrder, getStatusConfig } from '../models/Scene';
+import { Scene, SceneStatus, SceneTemplate, getStatusOrder, getStatusConfig } from '../models/Scene';
 import { SceneManager } from '../services/SceneManager';
 import type SceneCardsPlugin from '../main';
 import { renderAutocompleteInput, renderTagPillInput } from './InlineSuggest';
 import { isPureNumericActChapter, nextNumericActChapter, getActDisplayLabel } from '../utils/actChapter';
 import { App, Modal, Notice, Setting } from 'obsidian';
+import { getBuiltinSceneTemplates } from '../i18n/content';
+import { getContentLocale, legacyUi } from '../i18n';
 
 /**
  * Modal for quickly creating new scenes
@@ -39,15 +41,16 @@ export class QuickAddModal extends Modal {
         const { contentEl } = this;
         contentEl.addClass('story-line-quick-add');
 
-        contentEl.createEl('h2', { text: 'Create new scene' });
+        contentEl.createEl('h2', { text: legacyUi('Create new scene', 'Create new scene') });
 
         // Template selector
-        const allTemplates = [...BUILTIN_SCENE_TEMPLATES, ...this.plugin.settings.sceneTemplates];
+        const contentLocale = getContentLocale(this.sceneManager.getEffectiveLocale());
+        const allTemplates = [...getBuiltinSceneTemplates(contentLocale), ...this.plugin.settings.sceneTemplates];
         new Setting(contentEl)
-            .setName('Template')
-            .setDesc('Pre-fill fields and body from a template')
+            .setName(legacyUi('Template', 'Template'))
+            .setDesc(legacyUi('Pre-fill fields and body from a template', 'Pre-fill fields and body from a template'))
             .addDropdown(dd => {
-                dd.addOption('', '(none)');
+                dd.addOption('', legacyUi('(none)', '(none)'));
                 allTemplates.forEach((tpl, idx) => dd.addOption(String(idx), tpl.name));
                 dd.onChange(value => {
                     if (value === '') {
@@ -60,9 +63,9 @@ export class QuickAddModal extends Modal {
 
         // Title
         new Setting(contentEl)
-            .setName('Title')
+            .setName(legacyUi('Title', 'Title'))
             .addText(text => {
-                text.setPlaceholder('Scene title...')
+                text.setPlaceholder(legacyUi('Scene title...', 'Scene title...'))
                     .onChange(value => this.result.title = value);
                 text.inputEl.addClass('story-line-title-input');
                 // Auto-focus
@@ -73,9 +76,9 @@ export class QuickAddModal extends Modal {
         const actChapterRow = contentEl.createDiv({ cls: 'story-line-act-chapter-row' });
 
         const actGroup = actChapterRow.createDiv({ cls: 'story-line-field-group' });
-        actGroup.createEl('label', { text: 'Act', cls: 'story-line-field-label' });
+        actGroup.createEl('label', { text: legacyUi('Act', 'Act'), cls: 'story-line-field-label' });
         const actSelect = actGroup.createEl('select', { cls: 'dropdown story-line-field-input' });
-        actSelect.createEl('option', { text: 'None', value: '' });
+        actSelect.createEl('option', { text: legacyUi('None', 'None'), value: '' });
         // Dynamic act count: offer at least 5, or up to max existing numeric act + 2.
         // Non-numeric acts (e.g. "1.1", "Prologue") are skipped so they don't
         // collapse the count via NaN poisoning. To assign a custom string-named
@@ -85,12 +88,12 @@ export class QuickAddModal extends Modal {
         ) - 1;
         const actCount = Math.max(5, maxExistingAct + 2);
         // Add Prologue option at the top
-        actSelect.createEl('option', { text: 'Prologue', value: '0' });
+        actSelect.createEl('option', { text: legacyUi('Prologue', 'Prologue'), value: '0' });
         for (let i = 1; i <= actCount; i++) {
             actSelect.createEl('option', { text: getActDisplayLabel(i), value: String(i) });
         }
         // Add Epilogue option at the bottom
-        actSelect.createEl('option', { text: 'Epilogue', value: '99' });
+        actSelect.createEl('option', { text: legacyUi('Epilogue', 'Epilogue'), value: '99' });
         if (this.result.act != null) {
             // If the prefilled act isn't in the dropdown (e.g. a string act),
             // append it as a one-off option so the user sees it preserved.
@@ -107,7 +110,7 @@ export class QuickAddModal extends Modal {
         });
 
         const chapterGroup = actChapterRow.createDiv({ cls: 'story-line-field-group' });
-        chapterGroup.createEl('label', { text: 'Chapter', cls: 'story-line-field-label' });
+        chapterGroup.createEl('label', { text: legacyUi('Chapter', 'Chapter'), cls: 'story-line-field-label' });
 
         // Build list of existing chapters from scenes
         const allScenes = this.sceneManager.getAllScenes();
@@ -121,7 +124,7 @@ export class QuickAddModal extends Modal {
         const chapterSelect = chapterGroup.createEl('select', {
             cls: 'dropdown story-line-field-input',
         });
-        chapterSelect.createEl('option', { text: 'None', value: '' });
+        chapterSelect.createEl('option', { text: legacyUi('None', 'None'), value: '' });
         for (const ch of existingChapters) {
             const label = this.sceneManager.getChapterLabel(ch);
             const scenesInCh = allScenes.filter(s => Number(s.chapter) === ch).length;
@@ -130,7 +133,7 @@ export class QuickAddModal extends Modal {
                 : `Chapter ${ch} (${scenesInCh} scene${scenesInCh !== 1 ? 's' : ''})`;
             chapterSelect.createEl('option', { text: display, value: String(ch) });
         }
-        chapterSelect.createEl('option', { text: `+ New chapter (${nextChapter})`, value: String(nextChapter) });
+        chapterSelect.createEl('option', { text: legacyUi(`+ New chapter (${nextChapter})`, `+ New chapter (${nextChapter})`), value: String(nextChapter) });
 
         if (this.result.chapter != null) {
             chapterSelect.value = String(this.result.chapter);
@@ -146,7 +149,7 @@ export class QuickAddModal extends Modal {
         });
 
         // POV (autocomplete input)
-        const povSetting = new Setting(contentEl).setName('Pov character');
+        const povSetting = new Setting(contentEl).setName(legacyUi('Pov character', 'Pov character'));
         const povContainer = povSetting.controlEl.createDiv('sl-quickadd-autocomplete');
         renderAutocompleteInput({
             container: povContainer,
@@ -164,23 +167,23 @@ export class QuickAddModal extends Modal {
                 return Array.from(names.values()).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
             },
             onChange: (value) => { this.result.pov = value || undefined; },
-            placeholder: 'Search characters…',
+            placeholder: legacyUi('Search characters…', 'Search characters…'),
         });
 
         // Location (autocomplete input)
-        const locSetting = new Setting(contentEl).setName('Location');
+        const locSetting = new Setting(contentEl).setName(legacyUi('Location', 'Location'));
         const locContainer = locSetting.controlEl.createDiv('sl-quickadd-autocomplete');
         renderAutocompleteInput({
             container: locContainer,
             value: '',
             getSuggestions: () => this.getLocationNames(),
             onChange: (value) => { this.result.location = value || undefined; },
-            placeholder: 'Search locations…',
+            placeholder: legacyUi('Search locations…', 'Search locations…'),
             getDisplayLabel: this.getLocationDisplayLabel(),
         });
 
         // Characters (tag-pill autocomplete)
-        const charSetting = new Setting(contentEl).setName('Characters');
+        const charSetting = new Setting(contentEl).setName(legacyUi('Characters', 'Characters'));
         const charContainer = charSetting.controlEl.createDiv('sl-quickadd-tagpill');
         renderTagPillInput({
             container: charContainer,
@@ -198,14 +201,14 @@ export class QuickAddModal extends Modal {
                 return Array.from(names.values()).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
             },
             onChange: (values) => { this.result.characters = values.length > 0 ? values : undefined; },
-            placeholder: 'Add character…',
+            placeholder: legacyUi('Add character…', 'Add character…'),
         });
 
         // Scene Draft (becomes body text)
         new Setting(contentEl)
-            .setName('Scene draft')
+            .setName(legacyUi('Scene draft', 'Scene draft'))
             .addTextArea(area => {
-                area.setPlaceholder('Write your scene draft here…')
+                area.setPlaceholder(legacyUi('Write your scene draft here…', 'Write your scene draft here…'))
                     .onChange(value => this.result.description = value || undefined);
                 area.inputEl.rows = 3;
                 area.inputEl.addClass('story-line-wide-input');
@@ -218,12 +221,12 @@ export class QuickAddModal extends Modal {
         const conflictHeader = conflictWrapper.createDiv('story-line-conflict-header');
         const conflictToggle = conflictHeader.createEl('label', { cls: 'story-line-conflict-toggle' });
         const checkbox = conflictToggle.createEl('input', { attr: { type: 'checkbox' } });
-        conflictToggle.createSpan({ text: 'Same as description' });
+        conflictToggle.createSpan({ text: legacyUi('Same as description', 'Same as description') });
 
         const conflictSetting = new Setting(conflictWrapper)
-            .setName('Conflict')
+            .setName(legacyUi('Conflict', 'Conflict'))
             .addTextArea(area => {
-                area.setPlaceholder('What is the main conflict?')
+                area.setPlaceholder(legacyUi('What is the main conflict?', 'What is the main conflict?'))
                     .onChange(value => this.result.conflict = value || undefined);
                 area.inputEl.rows = 2;
                 area.inputEl.addClass('story-line-wide-input');
@@ -235,19 +238,19 @@ export class QuickAddModal extends Modal {
         });
 
         // Tags / Plotlines (autocomplete tag-pill input)
-        const tagSetting = new Setting(contentEl).setName('Tags / plotlines');
+        const tagSetting = new Setting(contentEl).setName(legacyUi('Tags / plotlines', 'Tags / plotlines'));
         const tagContainer = tagSetting.controlEl.createDiv('sl-quickadd-tagpill');
         renderTagPillInput({
             container: tagContainer,
             values: this.result.tags || [],
             getSuggestions: () => this.sceneManager.queryService.getAllTags().sort(),
             onChange: (values) => { this.result.tags = values.length > 0 ? values : undefined; },
-            placeholder: 'Add plotline…',
+            placeholder: legacyUi('Add plotline…', 'Add plotline…'),
         });
 
         // Status
         new Setting(contentEl)
-            .setName('Status')
+            .setName(legacyUi('Status', 'Status'))
             .addDropdown(dropdown => {
                 const statuses = getStatusOrder();
                 const cfg = getStatusConfig();
@@ -259,16 +262,16 @@ export class QuickAddModal extends Modal {
         // Buttons
         const buttonRow = contentEl.createDiv('story-line-button-row');
 
-        const cancelBtn = buttonRow.createEl('button', { text: 'Cancel' });
+        const cancelBtn = buttonRow.createEl('button', { text: legacyUi('Cancel', 'Cancel') });
         cancelBtn.addEventListener('click', () => this.close());
 
         const createEditBtn = buttonRow.createEl('button', {
-            text: 'Create & edit',
+            text: legacyUi('Create & edit', 'Create & edit'),
             cls: 'mod-cta'
         });
         createEditBtn.addEventListener('click', () => {
             if (!this.result.title) {
-                new Notice('Please enter a scene title');
+                new Notice(legacyUi('Please enter a scene title', 'Please enter a scene title'));
                 return;
             }
             this.prepareResult();
@@ -276,10 +279,10 @@ export class QuickAddModal extends Modal {
             this.close();
         });
 
-        const createBtn = buttonRow.createEl('button', { text: 'Create' });
+        const createBtn = buttonRow.createEl('button', { text: legacyUi('Create', 'Create') });
         createBtn.addEventListener('click', () => {
             if (!this.result.title) {
-                new Notice('Please enter a scene title');
+                new Notice(legacyUi('Please enter a scene title', 'Please enter a scene title'));
                 return;
             }
             this.prepareResult();

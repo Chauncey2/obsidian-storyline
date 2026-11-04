@@ -12,6 +12,8 @@ import { enableDragToPan } from '../components/DragToPan';
 import { resolveTagColor, getPlotlineHSL, contrastTextColor } from '../settings';
 import { attachTooltip } from '../components/Tooltip';
 import { compareScenesByActChapter, getActDisplayLabel } from '../utils/actChapter';
+import { displayGroupKey } from '../utils/groupLabels';
+import { legacyUi } from '../i18n';
 
 type SortMode = 'alpha' | 'scenes-desc' | 'scenes-asc' | 'reading-order';
 type PlotlineViewMode = 'list' | 'subway';
@@ -105,7 +107,7 @@ export class StorylineView extends ItemView {
         // Toolbar
         const toolbar = container.createDiv('story-line-toolbar');
         const titleRow = toolbar.createDiv('story-line-title-row');
-        titleRow.createEl('h3', { cls: 'story-line-view-title', text: 'StoryLine' });
+        titleRow.createEl('h3', { cls: 'story-line-view-title', text: legacyUi('StoryLine', 'StoryLine') });
         // project name shown in top-center only; no inline project selector here
 
         // View switcher tabs
@@ -124,19 +126,19 @@ export class StorylineView extends ItemView {
         sortBtn.addEventListener('click', (e) => {
             const menu = new Menu();
             menu.addItem((item: MenuItem) => {
-                item.setTitle(`${this.sortMode === 'alpha' ? '✓ ' : ''}Alphabetical`)
+                item.setTitle(legacyUi(`${this.sortMode === 'alpha' ? '✓ ' : ''}Alphabetical`, `${this.sortMode === 'alpha' ? '✓ ' : ''}Alphabetical`))
                     .onClick(() => { this.setSortMode('alpha'); });
             });
             menu.addItem((item: MenuItem) => {
-                item.setTitle(`${this.sortMode === 'scenes-desc' ? '✓ ' : ''}Most scenes first`)
+                item.setTitle(legacyUi(`${this.sortMode === 'scenes-desc' ? '✓ ' : ''}Most scenes first`, `${this.sortMode === 'scenes-desc' ? '✓ ' : ''}Most scenes first`))
                     .onClick(() => { this.setSortMode('scenes-desc'); });
             });
             menu.addItem((item: MenuItem) => {
-                item.setTitle(`${this.sortMode === 'scenes-asc' ? '✓ ' : ''}Fewest scenes first`)
+                item.setTitle(legacyUi(`${this.sortMode === 'scenes-asc' ? '✓ ' : ''}Fewest scenes first`, `${this.sortMode === 'scenes-asc' ? '✓ ' : ''}Fewest scenes first`))
                     .onClick(() => { this.setSortMode('scenes-asc'); });
             });
             menu.addItem((item: MenuItem) => {
-                item.setTitle(`${this.sortMode === 'reading-order' ? '✓ ' : ''}Reading order (chapter #)`)
+                item.setTitle(legacyUi(`${this.sortMode === 'reading-order' ? '✓ ' : ''}Reading order (chapter #)`, `${this.sortMode === 'reading-order' ? '✓ ' : ''}Reading order (chapter #)`))
                     .onClick(() => { this.setSortMode('reading-order'); });
             });
             menu.showAtPosition({ x: e.clientX, y: e.clientY });
@@ -167,7 +169,7 @@ export class StorylineView extends ItemView {
         // New plotline button
         const addPlotlineBtn = controls.createEl('button', {
             cls: 'mod-cta story-line-add-btn',
-            text: '+ new plotline'
+            text: legacyUi('+ new plotline', '+ new plotline')
         });
         addPlotlineBtn.addEventListener('click', () => this.openNewPlotlineModal());
 
@@ -186,7 +188,7 @@ export class StorylineView extends ItemView {
                 const menu = new Menu();
                 // Show All / Hide All
                 menu.addItem((item: MenuItem) => {
-                    item.setTitle('Show all')
+                    item.setTitle(legacyUi('Show all', 'Show all'))
                         .setIcon('eye')
                         .onClick(() => {
                             this.hiddenPlotlines.clear();
@@ -197,7 +199,7 @@ export class StorylineView extends ItemView {
                 for (const tag of allTags) {
                     const isHidden = this.hiddenPlotlines.has(tag);
                     menu.addItem((item: MenuItem) => {
-                        item.setTitle(`${isHidden ? '   ' : '✓ '}${this.formatPlotlineName(tag)}`)
+                        item.setTitle(legacyUi(`${isHidden ? '   ' : '✓ '}${this.formatPlotlineName(tag)}`, `${isHidden ? '   ' : '✓ '}${this.formatPlotlineName(tag)}`))
                             .onClick(() => {
                                 if (isHidden) {
                                     this.hiddenPlotlines.delete(tag);
@@ -274,7 +276,7 @@ export class StorylineView extends ItemView {
         if (plotlines.size === 0 && scenes.length === 0) {
             content.createDiv({
                 cls: 'story-line-empty',
-                text: 'No scenes found. Create scenes first, then create plotlines to organize them.'
+                text: legacyUi('No scenes found. Create scenes first, then create plotlines to organize them.', 'No scenes found. Create scenes first, then create plotlines to organize them.')
             });
             return;
         }
@@ -320,16 +322,16 @@ export class StorylineView extends ItemView {
         if (plotlineKeys.length > 0) {
             const helpText = content.createDiv('storyline-help');
             const helpSpan = helpText.createSpan({ cls: 'storyline-help-text' });
-            helpSpan.appendText('A plotline groups scenes that share a story thread — e.g. "main mystery" or "love story". Hover a plotline header for ');
+            helpSpan.appendText(legacyUi('A plotline groups scenes that share a story thread — e.g. "main mystery" or "love story". Hover a plotline header for ', 'A plotline groups scenes that share a story thread — e.g. "main mystery" or "love story". Hover a plotline header for '));
             const penIcon = helpSpan.createSpan({ cls: 'storyline-help-icon' });
             obsidian.setIcon(penIcon, 'pencil');
-            helpSpan.appendText(' rename, ');
+            helpSpan.appendText(legacyUi(' rename, ', ' rename, '));
             const plusIcon = helpSpan.createSpan({ cls: 'storyline-help-icon' });
             obsidian.setIcon(plusIcon, 'plus');
-            helpSpan.appendText(' add scenes, or ');
+            helpSpan.appendText(legacyUi(' add scenes, or ', ' add scenes, or '));
             const trashIcon = helpSpan.createSpan({ cls: 'storyline-help-icon' });
             obsidian.setIcon(trashIcon, 'trash-2');
-            helpSpan.appendText(' delete. Click any scene to assign/remove it from plotlines.');
+            helpSpan.appendText(legacyUi(' delete. Click any scene to assign/remove it from plotlines.', ' delete. Click any scene to assign/remove it from plotlines.'));
         }
 
         // Render each plotline
@@ -345,11 +347,11 @@ export class StorylineView extends ItemView {
             const header = unassignedSection.createDiv('storyline-header storyline-unassigned-header');
             header.createSpan({
                 cls: 'storyline-unassigned-label',
-                text: `Unassigned (${unassigned.length} scenes)`
+                text: legacyUi(`${displayGroupKey('Unassigned')} (${unassigned.length} scenes)`, `${displayGroupKey('Unassigned')} (${unassigned.length} scenes)`)
             });
             header.createSpan({
                 cls: 'storyline-unassigned-hint',
-                text: '— click a scene to assign it to a plotline'
+                text: legacyUi('— click a scene to assign it to a plotline', '— click a scene to assign it to a plotline')
             });
 
             const nodeRow = unassignedSection.createDiv('storyline-nodes');
@@ -361,19 +363,19 @@ export class StorylineView extends ItemView {
         // If no plotlines exist but scenes do, show getting-started hint
         if (plotlineKeys.length === 0 && scenes.length > 0) {
             const hint = content.createDiv('storyline-getting-started');
-            hint.createEl('h4', { text: 'What are plotlines?' });
+            hint.createEl('h4', { text: legacyUi('What are plotlines?', 'What are plotlines?') });
             hint.createEl('p', {
-                text: 'A plotline is a story thread that runs through your scenes. '
+                text: legacyUi('A plotline is a story thread that runs through your scenes. ', 'A plotline is a story thread that runs through your scenes. ')
                     + 'For example: "main mystery", "love story", "character arc — Flora".'
             });
-            hint.createEl('h4', { text: 'How to get started' });
+            hint.createEl('h4', { text: legacyUi('How to get started', 'How to get started') });
             const steps = hint.createEl('ol');
-            steps.createEl('li', { text: 'Click "+ new plotline" above' });
-            steps.createEl('li', { text: 'Give it a name (e.g. "main mystery")' });
-            steps.createEl('li', { text: 'Select which scenes belong to it' });
+            steps.createEl('li', { text: legacyUi('Click "+ new plotline" above', 'Click "+ new plotline" above') });
+            steps.createEl('li', { text: legacyUi('Give it a name (e.g. "main mystery")', 'Give it a name (e.g. "main mystery")') });
+            steps.createEl('li', { text: legacyUi('Select which scenes belong to it', 'Select which scenes belong to it') });
             hint.createEl('p', {
                 cls: 'storyline-help-text',
-                text: 'You can assign a scene to multiple plotlines. '
+                text: legacyUi('You can assign a scene to multiple plotlines. ', 'You can assign a scene to multiple plotlines. ')
                     + 'This helps you see how each thread weaves through your story.'
             });
         }
@@ -786,10 +788,10 @@ export class StorylineView extends ItemView {
         if (plotlineColor) {
             header.setCssStyles({ borderLeftColor: plotlineColor });
         }
-        const toggle = header.createSpan({ cls: 'storyline-toggle', text: '▼ ' });
+        const toggle = header.createSpan({ cls: 'storyline-toggle', text: legacyUi('▼ ', '▼ ') });
         header.createSpan({
             cls: 'storyline-plotline-title',
-            text: `${this.formatPlotlineName(plotline)} (${scenes.length})`
+            text: legacyUi(`${this.formatPlotlineName(plotline)} (${scenes.length})`, `${this.formatPlotlineName(plotline)} (${scenes.length})`)
         });
 
         // Header action buttons (right side)
@@ -798,7 +800,7 @@ export class StorylineView extends ItemView {
         // Color picker button
         const colorBtn = actions.createEl('button', {
             cls: 'clickable-icon storyline-action-btn',
-            attr: { 'aria-label': 'Change plotline color', title: 'Change color' }
+            attr: { 'aria-label': 'Change plotline color', title: legacyUi('Change color', 'Change color') }
         });
         const colorIcon = colorBtn.createSpan();
         obsidian.setIcon(colorIcon, 'palette');
@@ -834,7 +836,7 @@ export class StorylineView extends ItemView {
         // Rename button
         const renameBtn = actions.createEl('button', {
             cls: 'clickable-icon storyline-action-btn',
-            attr: { 'aria-label': 'Rename plotline', title: 'Rename' }
+            attr: { 'aria-label': 'Rename plotline', title: legacyUi('Rename', 'Rename') }
         });
         const renameIcon = renameBtn.createSpan();
         obsidian.setIcon(renameIcon, 'pencil');
@@ -846,7 +848,7 @@ export class StorylineView extends ItemView {
         // Description button (issue #238 feedback — annotate a plotline)
         const descBtn = actions.createEl('button', {
             cls: 'clickable-icon storyline-action-btn',
-            attr: { 'aria-label': 'Edit plotline description', title: 'Edit description' }
+            attr: { 'aria-label': 'Edit plotline description', title: legacyUi('Edit description', 'Edit description') }
         });
         const descIcon = descBtn.createSpan();
         obsidian.setIcon(descIcon, 'file-text');
@@ -858,7 +860,7 @@ export class StorylineView extends ItemView {
         // Add scenes button
         const addToPlotBtn = actions.createEl('button', {
             cls: 'clickable-icon storyline-action-btn',
-            attr: { 'aria-label': 'Add scenes to this plotline', title: 'Add scenes' }
+            attr: { 'aria-label': 'Add scenes to this plotline', title: legacyUi('Add scenes', 'Add scenes') }
         });
         const addIcon = addToPlotBtn.createSpan();
         obsidian.setIcon(addIcon, 'plus');
@@ -870,7 +872,7 @@ export class StorylineView extends ItemView {
         // Delete button
         const deleteBtn = actions.createEl('button', {
             cls: 'clickable-icon storyline-action-btn storyline-delete-btn',
-            attr: { 'aria-label': 'Delete plotline', title: 'Delete' }
+            attr: { 'aria-label': 'Delete plotline', title: legacyUi('Delete', 'Delete') }
         });
         const deleteIcon = deleteBtn.createSpan();
         obsidian.setIcon(deleteIcon, 'trash-2');
@@ -885,13 +887,13 @@ export class StorylineView extends ItemView {
             e.stopPropagation();
             const menu = new Menu();
             menu.addItem((item: MenuItem) => {
-                item.setTitle('Change color')
+                item.setTitle(legacyUi('Change color', 'Change color'))
                     .setIcon('palette')
                     .onClick(() => colorInput.click());
             });
             if (this.plugin.settings.tagColors[plotline]) {
                 menu.addItem((item: MenuItem) => {
-                    item.setTitle('Reset color')
+                    item.setTitle(legacyUi('Reset color', 'Reset color'))
                         .setIcon('rotate-ccw')
                         .onClick(async () => {
                             delete this.plugin.settings.tagColors[plotline];
@@ -901,18 +903,18 @@ export class StorylineView extends ItemView {
                 });
             }
             menu.addItem((item: MenuItem) => {
-                item.setTitle('Rename plotline')
+                item.setTitle(legacyUi('Rename plotline', 'Rename plotline'))
                     .setIcon('pencil')
                     .onClick(() => this.openRenamePlotlineModal(plotline));
             });
             menu.addItem((item: MenuItem) => {
-                item.setTitle('Add scenes')
+                item.setTitle(legacyUi('Add scenes', 'Add scenes'))
                     .setIcon('plus')
                     .onClick(() => this.openAddSceneToPlotlineModal(plotline, scenes, allScenes));
             });
             menu.addSeparator();
             menu.addItem((item: MenuItem) => {
-                item.setTitle('Delete plotline')
+                item.setTitle(legacyUi('Delete plotline', 'Delete plotline'))
                     .setIcon('trash-2')
                     .onClick(() => this.confirmDeletePlotline(plotline, scenes.length));
             });
@@ -952,7 +954,7 @@ export class StorylineView extends ItemView {
                 actScenes.forEach((scene, idx) => {
                     this.renderSceneNode(flow, scene, [plotline]);
                     if (idx < actScenes.length - 1) {
-                        flow.createSpan({ cls: 'storyline-arrow', text: '→' });
+                        flow.createSpan({ cls: 'storyline-arrow', text: legacyUi('→', '→') });
                     }
                 });
             }
@@ -962,7 +964,7 @@ export class StorylineView extends ItemView {
             scenes.forEach((scene, idx) => {
                 this.renderSceneNode(flow, scene, [plotline]);
                 if (idx < scenes.length - 1) {
-                    flow.createSpan({ cls: 'storyline-arrow', text: '→' });
+                    flow.createSpan({ cls: 'storyline-arrow', text: legacyUi('→', '→') });
                 }
             });
         }
@@ -973,7 +975,7 @@ export class StorylineView extends ItemView {
         const summary = body.createDiv('plotline-summary');
         summary.createSpan({
             cls: 'plotline-summary-text',
-            text: `${scenes.length} of ${totalScenes} scenes (${pct}%)`
+            text: legacyUi(`${scenes.length} of ${totalScenes} scenes (${pct}%)`, `${scenes.length} of ${totalScenes} scenes (${pct}%)`)
         });
         // Mini progress bar
         const bar = summary.createDiv('plotline-progress-bar');
@@ -1003,11 +1005,11 @@ export class StorylineView extends ItemView {
 
         node.createSpan({
             cls: 'storyline-node-id',
-            text: `[${act}-${seq}]`
+            text: legacyUi(`[${act}-${seq}]`, `[${act}-${seq}]`)
         });
         node.createSpan({
             cls: 'storyline-node-title',
-            text: ` ${scene.title || 'Untitled'}`
+            text: legacyUi(` ${scene.title || 'Untitled'}`, ` ${scene.title || 'Untitled'}`)
         });
 
         // Show existing tags as small badges
@@ -1050,7 +1052,7 @@ export class StorylineView extends ItemView {
             for (const tag of allTags) {
                 const hasTag = sceneTags.has(tag);
                 menu.addItem((item: MenuItem) => {
-                    item.setTitle(`${hasTag ? '✓ ' : '   '}${this.formatPlotlineName(tag)}`)
+                    item.setTitle(legacyUi(`${hasTag ? '✓ ' : '   '}${this.formatPlotlineName(tag)}`, `${hasTag ? '✓ ' : '   '}${this.formatPlotlineName(tag)}`))
                         .onClick(async () => {
                             const newTags = hasTag
                                 ? (scene.tags || []).filter((t: string) => t !== tag)
@@ -1064,7 +1066,7 @@ export class StorylineView extends ItemView {
         }
 
         menu.addItem((item: MenuItem) => {
-            item.setTitle('+ create new plotline???')
+            item.setTitle(legacyUi('+ create new plotline???', '+ create new plotline???'))
                 .setIcon('plus')
                 .onClick(() => this.openNewPlotlineForScene(scene));
         });
@@ -1077,12 +1079,12 @@ export class StorylineView extends ItemView {
 
     private openRenamePlotlineModal(plotline: string): void {
         const modal = new Modal(this.app);
-        modal.titleEl.setText('Rename plotline');
+        modal.titleEl.setText(legacyUi('Rename plotline', 'Rename plotline'));
         let newName = plotline;
 
         new Setting(modal.contentEl)
-            .setName('Plotline name')
-            .setDesc(`Current tag: "${plotline}". The tag will be updated in all scenes that use it.`)
+            .setName(legacyUi('Plotline name', 'Plotline name'))
+            .setDesc(legacyUi(`Current tag: "${plotline}". The tag will be updated in all scenes that use it.`, `Current tag: "${plotline}". The tag will be updated in all scenes that use it.`))
             .addText((text: TextComponent) => {
                 text.setValue(plotline);
                 text.onChange((v: string) => (newName = v));
@@ -1090,7 +1092,7 @@ export class StorylineView extends ItemView {
 
         new Setting(modal.contentEl)
             .addButton((btn: ButtonComponent) => {
-                btn.setButtonText('Rename').setCta().onClick(async () => {
+                btn.setButtonText(legacyUi('Rename', 'Rename')).setCta().onClick(async () => {
                     const slug = newName.trim().toLowerCase().replace(/\s+/g, '-');
                     if (!slug || slug === plotline) {
                         modal.close();
@@ -1104,7 +1106,7 @@ export class StorylineView extends ItemView {
                         delete this.plugin.settings.plotlineDescriptions[plotline];
                         await this.plugin.saveSettings();
                     }
-                    new Notice(`Renamed plotline in ${count} scene${count !== 1 ? 's' : ''}`);
+                    new Notice(legacyUi(`Renamed plotline in ${count} scene${count !== 1 ? 's' : ''}`, `Renamed plotline in ${count} scene${count !== 1 ? 's' : ''}`));
                     this.refresh();
                     modal.close();
                 });
@@ -1116,12 +1118,12 @@ export class StorylineView extends ItemView {
 
     private openPlotlineDescriptionModal(plotline: string): void {
         const modal = new Modal(this.app);
-        modal.titleEl.setText(`Plotline description — ${this.formatPlotlineName(plotline)}`);
+        modal.titleEl.setText(legacyUi(`Plotline description — ${this.formatPlotlineName(plotline)}`, `Plotline description — ${this.formatPlotlineName(plotline)}`));
         let desc = this.plugin.settings.plotlineDescriptions?.[plotline] || '';
 
         const setting = new Setting(modal.contentEl)
-            .setName('Description / notes')
-            .setDesc('A short note reminding you what this plotline is supposed to do. Shown under the plotline header in list view.');
+            .setName(legacyUi('Description / notes', 'Description / notes'))
+            .setDesc(legacyUi('A short note reminding you what this plotline is supposed to do. Shown under the plotline header in list view.', 'A short note reminding you what this plotline is supposed to do. Shown under the plotline header in list view.'));
         const ta = setting.controlEl.createEl('textarea') as HTMLTextAreaElement;
         ta.setCssStyles({ width: '100%', minHeight: '120px', resize: 'vertical' });
         ta.value = desc;
@@ -1129,7 +1131,7 @@ export class StorylineView extends ItemView {
 
         new Setting(modal.contentEl)
             .addButton((btn: ButtonComponent) => {
-                btn.setButtonText('Clear').onClick(async () => {
+                btn.setButtonText(legacyUi('Clear', 'Clear')).onClick(async () => {
                     delete this.plugin.settings.plotlineDescriptions[plotline];
                     await this.plugin.saveSettings();
                     this.refresh();
@@ -1137,7 +1139,7 @@ export class StorylineView extends ItemView {
                 });
             })
             .addButton((btn: ButtonComponent) => {
-                btn.setButtonText('Save').setCta().onClick(async () => {
+                btn.setButtonText(legacyUi('Save', 'Save')).setCta().onClick(async () => {
                     const trimmed = desc.trim();
                     if (trimmed.length === 0) {
                         delete this.plugin.settings.plotlineDescriptions[plotline];
@@ -1156,24 +1158,24 @@ export class StorylineView extends ItemView {
 
     private confirmDeletePlotline(plotline: string, sceneCount: number): void {
         const modal = new Modal(this.app);
-        modal.titleEl.setText('Delete plotline');
+        modal.titleEl.setText(legacyUi('Delete plotline', 'Delete plotline'));
         modal.contentEl.createEl('p', {
-            text: `Remove the tag "${plotline}" from ${sceneCount} scene${sceneCount !== 1 ? 's' : ''}? The scenes themselves will not be deleted.`
+            text: legacyUi(`Remove the tag "${plotline}" from ${sceneCount} scene${sceneCount !== 1 ? 's' : ''}? The scenes themselves will not be deleted.`, `Remove the tag "${plotline}" from ${sceneCount} scene${sceneCount !== 1 ? 's' : ''}? The scenes themselves will not be deleted.`)
         });
 
         new Setting(modal.contentEl)
             .addButton((btn: ButtonComponent) => {
-                btn.setButtonText('Cancel').onClick(() => modal.close());
+                btn.setButtonText(legacyUi('Cancel', 'Cancel')).onClick(() => modal.close());
             })
             .addButton((btn: ButtonComponent) => {
-                btn.setButtonText('Delete').setClass('mod-warning').onClick(async () => {
+                btn.setButtonText(legacyUi('Delete', 'Delete')).setClass('mod-warning').onClick(async () => {
                     const count = await this.sceneManager.deleteTag(plotline);
                     // Also remove any stored description for the deleted plotline
                     if (this.plugin.settings.plotlineDescriptions?.[plotline]) {
                         delete this.plugin.settings.plotlineDescriptions[plotline];
                         await this.plugin.saveSettings();
                     }
-                    new Notice(`Removed plotline from ${count} scene${count !== 1 ? 's' : ''}`);
+                    new Notice(legacyUi(`Removed plotline from ${count} scene${count !== 1 ? 's' : ''}`, `Removed plotline from ${count} scene${count !== 1 ? 's' : ''}`));
                     this.refresh();
                     modal.close();
                 });
@@ -1185,20 +1187,20 @@ export class StorylineView extends ItemView {
 
     private openNewPlotlineForScene(scene: Scene): void {
         const modal = new Modal(this.app);
-        modal.titleEl.setText('New plotline');
+        modal.titleEl.setText(legacyUi('New plotline', 'New plotline'));
         let tagName = '';
 
         new Setting(modal.contentEl)
-            .setName('Plotline name')
-            .setDesc(`Will be added to "${scene.title || 'Untitled'}"`)
+            .setName(legacyUi('Plotline name', 'Plotline name'))
+            .setDesc(legacyUi(`Will be added to "${scene.title || 'Untitled'}"`, `Will be added to "${scene.title || 'Untitled'}"`))
             .addText((text: TextComponent) => {
-                text.setPlaceholder('E.g. Main-mystery');
+                text.setPlaceholder(legacyUi('E.g. Main-mystery', 'E.g. Main-mystery'));
                 text.onChange((v: string) => (tagName = v));
             });
 
         new Setting(modal.contentEl)
             .addButton((btn: ButtonComponent) => {
-                btn.setButtonText('Create & assign').setCta().onClick(async () => {
+                btn.setButtonText(legacyUi('Create & assign', 'Create & assign')).setCta().onClick(async () => {
                     if (!tagName.trim()) return;
                     const slug = tagName.trim().toLowerCase().replace(/\s+/g, '-');
                     const newTags = [...(scene.tags || []), slug];
@@ -1214,21 +1216,21 @@ export class StorylineView extends ItemView {
 
     private openNewPlotlineModal(): void {
         const modal = new Modal(this.app);
-        modal.titleEl.setText('New plotline');
+        modal.titleEl.setText(legacyUi('New plotline', 'New plotline'));
         let tagName = '';
 
         new Setting(modal.contentEl)
-            .setName('Plotline name')
-            .setDesc('Enter a name for the plotline. It will be stored as a tag on each assigned scene.')
+            .setName(legacyUi('Plotline name', 'Plotline name'))
+            .setDesc(legacyUi('Enter a name for the plotline. It will be stored as a tag on each assigned scene.', 'Enter a name for the plotline. It will be stored as a tag on each assigned scene.'))
             .addText((text: TextComponent) => {
-                text.setPlaceholder('E.g. Love-triangle');
+                text.setPlaceholder(legacyUi('E.g. Love-triangle', 'E.g. Love-triangle'));
                 text.onChange((v: string) => (tagName = v));
             });
 
         const scenePicker = modal.contentEl.createDiv('storyline-scene-picker');
         scenePicker.createEl('p', {
             cls: 'setting-item-description',
-            text: 'Select scenes to include (optional):'
+            text: legacyUi('Select scenes to include (optional):', 'Select scenes to include (optional):')
         });
 
         const scenes = this.sceneManager.queryService.getFilteredScenes(undefined, { field: 'sequence', direction: 'asc' });
@@ -1238,7 +1240,7 @@ export class StorylineView extends ItemView {
         scenes.forEach(scene => {
             const row = sceneList.createDiv('storyline-scene-picker-row');
             const cb = row.createEl('input', { type: 'checkbox' });
-            row.createSpan({ text: `[${String(scene.act ?? '?').toString().padStart(2, '0')}-${String(scene.sequence ?? '?').toString().padStart(2, '0')}] ${scene.title || 'Untitled'}` });
+            row.createSpan({ text: legacyUi(`[${String(scene.act ?? '?').toString().padStart(2, '0')}-${String(scene.sequence ?? '?').toString().padStart(2, '0')}] ${scene.title || 'Untitled'}`, `[${String(scene.act ?? '?').toString().padStart(2, '0')}-${String(scene.sequence ?? '?').toString().padStart(2, '0')}] ${scene.title || 'Untitled'}`) });
             cb.addEventListener('change', () => {
                 if (cb.checked) selectedPaths.add(scene.filePath);
                 else selectedPaths.delete(scene.filePath);
@@ -1247,7 +1249,7 @@ export class StorylineView extends ItemView {
 
         new Setting(modal.contentEl)
             .addButton((btn: ButtonComponent) => {
-                btn.setButtonText('Create plotline').setCta().onClick(async () => {
+                btn.setButtonText(legacyUi('Create plotline', 'Create plotline')).setCta().onClick(async () => {
                     if (!tagName.trim()) return;
                     const slug = tagName.trim().toLowerCase().replace(/\s+/g, '-');
                     for (const path of selectedPaths) {
@@ -1272,20 +1274,20 @@ export class StorylineView extends ItemView {
         allScenes: Scene[]
     ): void {
         const modal = new Modal(this.app);
-        modal.titleEl.setText(`Add scenes to "${this.formatPlotlineName(plotline)}"`);
+        modal.titleEl.setText(legacyUi(`Add scenes to "${this.formatPlotlineName(plotline)}"`, `Add scenes to "${this.formatPlotlineName(plotline)}"`));
 
         const currentPaths = new Set(currentScenes.map(s => s.filePath));
         const available = allScenes.filter(s => !currentPaths.has(s.filePath));
         const selectedPaths = new Set<string>();
 
         if (available.length === 0) {
-            modal.contentEl.createEl('p', { text: 'All scenes are already in this plotline.' });
+            modal.contentEl.createEl('p', { text: legacyUi('All scenes are already in this plotline.', 'All scenes are already in this plotline.') });
         } else {
             const sceneList = modal.contentEl.createDiv('storyline-scene-picker-list');
             available.forEach(scene => {
                 const row = sceneList.createDiv('storyline-scene-picker-row');
                 const cb = row.createEl('input', { type: 'checkbox' });
-                row.createSpan({ text: `[${String(scene.act ?? '?').toString().padStart(2, '0')}-${String(scene.sequence ?? '?').toString().padStart(2, '0')}] ${scene.title || 'Untitled'}` });
+                row.createSpan({ text: legacyUi(`[${String(scene.act ?? '?').toString().padStart(2, '0')}-${String(scene.sequence ?? '?').toString().padStart(2, '0')}] ${scene.title || 'Untitled'}`, `[${String(scene.act ?? '?').toString().padStart(2, '0')}-${String(scene.sequence ?? '?').toString().padStart(2, '0')}] ${scene.title || 'Untitled'}`) });
                 cb.addEventListener('change', () => {
                     if (cb.checked) selectedPaths.add(scene.filePath);
                     else selectedPaths.delete(scene.filePath);
@@ -1295,7 +1297,7 @@ export class StorylineView extends ItemView {
 
         new Setting(modal.contentEl)
             .addButton((btn: ButtonComponent) => {
-                btn.setButtonText('Add to plotline').setCta().onClick(async () => {
+                btn.setButtonText(legacyUi('Add to plotline', 'Add to plotline')).setCta().onClick(async () => {
                     for (const path of selectedPaths) {
                         const scene = this.sceneManager.getScene(path);
                         if (scene) {
@@ -1374,7 +1376,7 @@ export class StorylineView extends ItemView {
             const leaf = this.app.workspace.getLeaf('tab');
             await leaf.openFile(file, { state: { mode: 'source', source: false } });
         } else {
-            new Notice(`Could not find file: ${scene.filePath}`);
+            new Notice(legacyUi(`Could not find file: ${scene.filePath}`, `Could not find file: ${scene.filePath}`));
         }
     }
 

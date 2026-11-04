@@ -2,6 +2,7 @@
 import { Modal, Setting, Notice, DropdownComponent, ToggleComponent } from 'obsidian';
 import { ExportService, ExportFormat, ExportRange, ExportScope } from '../services/ExportService';
 import type SceneCardsPlugin from '../main';
+import { tr } from '../i18n';
 
 type ExportContent = ExportScope | 'scenes' | 'chapters';
 
@@ -48,16 +49,16 @@ export class ExportModal extends Modal {
         contentEl.addClass('storyline-export-modal');
         this.modalEl.addClass('mod-storyline-export');
 
-        contentEl.createEl('h2', { text: 'Export project' });
+        contentEl.createEl('h2', { text: tr('common.exportProject') });
 
         const project = this.plugin.sceneManager.activeProject;
         if (!project) {
-            contentEl.createEl('p', { text: 'No active project. Open a project first.' });
+            contentEl.createEl('p', { text: tr('common.noActiveProject') });
             return;
         }
 
         contentEl.createEl('p', {
-            text: `Project: ${project.title}`,
+            text: tr('common.projectName', { name: project.title }),
             cls: 'storyline-export-project-name',
         });
 
@@ -65,14 +66,14 @@ export class ExportModal extends Modal {
         let scopeDropdown: DropdownComponent | undefined;
         let renderManuscriptOptions: () => void = () => {};
         new Setting(contentEl)
-            .setName('Content')
-            .setDesc('What to include in the export')
+            .setName(tr('common.content'))
+            .setDesc(tr('common.content'))
             .addDropdown(dd => {
                 scopeDropdown = dd;
-                dd.addOption('manuscript', 'Manuscript (scene text in order)');
-                dd.addOption('chapters', 'Chapters');
-                dd.addOption('scenes', 'Scenes');
-                dd.addOption('outline', 'Outline (metadata, stats, table)');
+                dd.addOption('manuscript', tr('export.manuscript'));
+                dd.addOption('chapters', tr('common.chapters'));
+                dd.addOption('scenes', tr('common.scenes'));
+                dd.addOption('outline', tr('export.outline'));
                 dd.setValue(this.exportContent);
                 dd.onChange(v => {
                     this.exportContent = v as ExportContent;
@@ -87,14 +88,14 @@ export class ExportModal extends Modal {
 
         // Format selection
         new Setting(contentEl)
-            .setName('Format')
+            .setName(tr('common.format'))
             .addDropdown(dd => {
-                dd.addOption('md', 'Markdown (.md)');
-                dd.addOption('docx', 'Word (.docx)');
-                dd.addOption('pdf', 'PDF (.PDF)');
-                dd.addOption('html', 'HTML (.HTML)');
-                dd.addOption('csv', 'CSV (.CSV)');
-                dd.addOption('json', 'JSON (.JSON)');
+                dd.addOption('md', tr('export.markdown'));
+                dd.addOption('docx', tr('export.word'));
+                dd.addOption('pdf', tr('export.pdf'));
+                dd.addOption('html', tr('export.html'));
+                dd.addOption('csv', tr('export.csv'));
+                dd.addOption('json', tr('export.json'));
                 dd.setValue(this.format);
                 dd.onChange(v => {
                     this.format = v as ExportFormat;
@@ -120,8 +121,8 @@ export class ExportModal extends Modal {
 
             if (this.exportContent === 'scenes' || this.exportContent === 'chapters') {
                 new Setting(manuscriptOptions)
-                    .setName(this.exportContent === 'scenes' ? 'Scenes to export' : 'Chapters to export')
-                    .setDesc('Enter single values or inclusive ranges, separated by commas.')
+                    .setName(this.exportContent === 'scenes' ? tr('common.scenesToExport') : tr('common.chaptersToExport'))
+                    .setDesc(tr('export.rangeDesc'))
                     .addText(text => text
                         .setPlaceholder('1-5, 8, 9, 11, 13-18')
                         .setValue(this.exportRangeText)
@@ -129,8 +130,8 @@ export class ExportModal extends Modal {
             }
 
             new Setting(manuscriptOptions)
-                .setName('Include inactive scenes')
-                .setDesc('Include parked scenes marked inactive. Off by default.')
+                .setName(tr('common.includeInactive'))
+                .setDesc(tr('export.inactiveDesc'))
                 .addToggle(t => {
                     t.setValue(this.includeInactiveScenes);
                     t.onChange(v => { this.includeInactiveScenes = v; });
@@ -142,8 +143,8 @@ export class ExportModal extends Modal {
             let numberToggle: ToggleComponent | undefined;
 
             new Setting(manuscriptOptions)
-                .setName('Include scene titles')
-                .setDesc('Show "#### scene title" before each scene. Disable for a clean reader copy.')
+                .setName(tr('common.includeSceneTitles'))
+                .setDesc(tr('export.titlesDesc'))
                 .addToggle(t => {
                     titlesToggle = t;
                     t.setValue(this.includeSceneTitles && !this.numberScenesOnExport);
@@ -157,8 +158,8 @@ export class ExportModal extends Modal {
                 });
 
             new Setting(manuscriptOptions)
-                .setName('Number scenes (1, 2, 3\u2026)')
-                .setDesc('Replace scene titles with sequential numbers in the export.')
+                .setName(tr('export.numberScenes'))
+                .setDesc(tr('export.numberDesc'))
                 .addToggle(t => {
                     numberToggle = t;
                     t.setValue(this.numberScenesOnExport);
@@ -172,21 +173,21 @@ export class ExportModal extends Modal {
                 });
 
             new Setting(manuscriptOptions)
-                .setName('Include corkboard notes')
-                .setDesc('Include sticky / brainstorm notes from the corkboard. Off by default.')
+                .setName(tr('common.includeCorkboard'))
+                .setDesc(tr('export.corkboardDesc'))
                 .addToggle(t => {
                     t.setValue(this.includeCorkboardNotes);
                     t.onChange(v => { this.includeCorkboardNotes = v; });
                 });
 
             new Setting(manuscriptOptions)
-                .setName('Scene separator')
-                .setDesc('Separator used between scenes in manuscript exports.')
+                .setName(tr('common.sceneSeparator'))
+                .setDesc(tr('export.separatorDesc'))
                 .addDropdown(dd => dd
                     .addOptions({
-                        'blank': 'Blank Line',
+                        'blank': tr('export.blankLine'),
                         'asterisks': '* * *',
-                        'custom': 'Custom Separator',
+                        'custom': tr('export.customSeparator'),
                     })
                     .setValue(this.sceneSeparatorType)
                     .onChange(async (v) => {
@@ -198,10 +199,10 @@ export class ExportModal extends Modal {
 
             if (this.sceneSeparatorType === 'custom') {
                 new Setting(manuscriptOptions)
-                    .setName('Custom separator')
-                    .setDesc('Enter any UTF-8 character or text to use as a scene separator.')
+                    .setName(tr('common.customSeparator'))
+                    .setDesc(tr('export.customSeparatorDesc'))
                     .addText(text => text
-                        .setPlaceholder('E.g. ~ ~ ~')
+                        .setPlaceholder(tr('export.customSeparatorPlaceholder'))
                         .setValue(this.sceneSeparatorCustom)
                         .onChange(async (v) => {
                             this.sceneSeparatorCustom = v;
@@ -213,7 +214,7 @@ export class ExportModal extends Modal {
         };
         renderManuscriptOptions();
 
-        const exportBtn = actions.createEl('button', { text: 'Export', cls: 'mod-cta' });
+        const exportBtn = actions.createEl('button', { text: tr('common.export'), cls: 'mod-cta' });
         exportBtn.setAttr('type', 'button');
         exportBtn.addEventListener('click', async () => {
             const exportRange = this.exportContent === 'scenes' || this.exportContent === 'chapters'
@@ -221,11 +222,11 @@ export class ExportModal extends Modal {
                 : undefined;
             if ((this.exportContent === 'scenes' || this.exportContent === 'chapters') && !exportRange) {
                 const valueLabel = this.exportContent === 'scenes' ? 'scene' : 'chapter';
-                new Notice(`Enter ${valueLabel} numbers like 1-4, 6, 8.`);
+                new Notice(tr('export.rangeError', { type: valueLabel }));
                 return;
             }
             exportBtn.disabled = true;
-            exportBtn.textContent = 'Exporting…';
+            exportBtn.textContent = tr('export.exporting');
             try {
                 this.exportService.setExportOptions({
                     includeSceneTitles: this.includeSceneTitles,
@@ -243,11 +244,11 @@ export class ExportModal extends Modal {
             } catch (err) {
                 new Notice('Export failed: ' + String(err));
                 exportBtn.disabled = false;
-                exportBtn.textContent = 'Export';
+                exportBtn.textContent = tr('common.export');
             }
         });
 
-        const cancelBtn = actions.createEl('button', { text: 'Cancel' });
+        const cancelBtn = actions.createEl('button', { text: tr('common.cancel') });
         cancelBtn.setAttr('type', 'button');
         cancelBtn.addEventListener('click', () => this.close());
     }

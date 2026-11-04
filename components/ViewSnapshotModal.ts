@@ -1,3 +1,4 @@
+import { legacyUi } from '../i18n';
 /* eslint-disable @typescript-eslint/no-misused-promises, no-empty -- Obsidian's API surface and several untyped third-party libraries force dynamic dispatch; floating promises are intentional in DOM/event handlers; matching enable at end of file */
 import * as obsidian from 'obsidian';
 import type { ViewSnapshotService, ViewSnapshotMeta } from '../services/ViewSnapshotService';
@@ -22,19 +23,19 @@ class ManageSnapshotsModal extends Modal {
     }
 
     async onOpen() {
-        this.titleEl.setText('View snapshots');
+        this.titleEl.setText(legacyUi('View snapshots', 'View snapshots'));
         this.modalEl.addClass('sl-snapshot-modal');
 
         // Header row
         const header = this.contentEl.createDiv({ cls: 'sl-snapshot-header' });
-        header.createSpan({ text: 'Board & plot grid layouts for this project.' });
+        header.createSpan({ text: legacyUi('Board & plot grid layouts for this project.', 'Board & plot grid layouts for this project.') });
 
         const newDiv = header.createDiv({ cls: 'sl-snapshot-new-btn clickable-icon' });
         obsidian.setIcon(newDiv, 'plus');
         newDiv.setAttribute('aria-label', 'New snapshot');
         newDiv.addEventListener('click', async () => {
             const snap = await this.service.createSnapshot(`Snapshot ${await this.service.getNextId()}`);
-            new Notice(`Created snapshot #${snap.id}`);
+            new Notice(legacyUi(`Created snapshot #${snap.id}`, `Created snapshot #${snap.id}`));
             await this.renderList();
         });
 
@@ -49,7 +50,7 @@ class ManageSnapshotsModal extends Modal {
 
         if (metas.length === 0) {
             this.listEl.createEl('p', {
-                text: 'No snapshots yet. Click + to capture the current board and plot grid layout.',
+                text: legacyUi('No snapshots yet. Click + to capture the current board and plot grid layout.', 'No snapshots yet. Click + to capture the current board and plot grid layout.'),
                 cls: 'sl-snapshot-empty',
             });
             return;
@@ -83,14 +84,14 @@ class ManageSnapshotsModal extends Modal {
         if (!isActive) {
             const loadDiv = actions.createDiv({ cls: 'sl-snapshot-action-btn clickable-icon', attr: { 'aria-label': 'Load' } });
             obsidian.setIcon(loadDiv, 'upload');
-            loadDiv.createSpan({ text: 'Load' });
+            loadDiv.createSpan({ text: legacyUi('Load', 'Load') });
             loadDiv.addEventListener('click', async () => {
                 const ok = await this.service.restoreSnapshot(meta.id);
                 if (ok) {
-                    new Notice(`Loaded snapshot #${meta.id} "${meta.name}".`);
+                    new Notice(legacyUi(`Loaded snapshot #${meta.id} "${meta.name}".`, `Loaded snapshot #${meta.id} "${meta.name}".`));
                     this.close();
                 } else {
-                    new Notice('Failed to load snapshot.');
+                    new Notice(legacyUi('Failed to load snapshot.', 'Failed to load snapshot.'));
                 }
             });
         }
@@ -105,7 +106,7 @@ class ManageSnapshotsModal extends Modal {
         obsidian.setIcon(deleteDiv, 'trash-2');
         deleteDiv.addEventListener('click', async () => {
             await this.service.deleteSnapshot(meta.id);
-            new Notice(`Deleted snapshot #${meta.id}.`);
+            new Notice(legacyUi(`Deleted snapshot #${meta.id}.`, `Deleted snapshot #${meta.id}.`));
             await this.renderList();
         });
     }
@@ -125,10 +126,10 @@ class ManageSnapshotsModal extends Modal {
         const btns = form.createDiv({ cls: 'sl-snapshot-edit-btns' });
         const saveDiv = btns.createDiv({ cls: 'sl-snapshot-action-btn clickable-icon', attr: { 'aria-label': 'Save' } });
         obsidian.setIcon(saveDiv, 'check');
-        saveDiv.createSpan({ text: 'Save' });
+        saveDiv.createSpan({ text: legacyUi('Save', 'Save') });
         saveDiv.addEventListener('click', async () => {
             const n = nameInput.value.trim();
-            if (!n) { new Notice('Name is required.'); return; }
+            if (!n) { new Notice(legacyUi('Name is required.', 'Name is required.')); return; }
             await this.service.updateMeta(meta.id, n, descInput.value.trim());
             await this.renderList();
         });

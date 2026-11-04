@@ -1,5 +1,6 @@
  
 import { Modal, App, Setting } from 'obsidian';
+import { tr } from '../i18n';
 
 /**
  * A reusable confirmation dialog that replaces native `confirm()`.
@@ -41,14 +42,14 @@ export function openConfirmModal(app: App, opts: ConfirmModalOptions): void {
 
     new Setting(modal.contentEl)
         .addButton(btn => {
-            btn.setButtonText(opts.cancelLabel ?? 'Cancel')
+            btn.setButtonText(opts.cancelLabel ?? tr('common.cancel'))
                 .onClick(() => {
                     modal.close();
                     opts.onCancel?.();
                 });
         })
         .addButton(btn => {
-            const b = btn.setButtonText(opts.confirmLabel ?? 'Confirm');
+            const b = btn.setButtonText(opts.confirmLabel ?? tr('common.confirm'));
             if (opts.confirmClass === 'mod-cta') {
                 b.setCta();
             } else {

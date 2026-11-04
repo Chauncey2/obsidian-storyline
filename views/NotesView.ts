@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-floating-promises, @typescript-eslint/no-misused-promises -- floating promises are intentional in DOM/event handlers */
 import { EventRef, ItemView, MarkdownView, TFile, WorkspaceLeaf, WorkspaceSplit, setIcon } from 'obsidian';
+import { tr } from '../i18n';
 import type SceneCardsPlugin from '../main';
 import type { Scene } from '../models/Scene';
 import { SceneManager } from '../services/SceneManager';
@@ -35,7 +36,7 @@ export class NotesView extends ItemView {
     }
 
     getDisplayText(): string {
-        return 'Scene notes';
+        return tr('common.sceneNotes');
     }
 
     getIcon(): string {
@@ -50,7 +51,7 @@ export class NotesView extends ItemView {
         const container = viewContent.createDiv('sl-notes-view');
 
         const header = container.createDiv('sl-notes-editor-header');
-        header.createDiv({ cls: 'sl-notes-editor-title', text: 'Scene Notes' });
+        header.createDiv({ cls: 'sl-notes-editor-title', text: tr('common.sceneNotes') });
         const openBtn = header.createEl('button', {
             cls: 'clickable-icon sl-notes-open-btn',
             attr: { title: 'Open notes file in separate tab', 'aria-label': 'Open notes file' },
@@ -70,7 +71,7 @@ export class NotesView extends ItemView {
 
         // Empty state
         this.emptyEl = container.createDiv('sl-scene-inspector-empty');
-        this.emptyEl.createEl('p', { text: 'Open a scene file to edit its notes here.' });
+        this.emptyEl.createEl('p', { text: tr('common.openSceneNotesHere') });
 
         // Follow active markdown / manuscript leaves.
         this.registerEvent(
@@ -148,10 +149,10 @@ export class NotesView extends ItemView {
         if (!this.editorHost) return;
         this.editorHost.empty();
         const placeholder = this.editorHost.createDiv('sl-notes-placeholder');
-        placeholder.createEl('p', { text: 'No notes file yet.' });
+        placeholder.createEl('p', { text: tr('common.noNotesFileYet') });
         const addBtn = placeholder.createEl('button', {
             cls: 'sl-notes-create-btn',
-            text: 'Click to add notes…',
+            text: tr('common.clickAddNotes'),
         });
         addBtn.addEventListener('click', async () => {
             const path = await this.sceneManager.getOrCreateSceneNotesFile(scene);

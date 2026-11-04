@@ -1,3 +1,4 @@
+import { legacyUi } from '../i18n';
 /* eslint-disable @typescript-eslint/no-floating-promises, @typescript-eslint/no-misused-promises -- DOM/event handlers and Obsidian dynamic API */
 import * as obsidian from 'obsidian';
 import type SceneCardsPlugin from '../main';
@@ -132,7 +133,7 @@ export class InfoPanelComponent {
 
     private renderStatusRow(scene: Scene): void {
         const row = this.container.createDiv('sl-info-row');
-        row.createSpan({ cls: 'sl-info-label', text: 'Status' });
+        row.createSpan({ cls: 'sl-info-label', text: legacyUi('Status', 'Status') });
 
         const dropdown = row.createDiv('sl-info-status-dropdown');
         const currentStatus = scene.status || 'idea';
@@ -181,7 +182,7 @@ export class InfoPanelComponent {
 
     private renderPovRow(scene: Scene): void {
         const row = this.container.createDiv('sl-info-row');
-        row.createSpan({ cls: 'sl-info-label', text: 'POV' });
+        row.createSpan({ cls: 'sl-info-label', text: legacyUi('POV', 'POV') });
         const field = row.createDiv('sl-info-field');
         renderAutocompleteInput({
             container: field,
@@ -191,13 +192,13 @@ export class InfoPanelComponent {
                 await this.sceneManager.updateScene(scene.filePath, { pov: val });
                 scene.pov = val;
             },
-            placeholder: 'Search characters…',
+            placeholder: legacyUi('Search characters…', 'Search characters…'),
         });
     }
 
     private renderLocationRow(scene: Scene): void {
         const row = this.container.createDiv('sl-info-row');
-        row.createSpan({ cls: 'sl-info-label', text: 'Location' });
+        row.createSpan({ cls: 'sl-info-label', text: legacyUi('Location', 'Location') });
         const field = row.createDiv('sl-info-field');
         renderTagPillInput({
             container: field,
@@ -208,13 +209,13 @@ export class InfoPanelComponent {
                 await this.sceneManager.updateScene(scene.filePath, { location: value || undefined });
                 scene.location = value || undefined;
             },
-            placeholder: 'Search locations…',
+            placeholder: legacyUi('Search locations…', 'Search locations…'),
         });
     }
 
     private renderWordCountRow(scene: Scene): void {
         const row = this.container.createDiv('sl-info-row');
-        row.createSpan({ cls: 'sl-info-label', text: 'Words' });
+        row.createSpan({ cls: 'sl-info-label', text: legacyUi('Words', 'Words') });
         const value = row.createSpan({ cls: 'sl-info-value' });
         const current = scene.wordcount ?? 0;
         const target = scene.target_wordcount;
@@ -223,11 +224,11 @@ export class InfoPanelComponent {
 
     private renderSynopsis(scene: Scene): void {
         const section = this.container.createDiv('sl-info-section');
-        section.createDiv({ cls: 'sl-info-section-label', text: 'Synopsis' });
+        section.createDiv({ cls: 'sl-info-section-label', text: legacyUi('Synopsis', 'Synopsis') });
 
         const textarea = section.createEl('textarea', {
             cls: 'sl-info-synopsis-textarea',
-            attr: { placeholder: 'Brief scene synopsis…' },
+            attr: { placeholder: legacyUi('Brief scene synopsis…', 'Brief scene synopsis…') },
         });
         textarea.value = scene.synopsis || '';
         textarea.addEventListener('change', async () => {
@@ -239,7 +240,7 @@ export class InfoPanelComponent {
 
     private renderNotes(scene: Scene): void {
         const section = this.container.createDiv('sl-info-section');
-        section.createDiv({ cls: 'sl-info-section-label', text: 'Notes' });
+        section.createDiv({ cls: 'sl-info-section-label', text: legacyUi('Notes', 'Notes') });
         const notesContainer = section.createDiv('sl-info-notes-container sl-info-notes-editor-host');
         void this.mountNotesEditor(notesContainer, scene);
     }
@@ -258,7 +259,7 @@ export class InfoPanelComponent {
         if (!(file instanceof obsidian.TFile)) {
             // No notes file yet — show a clickable placeholder that creates
             // the file on first input instead of eagerly on render.
-            const placeholder = container.createDiv({ cls: 'sl-info-notes-placeholder', text: 'Click to add notes…' });
+            const placeholder = container.createDiv({ cls: 'sl-info-notes-placeholder', text: legacyUi('Click to add notes…', 'Click to add notes…') });
             placeholder.addEventListener('click', () => {
                 void this.sceneManager.getOrCreateSceneNotesFile(scene).then((path) => {
                     this.notesPath = path;
@@ -374,7 +375,7 @@ export class InfoPanelComponent {
         if (!scene.notes) {
             // Empty state — show a clickable placeholder that opens the editor
             const placeholder = container.createDiv('sl-info-notes-live is-empty');
-            placeholder.createDiv({ cls: 'sl-info-notes-placeholder', text: 'Click to add notes…' });
+            placeholder.createDiv({ cls: 'sl-info-notes-placeholder', text: legacyUi('Click to add notes…', 'Click to add notes…') });
             placeholder.addEventListener('click', () => {
                 this.renderNotesEditor(container, scene);
             });
@@ -437,7 +438,7 @@ export class InfoPanelComponent {
 
         const textarea = editorEl.createEl('textarea', {
             cls: 'sl-info-notes-textarea',
-            attr: { placeholder: 'Write notes in Markdown — use - [ ] for checkboxes, **bold**, [[wikilinks]]' },
+            attr: { placeholder: legacyUi('Write notes in Markdown — use - [ ] for checkboxes, **bold**, [[wikilinks]]', 'Write notes in Markdown — use - [ ] for checkboxes, **bold**, [[wikilinks]]') },
         });
         textarea.value = scene.notes || '';
 

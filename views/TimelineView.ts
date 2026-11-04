@@ -15,7 +15,9 @@ import { applyMobileClass } from '../components/MobileAdapter';
 import { attachTooltip } from '../components/Tooltip';
 import { ButtonComponent, DropdownComponent, ItemView, Menu, Modal, Notice, Setting, TFile, TextComponent, WorkspaceLeaf } from 'obsidian';
 import * as obsidian from 'obsidian';
-import { BUILTIN_BEAT_SHEETS, Scene, SceneStatus, TIMELINE_MODES, TIMELINE_MODE_ICONS, TIMELINE_MODE_LABELS, TimelineMode, formatSceneLength, getStatusOrder, resolveStatusCfg } from '../models/Scene';
+import { Scene, SceneStatus, TIMELINE_MODES, TIMELINE_MODE_ICONS, TIMELINE_MODE_LABELS, TimelineMode, formatSceneLength, getStatusOrder, resolveStatusCfg } from '../models/Scene';
+import { getContentLocale, tr, legacyUi } from '../i18n';
+import { getBuiltinBeatSheets } from '../i18n/content';
 import { getActDisplayLabel, getChapterDisplayLabel } from '../utils/actChapter';
 import { parseSceneLocations } from '../services/MetadataParser';
 
@@ -109,7 +111,7 @@ export class TimelineView extends ItemView {
         // Toolbar
         const toolbar = container.createDiv('story-line-toolbar');
         const titleRow = toolbar.createDiv('story-line-title-row');
-        titleRow.createEl('h3', { cls: 'story-line-view-title', text: 'StoryLine' });
+        titleRow.createEl('h3', { cls: 'story-line-view-title', text: legacyUi('StoryLine', 'StoryLine') });
         // project name shown in top-center only; no inline project selector here
 
         // View switcher tabs
@@ -120,7 +122,7 @@ export class TimelineView extends ItemView {
         // Add scene button
         const addBtn = controls.createEl('button', {
             cls: 'mod-cta story-line-add-btn',
-            text: '+ new scene'
+            text: tr('common.newScene')
         });
         addBtn.addEventListener('click', () => this.openQuickAdd());
 
@@ -197,7 +199,7 @@ export class TimelineView extends ItemView {
         // Zoom controls
         const zoomOut = controls.createEl('button', {
             cls: 'clickable-icon',
-            text: '−'
+            text: legacyUi('−', '−')
         });
         attachTooltip(zoomOut, 'Zoom out');
         zoomOut.addEventListener('click', () => {
@@ -207,12 +209,12 @@ export class TimelineView extends ItemView {
 
         controls.createSpan({
             cls: 'story-line-zoom-level',
-            text: `${Math.round(this.zoomLevel * 100)}%`
+            text: legacyUi(`${Math.round(this.zoomLevel * 100)}%`, `${Math.round(this.zoomLevel * 100)}%`)
         });
 
         const zoomIn = controls.createEl('button', {
             cls: 'clickable-icon',
-            text: '+'
+            text: legacyUi('+', '+')
         });
         attachTooltip(zoomIn, 'Zoom in');
         zoomIn.addEventListener('click', () => {
@@ -327,8 +329,8 @@ export class TimelineView extends ItemView {
 
         if (scenes.length === 0 && definedActs.length === 0) {
             const empty = timelineEl.createDiv('story-line-empty');
-            empty.createEl('p', { text: 'No scenes found.' });
-            empty.createEl('p', { text: 'Click "+ new scene" to create your first scene, or use the structure button to set up acts and chapters.' });
+            empty.createEl('p', { text: tr('common.noScenes') });
+            empty.createEl('p', { text: legacyUi('Click "+ new scene" to create your first scene, or use the structure button to set up acts and chapters.', 'Click "+ new scene" to create your first scene, or use the structure button to set up acts and chapters.') });
             return;
         }
 
@@ -527,14 +529,14 @@ export class TimelineView extends ItemView {
                 const divider = track.createDiv('timeline-chapter-divider');
                 divider.createSpan({ cls: 'timeline-chapter-label', text: item.label });
                 if (item.chapterLabel) {
-                    divider.createSpan({ cls: 'timeline-chapter-subtitle', text: `· ${item.chapterLabel}` });
+                    divider.createSpan({ cls: 'timeline-chapter-subtitle', text: legacyUi(`· ${item.chapterLabel}`, `· ${item.chapterLabel}`) });
                 }
                 if (item.chapterNum !== undefined) {
                     divider.addEventListener('contextmenu', event => {
                         event.preventDefault();
                         const menu = new Menu();
                         menu.addItem(menuItem => menuItem
-                            .setTitle('Rename chapter')
+                            .setTitle(legacyUi('Rename chapter', 'Rename chapter'))
                             .setIcon('pencil')
                             .onClick(() => openStructureLabelModal(
                                 this.app,
@@ -568,8 +570,8 @@ export class TimelineView extends ItemView {
                 const emptyEntry = track.createDiv('timeline-entry timeline-entry-empty');
                 const emptyCard = emptyEntry.createDiv('timeline-entry-card');
                 const card = emptyCard.createDiv('timeline-card timeline-card-empty');
-                card.createDiv({ cls: 'timeline-card-title', text: `No scenes in ${item.actLabel}` });
-                card.createEl('p', { cls: 'timeline-card-hint', text: 'Click + to add a scene' });
+                card.createDiv({ cls: 'timeline-card-title', text: legacyUi(`No scenes in ${item.actLabel}`, `No scenes in ${item.actLabel}`) });
+                card.createEl('p', { cls: 'timeline-card-hint', text: legacyUi('Click + to add a scene', 'Click + to add a scene') });
                 card.addEventListener('click', () => this.openQuickAdd(actForClosure));
             }
         };
@@ -624,8 +626,8 @@ export class TimelineView extends ItemView {
 
         if (scenes.length === 0) {
             const empty = timelineEl.createDiv('story-line-empty');
-            empty.createEl('p', { text: 'No scenes found.' });
-            empty.createEl('p', { text: 'Click "+ new scene" to create your first scene.' });
+            empty.createEl('p', { text: tr('common.noScenes') });
+            empty.createEl('p', { text: legacyUi('Click "+ new scene" to create your first scene.', 'Click "+ new scene" to create your first scene.') });
             return;
         }
 
@@ -712,10 +714,10 @@ export class TimelineView extends ItemView {
             // Sequence axis cell
             const seqCell = grid.createDiv('swimlane-seq-cell');
             seqCell.classList.add('timeline-seq-clickable');
-            seqCell.createSpan({ cls: 'timeline-seq-badge', text: `${act}-${seq}` });
+            seqCell.createSpan({ cls: 'timeline-seq-badge', text: legacyUi(`${act}-${seq}`, `${act}-${seq}`) });
             // Show chronological order badge when it differs from reading order
             if (chronoSeq !== null && scene.chronologicalOrder !== scene.sequence) {
-                const chronoBadge = seqCell.createSpan({ cls: 'timeline-chrono-badge', text: `C${chronoSeq}` });
+                const chronoBadge = seqCell.createSpan({ cls: 'timeline-chrono-badge', text: legacyUi(`C${chronoSeq}`, `C${chronoSeq}`) });
                 chronoBadge.setAttribute('title', `Chronological order: ${chronoSeq}`);
             }
             if (scene.storyDate) {
@@ -805,16 +807,16 @@ export class TimelineView extends ItemView {
             const modeBadge = card.createDiv({ cls: `timeline-mode-badge timeline-mode-${slMode}` });
             const modeIcon = modeBadge.createSpan();
             obsidian.setIcon(modeIcon, TIMELINE_MODE_ICONS[slMode] || 'clock');
-            modeBadge.createSpan({ text: ` ${TIMELINE_MODE_LABELS[slMode]}` });
+            modeBadge.createSpan({ text: legacyUi(` ${TIMELINE_MODE_LABELS[slMode]}`, ` ${TIMELINE_MODE_LABELS[slMode]}`) });
             if (scene.timeline_strand) {
-                modeBadge.createSpan({ cls: 'timeline-strand-label', text: ` · ${scene.timeline_strand}` });
+                modeBadge.createSpan({ cls: 'timeline-strand-label', text: legacyUi(` · ${scene.timeline_strand}`, ` · ${scene.timeline_strand}`) });
             }
         }
 
         const meta = card.createDiv('timeline-card-meta');
         // Show the field that is NOT the grouping field (avoid redundancy)
         if (this.swimlaneGroupBy !== 'pov' && scene.pov) {
-            meta.createSpan({ cls: 'timeline-card-pov', text: `POV: ${scene.pov}` });
+            meta.createSpan({ cls: 'timeline-card-pov', text: legacyUi(`POV: ${scene.pov}`, `POV: ${scene.pov}`) });
         }
         if (this.swimlaneGroupBy !== 'character' && scene.characters?.length) {
             meta.createSpan({ cls: 'timeline-card-pov', text: scene.characters.join(', ') });
@@ -937,11 +939,11 @@ export class TimelineView extends ItemView {
         const seq = scene.sequence !== undefined ? String(scene.sequence).padStart(2, '0') : '??';
         const chronoSeq = scene.chronologicalOrder !== undefined ? String(scene.chronologicalOrder).padStart(2, '0') : null;
 
-        seqCol.createSpan({ cls: 'timeline-seq-badge', text: `${act}-${seq}` });
+        seqCol.createSpan({ cls: 'timeline-seq-badge', text: legacyUi(`${act}-${seq}`, `${act}-${seq}`) });
 
         // Show chronological order badge when it differs from reading order
         if (chronoSeq !== null && scene.chronologicalOrder !== scene.sequence) {
-            const chronoBadge = seqCol.createSpan({ cls: 'timeline-chrono-badge', text: `C${chronoSeq}` });
+            const chronoBadge = seqCol.createSpan({ cls: 'timeline-chrono-badge', text: legacyUi(`C${chronoSeq}`, `C${chronoSeq}`) });
             chronoBadge.setAttribute('title', `Chronological order: ${chronoSeq}`);
         }
 
@@ -981,15 +983,15 @@ export class TimelineView extends ItemView {
             const modeBadge = card.createDiv({ cls: `timeline-mode-badge timeline-mode-${tlMode}` });
             const modeIcon = modeBadge.createSpan();
             obsidian.setIcon(modeIcon, TIMELINE_MODE_ICONS[tlMode] || 'clock');
-            modeBadge.createSpan({ text: ` ${TIMELINE_MODE_LABELS[tlMode]}` });
+            modeBadge.createSpan({ text: legacyUi(` ${TIMELINE_MODE_LABELS[tlMode]}`, ` ${TIMELINE_MODE_LABELS[tlMode]}`) });
             if (scene.timeline_strand) {
-                modeBadge.createSpan({ cls: 'timeline-strand-label', text: ` · ${scene.timeline_strand}` });
+                modeBadge.createSpan({ cls: 'timeline-strand-label', text: legacyUi(` · ${scene.timeline_strand}`, ` · ${scene.timeline_strand}`) });
             }
         }
 
         const meta = card.createDiv('timeline-card-meta');
         if (scene.pov) {
-            meta.createSpan({ cls: 'timeline-card-pov', text: `POV: ${scene.pov}` });
+            meta.createSpan({ cls: 'timeline-card-pov', text: legacyUi(`POV: ${scene.pov}`, `POV: ${scene.pov}`) });
         }
         const sceneLocations = parseSceneLocations(scene.location);
         if (sceneLocations.length > 0) {
@@ -1185,13 +1187,13 @@ export class TimelineView extends ItemView {
         const menu = new Menu();
 
         menu.addItem(item => {
-            item.setTitle('Edit scene')
+            item.setTitle(tr('common.editScene'))
                 .setIcon('pencil')
                 .onClick(() => this.openScene(scene));
         });
 
         menu.addItem(item => {
-            item.setTitle('Edit date/time')
+            item.setTitle(tr('common.editDateTime'))
                 .setIcon('clock')
                 .onClick(() => this.openTimeEditModal(scene));
         });
@@ -1202,7 +1204,7 @@ export class TimelineView extends ItemView {
         // if it isn't already, so the action always has a sensible anchor.
         if (this.selectedScenes.size > 1) {
             menu.addItem(item => {
-                item.setTitle(`Shift dates (${this.selectedScenes.size} scenes)…`)
+                item.setTitle(legacyUi(`Shift dates (${this.selectedScenes.size} scenes)…`, `Shift dates (${this.selectedScenes.size} scenes)…`))
                     .setIcon('calendar-range')
                     .onClick(() => this.openShiftDatesModal());
             });
@@ -1210,7 +1212,7 @@ export class TimelineView extends ItemView {
 
         // Scene color picker
         menu.addItem(item => {
-            item.setTitle(scene.color ? 'Change Color' : 'Set Color')
+            item.setTitle(scene.color ? legacyUi('Change Color', 'Change Color') : legacyUi('Set Color', 'Set Color'))
                 .setIcon('palette')
                 .onClick(() => {
                     SceneCardComponent.openColorPicker(this.app, scene, this.sceneManager, () => this.refresh());
@@ -1218,7 +1220,7 @@ export class TimelineView extends ItemView {
         });
 
         menu.addItem(item => {
-            item.setTitle('Duplicate scene')
+            item.setTitle(tr('common.duplicateScene'))
                 .setIcon('copy')
                 .onClick(async () => {
                     await this.sceneManager.duplicateScene(scene.filePath);
@@ -1232,7 +1234,7 @@ export class TimelineView extends ItemView {
         const statuses = getStatusOrder();
         statuses.forEach(status => {
             menu.addItem(item => {
-                item.setTitle(`Status: ${resolveStatusCfg(status).label}`)
+                item.setTitle(legacyUi(`Status: ${resolveStatusCfg(status).label}`, `Status: ${resolveStatusCfg(status).label}`))
                     .setChecked(scene.status === status)
                     .onClick(async () => {
                         await this.sceneManager.updateScene(scene.filePath, { status });
@@ -1244,11 +1246,11 @@ export class TimelineView extends ItemView {
         menu.addSeparator();
 
         menu.addItem(item => {
-            item.setTitle('Delete scene')
+            item.setTitle(tr('common.deleteScene'))
                 .setIcon('trash')
                 .onClick(async () => {
                     openConfirmModal(this.app, {
-                        title: 'Delete Scene',
+                        title: legacyUi('Delete Scene', 'Delete Scene'),
                         message: `Delete scene "${scene.title || 'Untitled'}"?`,
                         confirmLabel: 'Delete',
                         onConfirm: () => this.deleteScene(scene),
@@ -1311,19 +1313,19 @@ export class TimelineView extends ItemView {
      */
     private openStructureModal(): void {
         const modal = new Modal(this.app);
-        modal.titleEl.setText('Manage story structure');
+        modal.titleEl.setText(legacyUi('Manage story structure', 'Manage story structure'));
 
         const { contentEl } = modal;
 
         // ── Beat Sheet Templates section ──
-        contentEl.createEl('h3', { text: 'Beat sheet templates' });
+        contentEl.createEl('h3', { text: legacyUi('Beat sheet templates', 'Beat sheet templates') });
         contentEl.createEl('p', {
             cls: 'setting-item-description',
-            text: 'Apply a template to pre-populate your act/chapter structure with named beats.'
+            text: legacyUi('Apply a template to pre-populate your act/chapter structure with named beats.', 'Apply a template to pre-populate your act/chapter structure with named beats.')
         });
 
         const templateGrid = contentEl.createDiv('beat-sheet-list');
-        for (const template of BUILTIN_BEAT_SHEETS) {
+        for (const template of getBuiltinBeatSheets(getContentLocale(this.sceneManager.getEffectiveLocale()))) {
             const row = templateGrid.createDiv('beat-sheet-row');
 
             const textWrap = row.createDiv('beat-sheet-row-text');
@@ -1339,7 +1341,7 @@ export class TimelineView extends ItemView {
             const beatList = row.createDiv('beat-sheet-beats-preview');
             for (const beat of template.beats) {
                 const beatItem = beatList.createDiv('beat-sheet-beat-item');
-                beatItem.createSpan({ cls: 'beat-sheet-beat-act', text: `A${beat.act}` });
+                beatItem.createSpan({ cls: 'beat-sheet-beat-act', text: legacyUi(`A${beat.act}`, `A${beat.act}`) });
                 beatItem.createSpan({ cls: 'beat-sheet-beat-label', text: beat.label });
                 beatItem.createSpan({ cls: 'beat-sheet-beat-desc', text: beat.description });
             }
@@ -1360,20 +1362,20 @@ export class TimelineView extends ItemView {
                 }
             });
 
-            const applyBtn = row.createEl('button', { text: 'Apply', cls: 'mod-cta beat-sheet-apply-btn' });
+            const applyBtn = row.createEl('button', { text: legacyUi('Apply', 'Apply'), cls: 'mod-cta beat-sheet-apply-btn' });
             applyBtn.addEventListener('click', async () => {
                 await this.sceneManager.applyBeatSheet(template);
                 renderActsList();
                 renderChaptersList();
-                new Notice(`Applied "${template.name}" template`);
+                new Notice(legacyUi(legacyUi(`Applied "${template.name}" template`, `Applied "${template.name}" template`) , legacyUi(`Applied "${template.name}" template`, `Applied "${template.name}" template`) ));
             });
         }
 
         // ── Acts section ──
-        contentEl.createEl('h3', { text: 'Acts' });
+        contentEl.createEl('h3', { text: legacyUi('Acts', 'Acts') });
         contentEl.createEl('p', {
             cls: 'setting-item-description',
-            text: 'Define acts for your story. Empty acts appear on the timeline even without scenes.'
+            text: legacyUi('Define acts for your story. Empty acts appear on the timeline even without scenes.', 'Define acts for your story. Empty acts appear on the timeline even without scenes.')
         });
 
         const actsList = contentEl.createDiv('structure-list');
@@ -1391,7 +1393,7 @@ export class TimelineView extends ItemView {
             const actLabels = this.sceneManager.getActLabels();
             const actDescriptions = this.sceneManager.getActDescriptions();
             if (acts.length === 0) {
-                actsList.createEl('p', { cls: 'structure-empty', text: 'No acts defined yet.' });
+                actsList.createEl('p', { cls: 'structure-empty', text: tr('common.noActs') });
             }
             for (const act of acts) {
                 const count = scenesPerAct.get(act) || 0;
@@ -1403,7 +1405,7 @@ export class TimelineView extends ItemView {
                 const actDisplay = getActDisplayLabel(act);
                 const labelText = cleanLabel ? `${actDisplay} — ${cleanLabel}` : actDisplay;
                 row.createSpan({ cls: 'structure-label', text: labelText });
-                row.createSpan({ cls: 'structure-count', text: `${count} scene${count !== 1 ? 's' : ''}` });
+                row.createSpan({ cls: 'structure-count', text: legacyUi(`${count} scene${count !== 1 ? 's' : ''}`, `${count} scene${count !== 1 ? 's' : ''}`) });
 
                 // Edit label button
                 const editBtn = row.createEl('button', {
@@ -1447,7 +1449,7 @@ export class TimelineView extends ItemView {
                 // Description textarea
                 const descArea = wrapper.createEl('textarea', {
                     cls: 'structure-description',
-                    attr: { placeholder: 'Description / notes for this act…', rows: '2' }
+                    attr: { placeholder: legacyUi('Description / notes for this act…', 'Description / notes for this act…'), rows: '2' }
                 });
                 descArea.value = desc;
                 let descCommitTimer: number | null = null;
@@ -1474,35 +1476,35 @@ export class TimelineView extends ItemView {
 
         const addActRow = contentEl.createDiv('structure-add-row');
         new Setting(addActRow)
-            .setName('Add acts')
-            .setDesc('Enter act numbers (e.g. "1,2,3,4,5")')
+            .setName(legacyUi('Add acts', 'Add acts'))
+            .setDesc(legacyUi('Enter act numbers (e.g. "1,2,3,4,5")', 'Enter act numbers (e.g. "1,2,3,4,5")'))
             .addText(text => {
-                text.setPlaceholder('1,2,3,4,5');
+                text.setPlaceholder(legacyUi('1,2,3,4,5', '1,2,3,4,5'));
                 text.inputEl.addClass('structure-input');
             })
             .addButton(btn => {
-                btn.setButtonText('Add').setCta().onClick(async () => {
+                btn.setButtonText(legacyUi('Add', 'Add')).setCta().onClick(async () => {
                     const input = addActRow.querySelector('.structure-input') as HTMLInputElement;
                     if (!input?.value) return;
                     const nums = input.value.split(',')
                         .map(s => parseInt(s.trim()))
                         .filter(n => !isNaN(n) && n > 0);
                     if (nums.length === 0) {
-                        new Notice('Enter valid act numbers (e.g. 1,2,3)');
+                        new Notice(legacyUi('Enter valid act numbers (e.g. 1,2,3)', 'Enter valid act numbers (e.g. 1,2,3)'));
                         return;
                     }
                     await this.sceneManager.addActs(nums);
                     input.value = '';
                     renderActsList();
-                    new Notice(`Added ${nums.length} act(s)`);
+                    new Notice(legacyUi(`Added ${nums.length} act(s)`, `Added ${nums.length} act(s)`));
                 });
             });
 
         // ── Chapters section ──
-        contentEl.createEl('h3', { text: 'Chapters' });
+        contentEl.createEl('h3', { text: legacyUi('Chapters', 'Chapters') });
         contentEl.createEl('p', {
             cls: 'setting-item-description',
-            text: 'Define chapters. Empty chapters appear when grouping by chapter.'
+            text: legacyUi('Define chapters. Empty chapters appear when grouping by chapter.', 'Define chapters. Empty chapters appear when grouping by chapter.')
         });
 
         const chaptersList = contentEl.createDiv('structure-list');
@@ -1522,7 +1524,7 @@ export class TimelineView extends ItemView {
             const chapterLabels = this.sceneManager.getChapterLabels();
             const chapterDescriptions = this.sceneManager.getChapterDescriptions();
             if (chapters.length === 0) {
-                chaptersList.createEl('p', { cls: 'structure-empty', text: 'No chapters defined yet.' });
+                chaptersList.createEl('p', { cls: 'structure-empty', text: tr('common.noChapters') });
             }
             for (const ch of chapters) {
                 const count = scenesPerChapter.get(ch) || 0;
@@ -1532,7 +1534,7 @@ export class TimelineView extends ItemView {
                 const row = wrapper.createDiv('structure-row');
                 const labelText = label ? `Chapter ${ch} — ${label}` : `Chapter ${ch}`;
                 row.createSpan({ cls: 'structure-label', text: labelText });
-                row.createSpan({ cls: 'structure-count', text: `${count} scene${count !== 1 ? 's' : ''}` });
+                row.createSpan({ cls: 'structure-count', text: legacyUi(`${count} scene${count !== 1 ? 's' : ''}`, `${count} scene${count !== 1 ? 's' : ''}`) });
 
                 // Edit label button
                 const editBtn = row.createEl('button', {
@@ -1576,7 +1578,7 @@ export class TimelineView extends ItemView {
                 // Description textarea
                 const descArea = wrapper.createEl('textarea', {
                     cls: 'structure-description',
-                    attr: { placeholder: 'Description / notes for this chapter…', rows: '2' }
+                    attr: { placeholder: legacyUi('Description / notes for this chapter…', 'Description / notes for this chapter…'), rows: '2' }
                 });
                 descArea.value = desc;
                 let descCommitTimer: number | null = null;
@@ -1601,14 +1603,14 @@ export class TimelineView extends ItemView {
         const addChapterRow = contentEl.createDiv('structure-add-row');
         let createScenesForChapters = false;
         new Setting(addChapterRow)
-            .setName('Add chapters')
-            .setDesc('Enter chapter numbers (e.g. "1-10" or "1,2,3")')
+            .setName(legacyUi('Add chapters', 'Add chapters'))
+            .setDesc(legacyUi('Enter chapter numbers (e.g. "1-10" or "1,2,3")', 'Enter chapter numbers (e.g. "1-10" or "1,2,3")'))
             .addText(text => {
-                text.setPlaceholder('1-10');
+                text.setPlaceholder(legacyUi('1-10', '1-10'));
                 text.inputEl.addClass('structure-input');
             })
             .addButton(btn => {
-                btn.setButtonText('Add').setCta().onClick(async () => {
+                btn.setButtonText(legacyUi('Add', 'Add')).setCta().onClick(async () => {
                     const input = addChapterRow.querySelector('.structure-input') as HTMLInputElement;
                     if (!input?.value) return;
                     let nums: number[] = [];
@@ -1624,7 +1626,7 @@ export class TimelineView extends ItemView {
                             .filter(n => !isNaN(n) && n > 0);
                     }
                     if (nums.length === 0) {
-                        new Notice('Enter valid chapter numbers (e.g. 1-10 or 1,2,3)');
+                        new Notice(legacyUi('Enter valid chapter numbers (e.g. 1-10 or 1,2,3)', 'Enter valid chapter numbers (e.g. 1-10 or 1,2,3)'));
                         return;
                     }
                     await this.sceneManager.addChapters(nums);
@@ -1654,8 +1656,8 @@ export class TimelineView extends ItemView {
             });
 
         new Setting(addChapterRow)
-            .setName('Create an empty scene per chapter')
-            .setDesc('Makes new chapters immediately visible in all views.')
+            .setName(legacyUi('Create an empty scene per chapter', 'Create an empty scene per chapter'))
+            .setDesc(legacyUi('Makes new chapters immediately visible in all views.', 'Makes new chapters immediately visible in all views.'))
             .addToggle(toggle => {
                 toggle.setValue(false);
                 toggle.onChange(v => { createScenesForChapters = v; });
@@ -1663,7 +1665,7 @@ export class TimelineView extends ItemView {
 
         // Close button
         const closeRow = contentEl.createDiv('structure-close-row');
-        const closeBtn = closeRow.createEl('button', { text: 'Done', cls: 'mod-cta' });
+        const closeBtn = closeRow.createEl('button', { text: tr('common.done'), cls: 'mod-cta' });
         closeBtn.addEventListener('click', () => {
             modal.close();
             this.refresh();
@@ -1677,7 +1679,7 @@ export class TimelineView extends ItemView {
      */
     private openTimeEditModal(scene: Scene): void {
         const modal = new Modal(this.app);
-        modal.titleEl.setText(`Time & Order — ${scene.title || 'Untitled'}`);
+        modal.titleEl.setText(legacyUi(`Time & Order — ${scene.title || 'Untitled'}`, `Time & Order — ${scene.title || 'Untitled'}`));
 
         let storyDate = scene.storyDate || '';
         let storyTime = scene.storyTime || '';
@@ -1688,41 +1690,41 @@ export class TimelineView extends ItemView {
 
         // Date field (free text: "2026-02-17", "Day 1", "Monday", etc.)
         new Setting(modal.contentEl)
-            .setName('Date / day')
-            .setDesc('E.g. 2026-02-17, day 1, monday, chapter 3???')
+            .setName(legacyUi('Date / day', 'Date / day'))
+            .setDesc(legacyUi('E.g. 2026-02-17, day 1, monday, chapter 3???', 'E.g. 2026-02-17, day 1, monday, chapter 3???'))
             .addText((text: TextComponent) => {
                 text.setValue(storyDate)
-                    .setPlaceholder('E.g. Day 1')
+                    .setPlaceholder(legacyUi('E.g. Day 1', 'E.g. Day 1'))
                     .onChange((v: string) => (storyDate = v));
             });
 
         // Time field
         new Setting(modal.contentEl)
-            .setName('Time')
-            .setDesc('E.g. 14:00, morning, evening, night…')
+            .setName(legacyUi('Time', 'Time'))
+            .setDesc(legacyUi('E.g. 14:00, morning, evening, night…', 'E.g. 14:00, morning, evening, night…'))
             .addText((text: TextComponent) => {
                 text.setValue(storyTime)
-                    .setPlaceholder('E.g. Evening')
+                    .setPlaceholder(legacyUi('E.g. Evening', 'E.g. Evening'))
                     .onChange((v: string) => (storyTime = v));
             });
 
         // Legacy timeline field
         new Setting(modal.contentEl)
-            .setName('Timeline note')
-            .setDesc('Free-form note about when this happens in the story')
+            .setName(legacyUi('Timeline note', 'Timeline note'))
+            .setDesc(legacyUi('Free-form note about when this happens in the story', 'Free-form note about when this happens in the story'))
             .addText((text: TextComponent) => {
                 text.setValue(timeline)
-                    .setPlaceholder('E.g. After the party')
+                    .setPlaceholder(legacyUi('E.g. After the party', 'E.g. After the party'))
                     .onChange((v: string) => (timeline = v));
             });
 
         // Chronological order field
         new Setting(modal.contentEl)
-            .setName('Chronological order')
-            .setDesc('The order this event happens in story time (for non-linear narratives)')
+            .setName(legacyUi('Chronological order', 'Chronological order'))
+            .setDesc(legacyUi('The order this event happens in story time (for non-linear narratives)', 'The order this event happens in story time (for non-linear narratives)'))
             .addText((text: TextComponent) => {
                 text.setValue(chronoOrder)
-                    .setPlaceholder('E.g. 5')
+                    .setPlaceholder(legacyUi('E.g. 5', 'E.g. 5'))
                     .onChange((v: string) => (chronoOrder = v));
                 text.inputEl.type = 'number';
                 text.inputEl.min = '1';
@@ -1731,7 +1733,7 @@ export class TimelineView extends ItemView {
         // ── Timeline Mode dropdown ──
         const modeSection = modal.contentEl.createDiv('time-edit-mode-section');
         new Setting(modeSection)
-            .setName('Timeline mode')
+            .setName(legacyUi('Timeline mode', 'Timeline mode'))
             .setDesc('How the plugin handles this scene\'s temporal position')
             .addDropdown((dd: DropdownComponent) => {
                 for (const m of TIMELINE_MODES) {
@@ -1747,11 +1749,11 @@ export class TimelineView extends ItemView {
 
         // ── Timeline Strand field (only for parallel/frame) ──
         const strandSetting = new Setting(modeSection)
-            .setName('Timeline strand')
+            .setName(legacyUi('Timeline strand', 'Timeline strand'))
             .setDesc('Name for this timeline strand (e.g. "1943", "outer frame", "sarah\'s past")')
             .addText((text: TextComponent) => {
                 text.setValue(timelineStrand)
-                    .setPlaceholder('E.g. 1943')
+                    .setPlaceholder(legacyUi('E.g. 1943', 'E.g. 1943'))
                     .onChange((v: string) => (timelineStrand = v));
             });
         // Only show strand field for parallel/frame modes
@@ -1759,7 +1761,7 @@ export class TimelineView extends ItemView {
 
         new Setting(modal.contentEl)
             .addButton((btn: ButtonComponent) => {
-                btn.setButtonText('Save').setCta().onClick(async () => {
+                btn.setButtonText(legacyUi('Save', 'Save')).setCta().onClick(async () => {
                     const updates: Partial<Scene> = {};
                     updates.storyDate = storyDate.trim() || undefined;
                     updates.storyTime = storyTime.trim() || undefined;
@@ -1790,7 +1792,7 @@ export class TimelineView extends ItemView {
             if (scene) scenes.push(scene);
         }
         if (scenes.length < 2) {
-            new Notice('Select at least two scenes (ctrl/Cmd-click) to shift dates.');
+            new Notice(legacyUi('Select at least two scenes (ctrl/Cmd-click) to shift dates.', 'Select at least two scenes (ctrl/Cmd-click) to shift dates.'));
             return;
         }
         const modal = new ShiftDatesModal(this.app, this.sceneManager, scenes);
@@ -1813,7 +1815,7 @@ export class TimelineView extends ItemView {
             const leaf = this.app.workspace.getLeaf('tab');
             await leaf.openFile(file, { state: { mode: 'source', source: false } });
         } else {
-            new Notice(`Could not find file: ${scene.filePath}`);
+            new Notice(legacyUi(`Could not find file: ${scene.filePath}`, `Could not find file: ${scene.filePath}`));
         }
     }
 

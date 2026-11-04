@@ -1,0 +1,66 @@
+[
+  {
+    "file": "views/BoardView.ts",
+    "text": "Applied \"${…}\" — created ${…} placeholder scene(s)"
+  },
+  {
+    "file": "views/CharacterView.ts",
+    "text": "Showing: ${…}"
+  },
+  {
+    "file": "views/CodexView.ts",
+    "text": "Visual groups${…}"
+  },
+  {
+    "file": "views/LocationView.ts",
+    "text": "Showing: ${…}"
+  },
+  {
+    "file": "views/PlotgridView.ts",
+    "text": "Plot grid was reset, but the view could not refresh: ${…}"
+  },
+  {
+    "file": "views/PlotgridView.ts",
+    "text": "Plot grid reset failed; the current grid was kept. ${…}"
+  },
+  {
+    "file": "views/ResearchView.ts",
+    "text": "Selected: ${…}"
+  },
+  {
+    "file": "views/ResearchView.ts",
+    "text": "Notes"
+  },
+  {
+    "file": "views/ResearchView.ts",
+    "text": "Selected: ${…}"
+  },
+  {
+    "file": "views/ResearchView.ts",
+    "text": "No image selected"
+  },
+  {
+    "file": "views/ResearchView.ts",
+    "text": "Change Image"
+  },
+  {
+    "file": "views/ResearchView.ts",
+    "text": "Select Image"
+  },
+  {
+    "file": "views/StatsView.ts",
+    "text": " → ${…} (not found)"
+  },
+  {
+    "file": "views/StatsView.ts",
+    "text": "Tracked activity only · since ${…}"
+  },
+  {
+    "file": "views/TimelineView.ts",
+    "text": "How the plugin handles this scene's temporal position"
+  },
+  {
+    "file": "views/TimelineView.ts",
+    "text": "Name for this timeline strand (e.g. \"1943\", \"outer frame\", \"sarah's past\")"
+  }
+]

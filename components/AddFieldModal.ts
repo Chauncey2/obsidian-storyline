@@ -3,6 +3,7 @@ import { App, Modal, Notice, Setting } from 'obsidian';
 import { UniversalFieldTemplate, UniversalFieldType, generateId, suggestTopLevelKey, isReservedTopLevelKey } from '../services/FieldTemplateService';
 import { CHARACTER_CATEGORIES } from '../models/Character';
 import { pickVaultFolder } from './FolderPicker';
+import { tr, legacyUi } from '../i18n';
 
 // ═══════════════════════════════════════════════════════
 //  Add / Edit Universal Field Modal
@@ -81,22 +82,22 @@ export class AddFieldModal extends Modal {
         contentEl.addClass('storyline-add-field-modal');
 
         contentEl.createEl('h3', {
-            text: this.existing ? 'Edit Universal Field' : 'Add Universal Field',
+            text: legacyUi(this.existing ? tr('common.editUniversalField') : tr('common.addUniversalField'), this.existing ? tr('common.editUniversalField') : tr('common.addUniversalField')),
         });
 
         const sheetLabel = this.customSectionNames ? 'entry' : 'character sheet';
         contentEl.createEl('p', {
             cls: 'storyline-add-field-desc',
-            text: `This field will appear on every ${sheetLabel} in the chosen section.`,
+            text: legacyUi(`This field will appear on every ${sheetLabel} in the chosen section.`, `This field will appear on every ${sheetLabel} in the chosen section.`),
         });
 
         // ── Label ──
         let topLevelKeyInput: HTMLInputElement | null = null;
         new Setting(contentEl)
-            .setName('Field label')
-            .setDesc('The name shown next to the input')
+            .setName(tr('common.fieldLabel'))
+            .setDesc(tr('common.fieldLabelDesc'))
             .addText(text => {
-                text.setPlaceholder('E.g. Species')
+                text.setPlaceholder(legacyUi('E.g. Species', 'E.g. Species'))
                     .setValue(this.label)
                     .onChange(v => {
                         this.label = v.trim();
@@ -112,8 +113,8 @@ export class AddFieldModal extends Modal {
         // ── Section ──
         const sectionNames = this.customSectionNames || CHARACTER_CATEGORIES.map(c => c.title);
         new Setting(contentEl)
-            .setName('Section')
-            .setDesc(`Where this field appears on the ${sheetLabel}`)
+            .setName(tr('common.section'))
+            .setDesc(legacyUi(`Where this field appears on the ${sheetLabel}`, `Where this field appears on the ${sheetLabel}`))
             .addDropdown(dd => {
                 for (const name of sectionNames) {
                     dd.addOption(name, name);
@@ -128,14 +129,14 @@ export class AddFieldModal extends Modal {
         let folderSourceInput: HTMLInputElement | null = null;
         let refreshLinkTargetVisibility = () => {};
         new Setting(contentEl)
-            .setName('Input type')
+            .setName(tr('common.inputType'))
             .addDropdown(dd => {
-                dd.addOption('text', 'Text (single line)');
-                dd.addOption('textarea', 'Text block (multi-line)');
-                dd.addOption('dropdown', 'Dropdown menu');
-                dd.addOption('multi-select', 'Multi-select (tags)');
-                dd.addOption('checkbox', 'Checkbox (yes/no)');
-                dd.addOption('number', 'Number');
+                dd.addOption('text', legacyUi('Text (single line)', 'Text (single line)'));
+                dd.addOption('textarea', legacyUi('Text block (multi-line)', 'Text block (multi-line)'));
+                dd.addOption('dropdown', legacyUi('Dropdown menu', 'Dropdown menu'));
+                dd.addOption('multi-select', legacyUi('Multi-select (tags)', 'Multi-select (tags)'));
+                dd.addOption('checkbox', legacyUi('Checkbox (yes/no)', 'Checkbox (yes/no)'));
+                dd.addOption('number', legacyUi('Number', 'Number'));
                 dd.setValue(this.type);
                 dd.onChange(v => {
                     this.type = v as UniversalFieldType;
@@ -153,10 +154,10 @@ export class AddFieldModal extends Modal {
 
         // ── Placeholder ──
         new Setting(contentEl)
-            .setName('Placeholder')
-            .setDesc('Hint text shown when the field is empty')
+            .setName(tr('common.placeholder'))
+            .setDesc(legacyUi('Hint text shown when the field is empty', 'Hint text shown when the field is empty'))
             .addText(text => {
-                text.setPlaceholder('E.g. Human, elf, dwarf???')
+                text.setPlaceholder(legacyUi('E.g. Human, elf, dwarf???', 'E.g. Human, elf, dwarf???'))
                     .setValue(this.placeholder)
                     .onChange(v => { this.placeholder = v; });
             });
@@ -167,7 +168,7 @@ export class AddFieldModal extends Modal {
 
         const optionsLabel = optionsContainer.createDiv({
             cls: 'setting-item-name',
-            text: 'Dropdown options',
+            text: tr('common.dropdownOptions'),
         });
         optionsLabel.setCssStyles({ marginBottom: '4px' });
 
@@ -188,8 +189,8 @@ export class AddFieldModal extends Modal {
 
                 const removeBtn = row.createEl('button', {
                     cls: 'storyline-field-option-remove',
-                    text: '×',
-                    attr: { title: 'Remove option' },
+                    text: legacyUi('×', '×'),
+                    attr: { title: legacyUi('Remove option', 'Remove option') },
                 });
                 removeBtn.addEventListener('click', () => {
                     this.options.splice(i, 1);
@@ -201,7 +202,7 @@ export class AddFieldModal extends Modal {
 
         const addOptBtn = optionsContainer.createEl('button', {
             cls: 'storyline-field-option-add',
-            text: '+ add option',
+            text: legacyUi('+ add option', '+ add option'),
         });
         addOptBtn.addEventListener('click', () => {
             this.options.push('');
@@ -215,10 +216,10 @@ export class AddFieldModal extends Modal {
         folderSourceContainer = contentEl.createDiv('storyline-field-folder-source-container');
         if (this.type !== 'multi-select' && this.type !== 'dropdown') folderSourceContainer.setCssStyles({ display: 'none' });
         new Setting(folderSourceContainer)
-            .setName('Selectable notes folder (optional)')
-            .setDesc('Vault folder whose Markdown notes become selectable entries (e.g. Codex/Items/)')
+            .setName(tr('common.selectableNotesFolder'))
+            .setDesc(legacyUi('Vault folder whose Markdown notes become selectable entries (e.g. Codex/Items/)', 'Vault folder whose Markdown notes become selectable entries (e.g. Codex/Items/)'))
             .addText(text => {
-                text.setPlaceholder('E.g. World/traits')
+                text.setPlaceholder(legacyUi('E.g. World/traits', 'E.g. World/traits'))
                     .setValue(this.folderSource)
                     .onChange(v => {
                         this.folderSource = v.trim();
@@ -228,7 +229,7 @@ export class AddFieldModal extends Modal {
             })
             .addButton(button => button
                 .setIcon('folder-open')
-                .setTooltip('Browse vault folders')
+                .setTooltip(tr('common.browseFolders'))
                 .onClick(() => {
                     pickVaultFolder(this.app, path => {
                         this.folderSource = path;
@@ -238,8 +239,8 @@ export class AddFieldModal extends Modal {
                 }));
 
         const linkTargetSetting = new Setting(contentEl)
-            .setName('Link selected notes')
-            .setDesc('Save each selected note as an Obsidian wikilink. The folder only supplies the choices; the link points to the note.')
+            .setName(tr('common.linkSelectedNotes'))
+            .setDesc(legacyUi('Save each selected note as an Obsidian wikilink. The folder only supplies the choices; the link points to the note.', 'Save each selected note as an Obsidian wikilink. The folder only supplies the choices; the link points to the note.'))
             .addToggle(toggle => {
                 toggle.setValue(this.linkTarget);
                 toggle.onChange(value => { this.linkTarget = value; });
@@ -253,8 +254,8 @@ export class AddFieldModal extends Modal {
 
         // ── Top-level YAML key (issue #71) ──
         new Setting(contentEl)
-            .setName('Top-level YAML key (optional)')
-            .setDesc('When set, this field\'s value is also written as a top-level YAML key so it appears in Obsidian Properties / Bases / Dataview. Leave blank to keep it inside `universalFields:` only. Reserved StoryLine keys are not allowed.')
+            .setName(legacyUi('Top-level YAML key (optional)', 'Top-level YAML key (optional)'))
+            .setDesc(legacyUi('When set, this field\'s value is also written as a top-level YAML key so it appears in Obsidian Properties / Bases / Dataview. Leave blank to keep it inside `universalFields:` only. Reserved StoryLine keys are not allowed.', 'When set, this field\'s value is also written as a top-level YAML key so it appears in Obsidian Properties / Bases / Dataview. Leave blank to keep it inside `universalFields:` only. Reserved StoryLine keys are not allowed.'))
             .addText(text => {
                 text.setPlaceholder(suggestTopLevelKey(this.label || 'field'))
                     .setValue(this.topLevelKey)
@@ -267,10 +268,10 @@ export class AddFieldModal extends Modal {
 
         // ── Default value (issue #77) ──
         new Setting(contentEl)
-            .setName('Default value (optional)')
-            .setDesc('Pre-fill this field on newly-created entities (currently applied to scenes). For multi-select fields, separate values with commas.')
+            .setName(tr('common.defaultValue'))
+            .setDesc(legacyUi('Pre-fill this field on newly-created entities (currently applied to scenes). For multi-select fields, separate values with commas.', 'Pre-fill this field on newly-created entities (currently applied to scenes). For multi-select fields, separate values with commas.'))
             .addText(text => {
-                text.setPlaceholder('E.g. Draft, fountain, setup')
+                text.setPlaceholder(legacyUi('E.g. Draft, fountain, setup', 'E.g. Draft, fountain, setup'))
                     .setValue(this.defaultValue)
                     .onChange(v => { this.defaultValue = v; });
             });
@@ -278,13 +279,13 @@ export class AddFieldModal extends Modal {
         // ── Position (issue #92) ──
         if (this.siblings.length > 0) {
             new Setting(contentEl)
-                .setName('Position')
-                .setDesc('Where the field appears in the section')
+                .setName(tr('common.position'))
+                .setDesc(legacyUi('Where the field appears in the section', 'Where the field appears in the section'))
                 .addDropdown(dd => {
-                    dd.addOption('__end__', 'At end (default)');
-                    dd.addOption('__top__', 'At top');
+                    dd.addOption('__end__', tr('common.atEnd'));
+                    dd.addOption('__top__', tr('common.atTop'));
                     for (const s of this.siblings) {
-                        dd.addOption(s.id, `After: ${s.label}`);
+                        dd.addOption(s.id, legacyUi(`After: ${s.label}`, `After: ${s.label}`));
                     }
                     dd.setValue('__end__');
                     dd.onChange(v => {
@@ -301,7 +302,7 @@ export class AddFieldModal extends Modal {
         if (this.existing && this.onDelete) {
             const deleteBtn = footer.createEl('button', {
                 cls: 'mod-warning storyline-field-delete-btn',
-                text: 'Delete field',
+                text: tr('common.deleteField'),
             });
             deleteBtn.addEventListener('click', () => {
                 this.onDelete!();
@@ -310,12 +311,12 @@ export class AddFieldModal extends Modal {
         }
 
 
-        const cancelBtn = footer.createEl('button', { text: 'Cancel' });
+        const cancelBtn = footer.createEl('button', { text: legacyUi('Cancel', 'Cancel') });
         cancelBtn.addEventListener('click', () => this.close());
 
         const confirmBtn = footer.createEl('button', {
             cls: 'mod-cta',
-            text: this.existing ? 'Save' : 'Add field',
+            text: legacyUi(this.existing ? 'Save' : 'Add field', this.existing ? 'Save' : 'Add field'),
         });
         confirmBtn.addEventListener('click', () => {
             // Read input value directly in case onChange hasn't fired yet (issue #115)
@@ -339,11 +340,11 @@ export class AddFieldModal extends Modal {
             const tlk = this.topLevelKey.trim();
             if (tlk) {
                 if (!/^[A-Za-z][A-Za-z0-9_]*$/.test(tlk)) {
-                    new Notice('Top-level YAML key must start with a letter and use only letters, numbers, or underscores.');
+                    new Notice(legacyUi('Top-level YAML key must start with a letter and use only letters, numbers, or underscores.', 'Top-level YAML key must start with a letter and use only letters, numbers, or underscores.'));
                     return;
                 }
                 if (isReservedTopLevelKey(tlk)) {
-                    new Notice(`"${tlk}" is reserved by StoryLine. Choose a different key.`);
+                    new Notice(legacyUi(`"${tlk}" is reserved by StoryLine. Choose a different key.`, `"${tlk}" is reserved by StoryLine. Choose a different key.`));
                     return;
                 }
             }

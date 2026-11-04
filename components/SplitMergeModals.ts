@@ -1,3 +1,4 @@
+import { legacyUi } from '../i18n';
  
 import { Modal, Setting, Notice } from 'obsidian';
 import type SceneCardsPlugin from '../main';
@@ -34,33 +35,33 @@ export class SplitSceneModal extends Modal {
 
     onOpen(): void {
         const { contentEl } = this;
-        this.titleEl.setText('Split scene');
+        this.titleEl.setText(legacyUi('Split scene', 'Split scene'));
         contentEl.addClass('storyline-split-modal');
 
         const body = this.scene.body || '';
         if (!body.trim()) {
-            contentEl.createEl('p', { text: 'This scene has no body text to split.' });
+            contentEl.createEl('p', { text: legacyUi('This scene has no body text to split.', 'This scene has no body text to split.') });
             new Setting(contentEl).addButton(btn =>
-                btn.setButtonText('Close').onClick(() => this.close())
+                btn.setButtonText(legacyUi('Close', 'Close')).onClick(() => this.close())
             );
             return;
         }
 
         // Info
         contentEl.createEl('p', {
-            text: 'Click in the text below to place the split point. Everything above the marker becomes scene a, everything below becomes scene b.',
+            text: legacyUi('Click in the text below to place the split point. Everything above the marker becomes scene a, everything below becomes scene b.', 'Click in the text below to place the split point. Everything above the marker becomes scene a, everything below becomes scene b.'),
             cls: 'setting-item-description',
         });
 
         // Titles
         new Setting(contentEl)
-            .setName('Scene a title')
+            .setName(legacyUi('Scene a title', 'Scene a title'))
             .addText(text => {
                 text.setValue(this.titleA);
                 text.onChange(v => (this.titleA = v));
             });
         new Setting(contentEl)
-            .setName('Scene b title')
+            .setName(legacyUi('Scene b title', 'Scene b title'))
             .addText(text => {
                 text.setValue(this.titleB);
                 text.onChange(v => (this.titleB = v));
@@ -69,7 +70,7 @@ export class SplitSceneModal extends Modal {
         // Text area for split placement
         const label = contentEl.createDiv({
             cls: 'setting-item-name',
-            text: 'Click to place split point:',
+            text: legacyUi('Click to place split point:', 'Click to place split point:'),
         });
         label.setCssStyles({ marginBottom: '6px' });
 
@@ -105,9 +106,9 @@ export class SplitSceneModal extends Modal {
         // Buttons
         new Setting(contentEl)
             .addButton(btn => {
-                btn.setButtonText('Split').setCta().onClick(async () => {
+                btn.setButtonText(legacyUi('Split', 'Split')).setCta().onClick(async () => {
                     if (this.splitOffset <= 0 || this.splitOffset >= body.length) {
-                        new Notice('Split point must be within the text');
+                        new Notice(legacyUi('Split point must be within the text', 'Split point must be within the text'));
                         return;
                     }
                     try {
@@ -125,7 +126,7 @@ export class SplitSceneModal extends Modal {
                 });
             })
             .addButton(btn => {
-                btn.setButtonText('Cancel').onClick(() => this.close());
+                btn.setButtonText(legacyUi('Cancel', 'Cancel')).onClick(() => this.close());
             });
     }
 
@@ -140,7 +141,7 @@ export class SplitSceneModal extends Modal {
         const wordCountB = partB ? tokenizeWords(partB, splitLocale).length : 0;
 
         this.previewEl.createDiv({
-            text: `Scene A: ~${wordCountA} words  |  Scene B: ~${wordCountB} words`,
+            text: legacyUi(`Scene A: ~${wordCountA} words  |  Scene B: ~${wordCountB} words`, `Scene A: ~${wordCountA} words  |  Scene B: ~${wordCountB} words`),
             cls: 'setting-item-description',
         });
 
@@ -180,20 +181,20 @@ export class MergeSceneModal extends Modal {
 
     onOpen(): void {
         const { contentEl } = this;
-        this.titleEl.setText('Merge scenes');
+        this.titleEl.setText(legacyUi('Merge scenes', 'Merge scenes'));
         contentEl.addClass('storyline-merge-modal');
 
         if (this.scenes.length < 2) {
-            contentEl.createEl('p', { text: 'Select at least 2 scenes to merge.' });
+            contentEl.createEl('p', { text: legacyUi('Select at least 2 scenes to merge.', 'Select at least 2 scenes to merge.') });
             new Setting(contentEl).addButton(btn =>
-                btn.setButtonText('Close').onClick(() => this.close())
+                btn.setButtonText(legacyUi('Close', 'Close')).onClick(() => this.close())
             );
             return;
         }
 
         // List scenes being merged
         contentEl.createEl('p', {
-            text: `Merging ${this.scenes.length} scenes (in sequence order). The first scene's file will be kept.`,
+            text: legacyUi(`Merging ${this.scenes.length} scenes (in sequence order). The first scene's file will be kept.`, `Merging ${this.scenes.length} scenes (in sequence order). The first scene's file will be kept.`),
             cls: 'setting-item-description',
         });
 
@@ -201,12 +202,12 @@ export class MergeSceneModal extends Modal {
         for (const s of this.scenes) {
             const li = list.createEl('li');
             li.createEl('strong', { text: s.title || 'Untitled' });
-            li.createSpan({ text: ` — ${s.wordcount ?? 0} words, status: ${BUILTIN_STATUS_CONFIG[s.status as SceneStatus]?.label || s.status}` });
+            li.createSpan({ text: legacyUi(` — ${s.wordcount ?? 0} words, status: ${BUILTIN_STATUS_CONFIG[s.status as SceneStatus]?.label || s.status}`, ` — ${s.wordcount ?? 0} words, status: ${BUILTIN_STATUS_CONFIG[s.status as SceneStatus]?.label || s.status}`) });
         }
 
         // Title
         new Setting(contentEl)
-            .setName('Merged scene title')
+            .setName(legacyUi('Merged scene title', 'Merged scene title'))
             .addText(text => {
                 text.setValue(this.mergedTitle);
                 text.onChange(v => (this.mergedTitle = v));
@@ -216,7 +217,7 @@ export class MergeSceneModal extends Modal {
         const conflicts = this.detectConflicts();
         if (conflicts.length > 0) {
             const conflictSection = contentEl.createDiv('storyline-merge-conflicts');
-            conflictSection.createEl('h4', { text: 'Metadata differences (will be resolved automatically):' });
+            conflictSection.createEl('h4', { text: legacyUi('Metadata differences (will be resolved automatically):', 'Metadata differences (will be resolved automatically):') });
             const ul = conflictSection.createEl('ul');
             for (const c of conflicts) {
                 ul.createEl('li', { text: c });
@@ -226,14 +227,14 @@ export class MergeSceneModal extends Modal {
         // Combined word count
         const totalWords = this.scenes.reduce((sum, s) => sum + (s.wordcount ?? 0), 0);
         contentEl.createEl('p', {
-            text: `Combined word count: ~${totalWords.toLocaleString()}`,
+            text: legacyUi(`Combined word count: ~${totalWords.toLocaleString()}`, `Combined word count: ~${totalWords.toLocaleString()}`),
             cls: 'setting-item-description',
         });
 
         // Buttons
         new Setting(contentEl)
             .addButton(btn => {
-                btn.setButtonText('Merge').setCta().onClick(async () => {
+                btn.setButtonText(legacyUi('Merge', 'Merge')).setCta().onClick(async () => {
                     try {
                         const paths = this.scenes.map(s => s.filePath);
                         await this.plugin.sceneManager.mergeScenes(paths, this.mergedTitle.trim() || undefined);
@@ -245,7 +246,7 @@ export class MergeSceneModal extends Modal {
                 });
             })
             .addButton(btn => {
-                btn.setButtonText('Cancel').onClick(() => this.close());
+                btn.setButtonText(legacyUi('Cancel', 'Cancel')).onClick(() => this.close());
             });
     }
 

@@ -1,3 +1,4 @@
+import { legacyUi } from '../i18n';
 import { App, Modal, Notice, Setting, TextComponent, DropdownComponent } from 'obsidian';
 import { Scene } from '../models/Scene';
 import { SceneManager } from '../services/SceneManager';
@@ -81,20 +82,20 @@ export class ShiftDatesModal extends Modal {
         contentEl.addClass('story-line-shift-dates');
 
         contentEl.createEl('h2', {
-            text: `Shift dates — ${this.selectedScenes.length} scenes`,
+            text: legacyUi(`Shift dates — ${this.selectedScenes.length} scenes`, `Shift dates — ${this.selectedScenes.length} scenes`),
         });
         contentEl.createEl('p', {
             cls: 'setting-item-description',
-            text: 'Adjust the date and/or time of the selected scenes. Gaps between scenes are preserved.',
+            text: legacyUi('Adjust the date and/or time of the selected scenes. Gaps between scenes are preserved.', 'Adjust the date and/or time of the selected scenes. Gaps between scenes are preserved.'),
         });
 
         // ── Mode toggle ──
         new Setting(contentEl)
-            .setName('How to shift')
-            .setDesc('Pick a new start date, or move all selected scenes by a set amount.')
+            .setName(legacyUi('How to shift', 'How to shift'))
+            .setDesc(legacyUi('Pick a new start date, or move all selected scenes by a set amount.', 'Pick a new start date, or move all selected scenes by a set amount.'))
             .addDropdown(dd => {
-                dd.addOption('anchor', 'Start on a new date');
-                dd.addOption('delta', 'Move by a set amount');
+                dd.addOption('anchor', legacyUi('Start on a new date', 'Start on a new date'));
+                dd.addOption('delta', legacyUi('Move by a set amount', 'Move by a set amount'));
                 dd.setValue(this.mode);
                 dd.onChange(v => {
                     this.mode = v as 'anchor' | 'delta';
@@ -108,7 +109,7 @@ export class ShiftDatesModal extends Modal {
         this.renderModeInputs();
 
         // ── Preview ──
-        contentEl.createEl('h3', { text: 'Preview' });
+        contentEl.createEl('h3', { text: legacyUi('Preview', 'Preview') });
         this.previewEl = contentEl.createDiv('story-line-shift-preview');
         this.warningEl = contentEl.createDiv('story-line-shift-warning');
         this.warningEl.setCssStyles({ display: 'none' });
@@ -116,9 +117,9 @@ export class ShiftDatesModal extends Modal {
 
         // ── Actions ──
         const footer = contentEl.createDiv('story-line-shift-footer');
-        const cancelBtn = footer.createEl('button', { text: 'Cancel' });
+        const cancelBtn = footer.createEl('button', { text: legacyUi('Cancel', 'Cancel') });
         cancelBtn.addEventListener('click', () => this.close());
-        this.applyBtn = footer.createEl('button', { text: 'Apply', cls: 'mod-cta' });
+        this.applyBtn = footer.createEl('button', { text: legacyUi('Apply', 'Apply'), cls: 'mod-cta' });
         this.applyBtn.addEventListener('click', () => void this.apply());
     }
 
@@ -135,19 +136,19 @@ export class ShiftDatesModal extends Modal {
                 : '(no scenes)';
 
             new Setting(this.inputsEl)
-                .setName('Anchor scene')
+                .setName(legacyUi('Anchor scene', 'Anchor scene'))
                 .setDesc(`The earliest selected scene. Its new date/time sets the offset for all others. Current: ${anchor?.storyDate || '—'} ${anchor?.storyTime || ''}`.trim())
                 .addText(text => {
-                    text.setPlaceholder('Anchor scene')
+                    text.setPlaceholder(legacyUi('Anchor scene', 'Anchor scene'))
                         .setValue(anchorLabel)
                         .setDisabled(true);
                 });
 
             new Setting(this.inputsEl)
-                .setName('New date')
-                .setDesc('New date for the anchor scene (e.g. 2024-06-10, day 5). Leave blank to keep the date and only shift time.')
+                .setName(legacyUi('New date', 'New date'))
+                .setDesc(legacyUi('New date for the anchor scene (e.g. 2024-06-10, day 5). Leave blank to keep the date and only shift time.', 'New date for the anchor scene (e.g. 2024-06-10, day 5). Leave blank to keep the date and only shift time.'))
                 .addText((text: TextComponent) => {
-                    text.setPlaceholder('E.g. 2024-06-10')
+                    text.setPlaceholder(legacyUi('E.g. 2024-06-10', 'E.g. 2024-06-10'))
                         .setValue(this.anchorDate)
                         .onChange(v => {
                             this.anchorDate = v;
@@ -156,10 +157,10 @@ export class ShiftDatesModal extends Modal {
                 });
 
             new Setting(this.inputsEl)
-                .setName('New time')
-                .setDesc('New time for the anchor scene (e.g. 14:00, evening). Leave blank to keep the time and only shift the date.')
+                .setName(legacyUi('New time', 'New time'))
+                .setDesc(legacyUi('New time for the anchor scene (e.g. 14:00, evening). Leave blank to keep the time and only shift the date.', 'New time for the anchor scene (e.g. 14:00, evening). Leave blank to keep the time and only shift the date.'))
                 .addText((text: TextComponent) => {
-                    text.setPlaceholder('E.g. 14:00')
+                    text.setPlaceholder(legacyUi('E.g. 14:00', 'E.g. 14:00'))
                         .setValue(this.anchorTime)
                         .onChange(v => {
                             this.anchorTime = v;
@@ -168,11 +169,11 @@ export class ShiftDatesModal extends Modal {
                 });
         } else {
             new Setting(this.inputsEl)
-                .setName('Move by')
-                .setDesc('Signed amount to shift every selected scene. Use a negative number to move earlier.')
+                .setName(legacyUi('Move by', 'Move by'))
+                .setDesc(legacyUi('Signed amount to shift every selected scene. Use a negative number to move earlier.', 'Signed amount to shift every selected scene. Use a negative number to move earlier.'))
                 .addText(text => {
                     text.inputEl.type = 'number';
-                    text.setPlaceholder('E.g. 3')
+                    text.setPlaceholder(legacyUi('E.g. 3', 'E.g. 3'))
                         .setValue(String(this.deltaAmount))
                         .onChange(v => {
                             const n = parseInt(v, 10);
@@ -181,10 +182,10 @@ export class ShiftDatesModal extends Modal {
                         });
                 })
                 .addDropdown((dd: DropdownComponent) => {
-                    dd.addOption('days', 'Days');
-                    dd.addOption('weeks', 'Weeks');
-                    dd.addOption('hours', 'Hours');
-                    dd.addOption('minutes', 'Minutes');
+                    dd.addOption('days', legacyUi('Days', 'Days'));
+                    dd.addOption('weeks', legacyUi('Weeks', 'Weeks'));
+                    dd.addOption('hours', legacyUi('Hours', 'Hours'));
+                    dd.addOption('minutes', legacyUi('Minutes', 'Minutes'));
                     dd.setValue(this.deltaUnit);
                     dd.onChange(v => {
                         this.deltaUnit = v as typeof this.deltaUnit;
@@ -238,24 +239,24 @@ export class ShiftDatesModal extends Modal {
         const table = this.previewEl.createEl('table', { cls: 'story-line-shift-preview-table' });
         const thead = table.createEl('thead');
         const headRow = thead.createEl('tr');
-        headRow.createEl('th', { text: 'Scene' });
-        headRow.createEl('th', { text: 'Current' });
-        headRow.createEl('th', { text: '→' });
-        headRow.createEl('th', { text: 'New' });
+        headRow.createEl('th', { text: legacyUi('Scene', 'Scene') });
+        headRow.createEl('th', { text: legacyUi('Current', 'Current') });
+        headRow.createEl('th', { text: legacyUi('→', '→') });
+        headRow.createEl('th', { text: legacyUi('New', 'New') });
 
         const tbody = table.createEl('tbody');
         for (const row of this.previewRows) {
             const tr = tbody.createEl('tr');
             if (row.notes.length > 0) tr.addClass('row-skipped');
             tr.createEl('td', { text: row.scene.title || 'Untitled' });
-            tr.createEl('td', { text: `${row.oldDate} ${row.oldTime}`.trim() || '—' });
-            tr.createEl('td', { text: '→' });
+            tr.createEl('td', { text: legacyUi(`${row.oldDate} ${row.oldTime}`, `${row.oldDate} ${row.oldTime}`).trim() || '—' });
+            tr.createEl('td', { text: legacyUi('→', '→') });
             const newCell = tr.createEl('td');
-            newCell.createSpan({ text: `${row.newDate} ${row.newTime}`.trim() || '—' });
+            newCell.createSpan({ text: legacyUi(`${row.newDate} ${row.newTime}`, `${row.newDate} ${row.newTime}`).trim() || '—' });
             if (row.notes.length > 0) {
                 newCell.createSpan({
                     cls: 'story-line-shift-note',
-                    text: ` (${row.notes.join('; ')})`,
+                    text: legacyUi(` (${row.notes.join('; ')})`, ` (${row.notes.join('; ')})`),
                 });
             }
         }
@@ -266,7 +267,7 @@ export class ShiftDatesModal extends Modal {
             this.warningEl.empty();
             this.warningEl.setCssStyles({ display: '' });
             this.warningEl.createEl('strong', {
-                text: `${skipped.length} scene(s) have unparseable dates/times and will be skipped.`,
+                text: legacyUi(`${skipped.length} scene(s) have unparseable dates/times and will be skipped.`, `${skipped.length} scene(s) have unparseable dates/times and will be skipped.`),
             });
         } else {
             this.warningEl.setCssStyles({ display: 'none' });
@@ -369,9 +370,9 @@ export class ShiftDatesModal extends Modal {
         }
 
         if (changed > 0) {
-            new Notice(`Shifted dates for ${changed} scene(s)${skipped > 0 ? ` (${skipped} skipped)` : ''}.`);
+            new Notice(legacyUi(`Shifted dates for ${changed} scene(s)${skipped > 0 ? ` (${skipped} skipped)` : ''}.`, `Shifted dates for ${changed} scene(s)${skipped > 0 ? ` (${skipped} skipped)` : ''}.`));
         } else {
-            new Notice('No scenes were changed.');
+            new Notice(legacyUi('No scenes were changed.', 'No scenes were changed.'));
         }
         this.close();
     }

@@ -18,6 +18,7 @@ import type { SceneStatus } from '../models/Scene';
 import { makeCustomCodexCategory } from '../models/Codex';
 import type { SeriesMetadata } from '../models/StoryLineProject';
 import { App, Modal, Notice, Setting, normalizePath, stringifyYaml } from 'obsidian';
+import { tr } from '../i18n';
 
 // ────────────────────────────────────────────────────
 //  Minimal typed façades for Node fs / path
@@ -73,7 +74,7 @@ export async function pickScrivenerDestination(app: App): Promise<string | null>
     const vaultRoot = (app.vault.adapter as unknown as { getBasePath?: () => string }).getBasePath?.();
     if (!vaultRoot) throw new Error('Could not determine the active vault folder.');
 
-    new Notice('Now choose an existing destination folder inside the active vault.');
+    new Notice(tr('common.scrivenerDestination'));
     const result = await remote.dialog.showOpenDialog({
         title: 'Choose StoryLine import destination folder',
         message: 'Choose an existing folder inside the active vault (not the vault root).',
@@ -200,9 +201,9 @@ class FolderClassificationModal extends Modal {
         contentEl.empty();
         contentEl.addClass('storyline-folder-classification-modal');
 
-        contentEl.createEl('h3', { text: 'Classify Scrivener folders' });
+        contentEl.createEl('h3', { text: tr('common.classifyScrivener') });
         contentEl.createEl('p', {
-            text: 'These folders were found in the Scrivener project but don\u2019t match a standard category. Choose how each should be imported:',
+            text: tr('import.unknownFolders'),
             cls: 'setting-item-description',
         });
 
@@ -218,7 +219,7 @@ class FolderClassificationModal extends Modal {
             const childCount = this.countLeafItems(folder);
             new Setting(contentEl)
                 .setName(folder.title)
-                .setDesc(`${childCount} item${childCount !== 1 ? 's' : ''}`)
+                .setDesc(tr('import.itemCount', { count: childCount }))
                 .addDropdown(dd => {
                     for (const [value, label] of Object.entries(options)) {
                         dd.addOption(value, label);
@@ -232,14 +233,14 @@ class FolderClassificationModal extends Modal {
 
         const btnRow = contentEl.createDiv({ cls: 'story-line-button-row' });
 
-        const cancelBtn = btnRow.createEl('button', { text: 'Cancel' });
+        const cancelBtn = btnRow.createEl('button', { text: tr('common.cancel') });
         cancelBtn.addEventListener('click', () => {
             this.resolved = true;
             this.onResult(null);
             this.close();
         });
 
-        const importBtn = btnRow.createEl('button', { text: 'Continue import', cls: 'mod-cta' });
+        const importBtn = btnRow.createEl('button', { text: tr('common.continueImport'), cls: 'mod-cta' });
         importBtn.addEventListener('click', () => {
             this.resolved = true;
             this.onResult(this.choices);
@@ -1106,7 +1107,7 @@ export class ScrivenerImporter {
                 notesFolder: firstProject!.notesFolder,
             };
 
-            new Notice(`Creating series "${projectTitle}" with ${bookFolders.length} books…`, 3000);
+            new Notice(tr('import.creatingSeries', { name: projectTitle, count: bookFolders.length }), 3000);
         } else {
             // ── 3b. Single-book project ──
             const project = await this.plugin.sceneManager.createProject(safeName, '', destinationRoot);
@@ -1141,7 +1142,7 @@ export class ScrivenerImporter {
 
             processed++;
             if (processed % 10 === 0) {
-                new Notice(`Importing… ${processed}/${total}`, 2000);
+                new Notice(tr('import.progress', { current: processed, total }), 2000);
             }
             // Allow UI to breathe
             if (processed % 5 === 0) {

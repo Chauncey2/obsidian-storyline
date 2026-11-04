@@ -1,3 +1,4 @@
+import { legacyUi } from '../i18n';
 /* eslint-disable @typescript-eslint/no-unsafe-return, @typescript-eslint/no-floating-promises, @typescript-eslint/no-misused-promises, @typescript-eslint/no-unnecessary-type-assertion -- Obsidian's API surface and several untyped third-party libraries force dynamic dispatch; floating promises are intentional in DOM/event handlers; matching enable at end of file */
 import * as obsidian from 'obsidian';
 import { Modal, App } from 'obsidian';
@@ -82,7 +83,7 @@ export class SceneCardComponent {
             text: displayTitle
         });
         if (scene.inactive) {
-            titleEl.createSpan({ cls: 'scene-card-inactive-badge', text: 'Inactive' });
+            titleEl.createSpan({ cls: 'scene-card-inactive-badge', text: legacyUi('Inactive', 'Inactive') });
         }
 
         // Subtitle (optional, shown below title)
@@ -117,9 +118,9 @@ export class SceneCardComponent {
             const modeBadge = card.createDiv({ cls: `scene-card-timeline-mode timeline-mode-${cardTlMode}` });
             const modeIcon = modeBadge.createSpan();
             obsidian.setIcon(modeIcon, TIMELINE_MODE_ICONS[cardTlMode] || 'clock');
-            modeBadge.createSpan({ text: ` ${TIMELINE_MODE_LABELS[cardTlMode]}` });
+            modeBadge.createSpan({ text: legacyUi(` ${TIMELINE_MODE_LABELS[cardTlMode]}`, ` ${TIMELINE_MODE_LABELS[cardTlMode]}`) });
             if (scene.timeline_strand) {
-                modeBadge.createSpan({ cls: 'scene-card-strand', text: ` · ${scene.timeline_strand}` });
+                modeBadge.createSpan({ cls: 'scene-card-strand', text: legacyUi(` · ${scene.timeline_strand}`, ` · ${scene.timeline_strand}`) });
             }
         }
 
@@ -128,7 +129,7 @@ export class SceneCardComponent {
             const arcBadge = card.createDiv({ cls: 'scene-card-arc-point-badge' });
             const arcIcon = arcBadge.createSpan();
             obsidian.setIcon(arcIcon, 'diamond');
-            arcBadge.createSpan({ text: ' Arc Point' });
+            arcBadge.createSpan({ text: legacyUi(' Arc Point', ' Arc Point') });
         }
 
         if (!options?.compact) {
@@ -161,7 +162,7 @@ export class SceneCardComponent {
                 if (povName) {
                     charList.createSpan({
                         cls: 'scene-card-char-tag',
-                        text: `POV: ${povName}`,
+                        text: legacyUi(`POV: ${povName}`, `POV: ${povName}`),
                     });
                     renderedCount += 1;
                 }
@@ -177,7 +178,7 @@ export class SceneCardComponent {
                 if (totalChars > renderedCount) {
                     charList.createSpan({
                         cls: 'scene-card-char-more',
-                        text: `+${totalChars - renderedCount}`,
+                        text: legacyUi(`+${totalChars - renderedCount}`, `+${totalChars - renderedCount}`),
                     });
                 }
             }
@@ -319,7 +320,7 @@ export class SceneCardComponent {
                 if (!badgesEl) badgesEl = card.createDiv('scene-card-custom-fields');
                 const text = display.length > 24 ? display.slice(0, 23) + '…' : display;
                 const badge = badgesEl.createSpan({ cls: 'scene-card-custom-badge' });
-                badge.createSpan({ cls: 'scene-card-custom-badge-label', text: `${tpl.label}: ` });
+                badge.createSpan({ cls: 'scene-card-custom-badge-label', text: legacyUi(`${tpl.label}: `, `${tpl.label}: `) });
                 badge.createSpan({ text });
                 badge.setAttribute('title', `${tpl.label}: ${display}`);
                 shown++;
@@ -346,7 +347,7 @@ export class SceneCardComponent {
             const filled = idx >= threshold;
             container.createSpan({
                 cls: `scene-card-dot ${filled ? 'filled' : 'empty'}`,
-                text: filled ? '●' : '○'
+                text: legacyUi(filled ? '●' : '○', filled ? '●' : '○')
             });
         }
     }
@@ -545,7 +546,7 @@ export class SceneCardComponent {
      */
     static openColorPicker(app: App, scene: Scene, sceneManager: SceneManager, onDone: () => void): void {
         const modal = new Modal(app);
-        modal.titleEl.setText('Scene color');
+        modal.titleEl.setText(legacyUi('Scene color', 'Scene color'));
         const colorInput = modal.contentEl.createEl('input', {
             type: 'color',
         });
@@ -564,7 +565,7 @@ export class SceneCardComponent {
             marginTop: '12px',
         });
 
-        const saveBtn = btnRow.createEl('button', { text: 'Save', cls: 'mod-cta' });
+        const saveBtn = btnRow.createEl('button', { text: legacyUi('Save', 'Save'), cls: 'mod-cta' });
         saveBtn.addEventListener('click', async () => {
             await sceneManager.updateScene(scene.filePath, { color: colorInput.value } as Partial<Scene>);
             modal.close();
@@ -572,7 +573,7 @@ export class SceneCardComponent {
         });
 
         if (scene.color) {
-            const clearBtn = btnRow.createEl('button', { text: 'Clear color' });
+            const clearBtn = btnRow.createEl('button', { text: legacyUi('Clear color', 'Clear color') });
             clearBtn.addEventListener('click', async () => {
                 await sceneManager.updateScene(scene.filePath, { color: undefined } as Partial<Scene>);
                 modal.close();

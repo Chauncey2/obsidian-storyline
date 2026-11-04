@@ -9,6 +9,8 @@ import { compareActChapter, getActDisplayLabel } from '../utils/actChapter';
 import { SceneManager } from '../services/SceneManager';
 import { MANUSCRIPT_VIEW_TYPE, NAVIGATOR_VIEW_TYPE } from '../constants';
 import { Scene, getStatusOrder, resolveStatusCfg } from '../models/Scene';
+import { displayGroupKey } from '../utils/groupLabels';
+import { legacyUi } from '../i18n';
 
 /**
  * Sort modes available in the navigator.
@@ -22,7 +24,7 @@ const SORT_LABELS: Record<NavSortMode, string> = {
     status: 'Status',
     recent: 'Recently edited',
     words: 'Word count',
-    title: 'Title A-Z',
+    title: legacyUi('Title A-Z', 'Title A-Z'),
 };
 
 const SORT_ICONS: Record<NavSortMode, string> = {
@@ -32,7 +34,7 @@ const SORT_ICONS: Record<NavSortMode, string> = {
     status: 'circle-dot',
     recent: 'clock',
     words: 'hash',
-    title: 'a-large-small',
+    title: legacyUi('a-large-small', 'a-large-small'),
 };
 
 /**
@@ -110,7 +112,7 @@ export class NavigatorView extends ItemView {
         setIcon(searchIcon, 'search');
         this.searchInput = searchWrap.createEl('input', {
             type: 'text',
-            placeholder: 'Filter scenes…',
+            placeholder: legacyUi('Filter scenes…', 'Filter scenes…'),
             cls: 'sl-nav-search',
         });
         this.searchInput.addEventListener('input', () => {
@@ -243,7 +245,7 @@ export class NavigatorView extends ItemView {
         if (!this.plotlineFilter) allRow.addClass('is-active');
         const allDot = allRow.createSpan('sl-nav-plotline-dot');
         allDot.setCssStyles({ background: 'var(--text-faint)' });
-        allRow.createSpan({ text: 'All', cls: 'sl-nav-plotline-name' });
+        allRow.createSpan({ text: legacyUi('All', 'All'), cls: 'sl-nav-plotline-name' });
         allRow.addEventListener('click', () => {
             this.plotlineFilter = null;
             this.renderChips();
@@ -296,7 +298,7 @@ export class NavigatorView extends ItemView {
 
         const allRow = this.chapterRow.createDiv('sl-nav-plotline-item');
         if (!this.chapterFilter) allRow.addClass('is-active');
-        allRow.createSpan({ cls: 'sl-nav-plotline-name', text: 'All' });
+        allRow.createSpan({ cls: 'sl-nav-plotline-name', text: legacyUi('All', 'All') });
         allRow.addEventListener('click', () => {
             this.chapterFilter = null;
             this.renderChapterFilter();
@@ -306,7 +308,7 @@ export class NavigatorView extends ItemView {
         for (const chapter of chapters) {
             const row = this.chapterRow.createDiv('sl-nav-plotline-item');
             if (this.chapterFilter === chapter) row.addClass('is-active');
-            row.createSpan({ cls: 'sl-nav-plotline-name', text: `Chapter ${chapter}` });
+            row.createSpan({ cls: 'sl-nav-plotline-name', text: legacyUi(`Chapter ${chapter}`, `Chapter ${chapter}`) });
             const count = this.sceneManager.getAllScenes()
                 .filter(s => !s.corkboardNote && !s.inactive && String(s.chapter) === chapter).length;
             row.createSpan({ text: String(count), cls: 'sl-nav-plotline-count' });
@@ -447,7 +449,7 @@ export class NavigatorView extends ItemView {
             const header = this.listEl!.createDiv('sl-nav-chapter-header');
             const toggle = header.createSpan('sl-nav-chapter-toggle');
             toggle.textContent = isCollapsed ? '▸' : '▾';
-            header.createSpan({ text: chKey, cls: 'sl-nav-chapter-label' });
+            header.createSpan({ text: displayGroupKey(chKey), cls: 'sl-nav-chapter-label' });
             const count = header.createSpan({ cls: 'sl-nav-chapter-count' });
             count.textContent = `${chScenes.length}`;
 
@@ -534,7 +536,7 @@ export class NavigatorView extends ItemView {
             const menu = new Menu();
 
             menu.addItem((item) => {
-                item.setTitle(isPinned ? 'Unpin' : 'Pin to top');
+                item.setTitle(isPinned ? legacyUi('Unpin', 'Unpin') : legacyUi('Pin to top', 'Pin to top'));
                 item.setIcon(isPinned ? 'pin-off' : 'pin');
                 item.onClick(() => {
                     if (isPinned) {
@@ -547,7 +549,7 @@ export class NavigatorView extends ItemView {
             });
 
             menu.addItem((item) => {
-                item.setTitle('Open in new tab');
+                item.setTitle(legacyUi('Open in new tab', 'Open in new tab'));
                 item.setIcon('file-plus');
                 item.onClick(async () => {
                     const file = this.app.vault.getAbstractFileByPath(scene.filePath);
@@ -561,7 +563,7 @@ export class NavigatorView extends ItemView {
 
             // Scene color picker
             menu.addItem((item) => {
-                item.setTitle(scene.color ? 'Change Color' : 'Set Color');
+                item.setTitle(scene.color ? legacyUi('Change Color', 'Change Color') : legacyUi('Set Color', 'Set Color'));
                 item.setIcon('palette');
                 item.onClick(() => {
                     SceneCardComponent.openColorPicker(this.app, scene, this.sceneManager, () => this.renderList());
@@ -570,7 +572,7 @@ export class NavigatorView extends ItemView {
 
             // Archive
             menu.addItem((item) => {
-                item.setTitle('Archive scene');
+                item.setTitle(legacyUi('Archive scene', 'Archive scene'));
                 item.setIcon('archive');
                 item.onClick(async () => {
                     await this.sceneManager.archiveScene(scene.filePath);

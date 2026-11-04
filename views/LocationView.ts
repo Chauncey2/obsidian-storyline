@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-floating-promises, @typescript-eslint/no-misused-promises, @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-unused-vars -- Obsidian's API surface and several untyped third-party libraries force dynamic dispatch; floating promises are intentional in DOM/event handlers; matching enable at end of file */
 import { ButtonComponent, ItemView, Modal, Notice, Setting, TFile, TextComponent, WorkspaceLeaf } from 'obsidian';
+import { tr, legacyUi } from '../i18n';
 import * as obsidian from 'obsidian';
 import { LOCATION_VIEW_TYPE } from '../constants';
 import { Scene, resolveStatusCfg } from '../models/Scene';
@@ -149,7 +150,7 @@ export class LocationView extends ItemView {
 
         const toolbar = container.createDiv('story-line-toolbar');
         const titleRow = toolbar.createDiv('story-line-title-row');
-        titleRow.createEl('h3', { cls: 'story-line-view-title', text: 'StoryLine' });
+        titleRow.createEl('h3', { cls: 'story-line-view-title', text: tr('common.storyLine') });
 
         renderViewSwitcher(toolbar, LOCATION_VIEW_TYPE, this.plugin, this.leaf);
 
@@ -193,13 +194,13 @@ export class LocationView extends ItemView {
 
     private renderOverview(container: HTMLElement): void {
         container.empty();
-        container.createEl('h3', { text: 'Worlds & locations' });
+        container.createEl('h3', { text: tr('common.locations') });
 
         // Search + Sort
         const searchRow = container.createDiv('codex-search-row');
         const searchInput = searchRow.createEl('input', {
             cls: 'codex-search-input',
-            attr: { type: 'text', placeholder: 'Search locations…' },
+            attr: { type: 'text', placeholder: legacyUi('Search locations…', 'Search locations…') },
         });
         searchInput.value = this.searchText;
         // Only re-focus the search input if this view already had focus —
@@ -217,7 +218,7 @@ export class LocationView extends ItemView {
             }, 0);
         }
 
-        searchRow.createSpan({ cls: 'codex-sort-label', text: 'Sort by' });
+        searchRow.createSpan({ cls: 'codex-sort-label', text: legacyUi('Sort by', 'Sort by') });
         const sortSelect = searchRow.createEl('select', { cls: 'codex-sort-select' });
         for (const opt of [
             { value: 'name', label: 'Name' },
@@ -236,9 +237,9 @@ export class LocationView extends ItemView {
 
         const visualGroups = this.getLocationVisualGroups();
         if (visualGroups.length > 0) {
-            searchRow.createSpan({ cls: 'codex-sort-label', text: 'Group by' });
+            searchRow.createSpan({ cls: 'codex-sort-label', text: legacyUi('Group by', 'Group by') });
             const groupSelect = searchRow.createEl('select', { cls: 'codex-sort-select' });
-            groupSelect.createEl('option', { text: 'None', value: 'none' });
+            groupSelect.createEl('option', { text: legacyUi('None', 'None'), value: 'none' });
             for (const group of visualGroups) {
                 const option = groupSelect.createEl('option', { text: group.name, value: group.id });
                 if (this.groupingMode === 'named' && this.activeVisualGroupId === group.id) option.selected = true;
@@ -258,7 +259,7 @@ export class LocationView extends ItemView {
         if (inSeries && currentBook) {
             const filterToggle = searchRow.createEl('button', {
                 cls: `codex-book-filter${this.bookFilterActive ? ' active' : ''}`,
-                text: this.bookFilterActive ? `Showing: ${currentBook}` : 'All books',
+                text: this.bookFilterActive ? `Showing: ${currentBook}` : legacyUi('All books', 'All books'),
             });
             attachTooltip(filterToggle, this.bookFilterActive
                 ? `Click to show all series locations`
@@ -334,8 +335,8 @@ export class LocationView extends ItemView {
             const empty = container.createDiv('location-empty-state');
             const emptyIcon = empty.createDiv('location-empty-icon');
             obsidian.setIcon(emptyIcon, 'map');
-            empty.createEl('h4', { text: 'No worlds or locations yet' });
-            empty.createEl('p', { text: 'Click "+ world" to create a worldbuilding profile, or "+ location" to add a specific place.' });
+            empty.createEl('h4', { text: tr('common.noWorldsLocationsYet') });
+            empty.createEl('p', { text: legacyUi('Click "+ world" to create a worldbuilding profile, or "+ location" to add a specific place.', 'Click "+ world" to create a worldbuilding profile, or "+ location" to add a specific place.') });
             return;
         }
 
@@ -362,7 +363,7 @@ export class LocationView extends ItemView {
             if (groupOrphans.length > 0) {
                 if (groupWorlds.length > 0) {
                     const divider = parent.createDiv('location-orphan-divider');
-                    divider.createSpan({ text: 'Standalone Locations' });
+                    divider.createSpan({ text: legacyUi('Standalone Locations', 'Standalone Locations') });
                 }
                 for (const loc of groupOrphans) this.renderLocationNode(parent, loc, scenes, 0, [], visualGroups);
             }
@@ -386,7 +387,7 @@ export class LocationView extends ItemView {
                 || orphanRoots.some(location => !visualGroups.some(group => group.entryPaths.includes(location.filePath)));
             if (hasUngroupedRoots) {
                 const ungroupedSection = tree.createDiv('codex-visual-group');
-                ungroupedSection.createDiv({ cls: 'codex-entry-group-heading', text: 'Ungrouped' });
+                ungroupedSection.createDiv({ cls: 'codex-entry-group-heading', text: legacyUi('Ungrouped', 'Ungrouped') });
                 this.attachLocationGroupDropTarget(ungroupedSection, undefined, visualGroups);
                 renderRoots(ungroupedSection.createDiv('codex-visual-group-items'));
             }
@@ -405,7 +406,7 @@ export class LocationView extends ItemView {
 
         if (unlinked.length > 0) {
             const divider = tree.createDiv('location-orphan-divider');
-            divider.createSpan({ text: 'Locations from scenes (no profile yet)' });
+            divider.createSpan({ text: legacyUi('Locations from scenes (no profile yet)', 'Locations from scenes (no profile yet)') });
             for (const name of unlinked) {
                 this.renderUnlinkedLocation(tree, name, scenes);
             }
@@ -619,7 +620,7 @@ export class LocationView extends ItemView {
         const locLower = loc.name.toLowerCase();
         const sceneCount = scenes.filter(s => s.location?.toLowerCase() === locLower).length;
         if (sceneCount > 0) {
-            header.createSpan({ cls: 'location-tree-count', text: `${sceneCount} sc` });
+            header.createSpan({ cls: 'location-tree-count', text: legacyUi(`${sceneCount} sc`, `${sceneCount} sc`) });
         }
 
         if (loc.locationType) {
@@ -698,7 +699,7 @@ export class LocationView extends ItemView {
             cls: 'codex-entry-group-select location-tree-group-select',
             attr: { 'aria-label': `Visual group for ${item.name}` },
         });
-        select.createEl('option', { text: 'No group', value: '' });
+        select.createEl('option', { text: legacyUi('No group', 'No group'), value: '' });
         const current = groups.find(group => group.entryPaths.includes(item.filePath));
         for (const group of groups) {
             const option = select.createEl('option', { text: group.name, value: group.id });
@@ -754,10 +755,10 @@ export class LocationView extends ItemView {
         const locLower = name.toLowerCase();
         const sceneCount = scenes.filter(s => s.location?.toLowerCase() === locLower).length;
         if (sceneCount > 0) {
-            header.createSpan({ cls: 'location-tree-count', text: `${sceneCount} sc` });
+            header.createSpan({ cls: 'location-tree-count', text: legacyUi(`${sceneCount} sc`, `${sceneCount} sc`) });
         }
 
-        const createBtn = header.createEl('button', { cls: 'location-create-profile-btn', text: 'Create' });
+        const createBtn = header.createEl('button', { cls: 'location-create-profile-btn', text: legacyUi('Create', 'Create') });
         createBtn.addEventListener('click', async (e) => {
             e.stopPropagation();
             await this.createLocationFromName(name);
@@ -881,12 +882,12 @@ export class LocationView extends ItemView {
             const inSeries = item.filePath.startsWith(seriesLocFolder + '/');
             if (inSeries) {
                 menu.addItem(it =>
-                    it.setTitle('Demote to project (book-only)')
+                    it.setTitle(legacyUi('Demote to project (book-only)', 'Demote to project (book-only)'))
                         .setIcon('arrow-down-from-line')
                         .onClick(() => this.moveItemTo(item, projectLocFolder, 'demoted')));
             } else {
                 menu.addItem(it =>
-                    it.setTitle('Promote to series (shared)')
+                    it.setTitle(legacyUi('Promote to series (shared)', 'Promote to series (shared)'))
                         .setIcon('arrow-up-from-line')
                         .onClick(() => this.moveItemTo(item, seriesLocFolder, 'promoted')));
             }
@@ -902,24 +903,24 @@ export class LocationView extends ItemView {
 
             if (allBooks) {
                 menu.addItem(it =>
-                    it.setTitle(`Restrict to "${currentBook}" only`)
+                    it.setTitle(legacyUi(`Restrict to "${currentBook}" only`, `Restrict to "${currentBook}" only`))
                         .setIcon('book-marked')
                         .onClick(() => this.setItemBooks(item, [currentBook])));
             } else if (inBook) {
                 menu.addItem(it =>
-                    it.setTitle(`Remove from "${currentBook}"`)
+                    it.setTitle(legacyUi(`Remove from "${currentBook}"`, `Remove from "${currentBook}"`))
                         .setIcon('book-x')
                         .onClick(() => this.setItemBooks(item,
                             (item.books || []).filter(b => b.toLowerCase() !== lower))));
             } else {
                 menu.addItem(it =>
-                    it.setTitle(`Add to "${currentBook}"`)
+                    it.setTitle(legacyUi(`Add to "${currentBook}"`, `Add to "${currentBook}"`))
                         .setIcon('book-plus')
                         .onClick(() => this.setItemBooks(item,
                             [...(item.books || []), currentBook])));
             }
             menu.addItem(it =>
-                it.setTitle('Share across all books')
+                it.setTitle(legacyUi('Share across all books', 'Share across all books'))
                     .setIcon('books')
                     .setDisabled(allBooks)
                     .onClick(() => this.setItemBooks(item, [])));
@@ -931,10 +932,10 @@ export class LocationView extends ItemView {
     private async moveItemTo(item: WorldOrLocation, target: string, verb: 'promoted' | 'demoted'): Promise<void> {
         try {
             await this.locationManager.moveItem(item, target);
-            new Notice(`"${item.name}" ${verb}`);
+            new Notice(legacyUi(`"${item.name}" ${verb}`, `"${item.name}" ${verb}`));
             await this.plugin.refreshOpenViews();
         } catch (err) {
-            new Notice(`Could not move: ${(err as Error).message}`);
+            new Notice(legacyUi(`Could not move: ${(err as Error).message}`, `Could not move: ${(err as Error).message}`));
         }
     }
 
@@ -959,7 +960,7 @@ export class LocationView extends ItemView {
             }
             await this.plugin.refreshOpenViews();
         } catch (err) {
-            new Notice(`Could not update book membership: ${(err as Error).message}`);
+            new Notice(legacyUi(`Could not update book membership: ${(err as Error).message}`, `Could not update book membership: ${(err as Error).message}`));
         }
     }
 
@@ -987,7 +988,7 @@ export class LocationView extends ItemView {
         const backBtn = header.createSpan({ cls: 'codex-nav-back-link' });
         const backIcon = backBtn.createSpan();
         obsidian.setIcon(backIcon, 'circle-arrow-left');
-        backBtn.createSpan({ text: ' All Locations' });
+        backBtn.createSpan({ text: legacyUi(' All Locations', ' All Locations') });
         backBtn.addEventListener('click', () => {
             this.selectedItem = null;
             this.renderView(this.rootContainer!);
@@ -1018,7 +1019,7 @@ export class LocationView extends ItemView {
         // Type label
         const typeLabel = container.createDiv('location-detail-type');
         obsidian.setIcon(typeLabel, isWorld ? 'globe' : 'map-pin');
-        typeLabel.createSpan({ text: ` ${isWorld ? 'World' : 'Location'}` });
+        typeLabel.createSpan({ text: legacyUi(` ${isWorld ? 'World' : 'Location'}`, ` ${isWorld ? 'World' : 'Location'}`) });
 
         // Portrait area (clickable to change)
         const portraitArea = container.createDiv('location-detail-portrait');
@@ -1045,7 +1046,7 @@ export class LocationView extends ItemView {
             } else {
                 const ph = portraitArea.createDiv('location-detail-portrait-placeholder');
                 obsidian.setIcon(ph, 'image');
-                ph.createSpan({ text: 'Click to add image' });
+                ph.createSpan({ text: legacyUi('Click to add image', 'Click to add image') });
             }
             const changeLabel = portraitArea.createDiv('location-portrait-change-label');
             changeLabel.textContent = draft.image ? 'Change image' : '';
@@ -1141,7 +1142,7 @@ export class LocationView extends ItemView {
         const hideCatBtn = sectionHeader.createSpan({
             cls: 'character-section-hide-cat-btn',
             attr: {
-                title: 'Hide this category',
+                title: legacyUi('Hide this category', 'Hide this category'),
                 'aria-label': 'Hide this category',
                 role: 'button',
             },
@@ -1162,7 +1163,7 @@ export class LocationView extends ItemView {
         // '+' button to add a universal field to this section
         const addFieldBtn = sectionHeader.createEl('button', {
             cls: 'character-section-add-field-btn',
-            attr: { title: 'Add universal field to this section', 'aria-label': 'Add universal field' },
+            attr: { title: legacyUi('Add universal field to this section', 'Add universal field to this section'), 'aria-label': 'Add universal field' },
         });
         obsidian.setIcon(addFieldBtn, 'plus');
         addFieldBtn.addEventListener('click', (e) => {
@@ -1247,7 +1248,7 @@ export class LocationView extends ItemView {
         if (hiddenFieldsInCat.length > 0) {
             const toggleEl = sectionBody.createDiv('hidden-fields-toggle');
             toggleEl.createEl('a', {
-                text: `Show ${hiddenFieldsInCat.length} hidden field${hiddenFieldsInCat.length > 1 ? 's' : ''}`,
+                text: legacyUi(`Show ${hiddenFieldsInCat.length} hidden field${hiddenFieldsInCat.length > 1 ? 's' : ''}`, `Show ${hiddenFieldsInCat.length} hidden field${hiddenFieldsInCat.length > 1 ? 's' : ''}`),
                 cls: 'hidden-fields-toggle-link',
             });
             const hiddenContainer = sectionBody.createDiv('hidden-fields-container');
@@ -1278,7 +1279,7 @@ export class LocationView extends ItemView {
         const toggleEl = parent.createDiv('hidden-fields-toggle');
         const count = hiddenCategoryList.length;
         toggleEl.createEl('a', {
-            text: `Show ${count} hidden categor${count > 1 ? 'ies' : 'y'}`,
+            text: legacyUi(`Show ${count} hidden categor${count > 1 ? 'ies' : 'y'}`, `Show ${count} hidden categor${count > 1 ? 'ies' : 'y'}`),
             cls: 'hidden-fields-toggle-link',
         });
         const hiddenContainer = parent.createDiv('hidden-categories-container');
@@ -1318,7 +1319,7 @@ export class LocationView extends ItemView {
         const showCatBtn = sectionHeader.createSpan({
             cls: 'character-section-hide-cat-btn',
             attr: {
-                title: 'Show this category',
+                title: legacyUi('Show this category', 'Show this category'),
                 'aria-label': 'Show this category',
                 role: 'button',
             },
@@ -1432,7 +1433,7 @@ export class LocationView extends ItemView {
             // User-defined custom types
             const customTypes = this.plugin.settings.customLocationTypes ?? [];
             if (customTypes.length > 0) {
-                const sep = select.createEl('option', { text: '──────────', value: '' });
+                const sep = select.createEl('option', { text: legacyUi('──────────', '──────────'), value: '' });
                 sep.disabled = true;
                 for (const t of customTypes) {
                     const opt = select.createEl('option', { text: t, value: t.toLowerCase() });
@@ -1450,7 +1451,7 @@ export class LocationView extends ItemView {
             }
             // "+ Add custom type…" sentinel
             const ADD_SENTINEL = '__add_custom_type__';
-            select.createEl('option', { text: '+ add custom type???', value: ADD_SENTINEL });
+            select.createEl('option', { text: legacyUi('+ add custom type???', '+ add custom type???'), value: ADD_SENTINEL });
 
             select.addEventListener('change', async () => {
                 if (select.value === ADD_SENTINEL) {
@@ -1561,7 +1562,7 @@ export class LocationView extends ItemView {
     ): void {
         const upBtn = labelEl.createSpan({
             cls: 'field-move-btn',
-            attr: { title: 'Move field up', 'aria-label': 'Move field up' },
+            attr: { title: legacyUi('Move field up', 'Move field up'), 'aria-label': 'Move field up' },
         });
         obsidian.setIcon(upBtn, 'chevron-up');
         upBtn.addEventListener('click', async (e) => {
@@ -1572,7 +1573,7 @@ export class LocationView extends ItemView {
 
         const downBtn = labelEl.createSpan({
             cls: 'field-move-btn',
-            attr: { title: 'Move field down', 'aria-label': 'Move field down' },
+            attr: { title: legacyUi('Move field down', 'Move field down'), 'aria-label': 'Move field down' },
         });
         obsidian.setIcon(downBtn, 'chevron-down');
         downBtn.addEventListener('click', async (e) => {
@@ -1602,7 +1603,7 @@ export class LocationView extends ItemView {
 
         const editBtn = labelWrap.createSpan({
             cls: 'codex-universal-edit-btn',
-            attr: { title: 'Edit or remove this universal field', 'aria-label': 'Edit field' },
+            attr: { title: legacyUi('Edit or remove this universal field', 'Edit or remove this universal field'), 'aria-label': 'Edit field' },
         });
         obsidian.setIcon(editBtn, 'pencil');
         editBtn.addEventListener('click', () => {
@@ -1640,7 +1641,7 @@ export class LocationView extends ItemView {
         // Up/down move buttons — share field-move-btn styling for hover behavior.
         const moveUpBtn = labelWrap.createSpan({
             cls: 'codex-universal-move-btn',
-            attr: { title: 'Move field up', 'aria-label': 'Move field up' },
+            attr: { title: legacyUi('Move field up', 'Move field up'), 'aria-label': 'Move field up' },
         });
         obsidian.setIcon(moveUpBtn, 'chevron-up');
         moveUpBtn.addEventListener('click', async (e) => {
@@ -1653,7 +1654,7 @@ export class LocationView extends ItemView {
 
         const moveDownBtn = labelWrap.createSpan({
             cls: 'codex-universal-move-btn',
-            attr: { title: 'Move field down', 'aria-label': 'Move field down' },
+            attr: { title: legacyUi('Move field down', 'Move field down'), 'aria-label': 'Move field down' },
         });
         obsidian.setIcon(moveDownBtn, 'chevron-down');
         moveDownBtn.addEventListener('click', async (e) => {
@@ -1700,7 +1701,7 @@ export class LocationView extends ItemView {
                 for (const item of selected) {
                     const pill = pillsEl.createSpan({ cls: 'universal-multi-pill' });
                     pill.createSpan({ text: item });
-                    const x = pill.createSpan({ cls: 'universal-multi-pill-x', text: '\u00d7' });
+                    const x = pill.createSpan({ cls: 'universal-multi-pill-x', text: legacyUi('\u00d7', '\u00d7') });
                     x.addEventListener('click', () => {
                         const idx = selected.indexOf(item);
                         if (idx >= 0) selected.splice(idx, 1);
@@ -1834,15 +1835,15 @@ export class LocationView extends ItemView {
         obsidian.setIcon(chevron, 'chevron-down');
         const icon = sectionHeader.createSpan('location-section-icon');
         obsidian.setIcon(icon, 'git-branch');
-        sectionHeader.createSpan({ text: 'Hierarchy' });
+        sectionHeader.createSpan({ text: legacyUi('Hierarchy', 'Hierarchy') });
 
         const body = section.createDiv('location-section-body');
 
         // World dropdown
         const worldRow = body.createDiv('location-field-row');
-        worldRow.createEl('label', { cls: 'location-field-label', text: 'World' });
+        worldRow.createEl('label', { cls: 'location-field-label', text: legacyUi('World', 'World') });
         const worldSelect = worldRow.createEl('select', { cls: 'location-field-input dropdown' });
-        worldSelect.createEl('option', { text: 'None (standalone)', value: '' });
+        worldSelect.createEl('option', { text: legacyUi('None (standalone)', 'None (standalone)'), value: '' });
         for (const w of this.locationManager.getAllWorlds()) {
             const opt = worldSelect.createEl('option', { text: w.name, value: w.name });
             if (draft.world === w.name) opt.selected = true;
@@ -1854,9 +1855,9 @@ export class LocationView extends ItemView {
 
         // Parent location dropdown
         const parentRow = body.createDiv('location-field-row');
-        parentRow.createEl('label', { cls: 'location-field-label', text: 'Parent location' });
+        parentRow.createEl('label', { cls: 'location-field-label', text: legacyUi('Parent location', 'Parent location') });
         const parentSelect = parentRow.createEl('select', { cls: 'location-field-input dropdown' });
-        parentSelect.createEl('option', { text: 'None (top-level)', value: '' });
+        parentSelect.createEl('option', { text: legacyUi('None (top-level)', 'None (top-level)'), value: '' });
         const allLocations = this.locationManager.getAllLocations()
             .filter(l => l.filePath !== draft.filePath);
         for (const loc of allLocations) {
@@ -1905,18 +1906,18 @@ export class LocationView extends ItemView {
                 const keyIn = row.createEl('input', {
                     cls: 'location-field-input location-custom-key',
                     type: 'text',
-                    attr: { placeholder: 'Field name' },
+                    attr: { placeholder: legacyUi('Field name', 'Field name') },
                 });
                 keyIn.value = key;
 
                 const valIn = row.createEl('input', {
                     cls: 'location-field-input location-custom-value',
                     type: 'text',
-                    attr: { placeholder: 'Value' },
+                    attr: { placeholder: legacyUi('Value', 'Value') },
                 });
                 valIn.value = val;
 
-                const removeBtn = row.createEl('button', { cls: 'location-custom-remove', attr: { title: 'Remove' } });
+                const removeBtn = row.createEl('button', { cls: 'location-custom-remove', attr: { title: legacyUi('Remove', 'Remove') } });
                 obsidian.setIcon(removeBtn, 'x');
 
                 keyIn.addEventListener('change', () => {
@@ -1937,7 +1938,7 @@ export class LocationView extends ItemView {
             }
 
             const addRow = sectionBody.createDiv('location-custom-add-row');
-            const addBtn = addRow.createEl('button', { cls: 'location-custom-add-btn', text: '+ add field' });
+            const addBtn = addRow.createEl('button', { cls: 'location-custom-add-btn', text: legacyUi('+ add field', '+ add field') });
             addBtn.addEventListener('click', () => {
                 if (!draft.custom) draft.custom = {};
                 let n = Object.keys(draft.custom).length + 1;
@@ -1998,7 +1999,7 @@ export class LocationView extends ItemView {
 
         // Location count
         const statsBox = container.createDiv('location-side-stats');
-        statsBox.createEl('h4', { text: 'World summary' });
+        statsBox.createEl('h4', { text: legacyUi('World summary', 'World summary') });
         const statGrid = statsBox.createDiv('location-stat-grid');
         this.renderStat(statGrid, String(locations.length), 'Locations');
 
@@ -2010,7 +2011,7 @@ export class LocationView extends ItemView {
         // Location list
         if (locations.length > 0) {
             const listSection = container.createDiv('location-side-list');
-            listSection.createEl('h4', { text: 'Locations in this world' });
+            listSection.createEl('h4', { text: legacyUi('Locations in this world', 'Locations in this world') });
             for (const loc of locations) {
                 const item = listSection.createDiv('location-side-item');
                 const icon = item.createSpan('location-side-item-icon');
@@ -2027,7 +2028,7 @@ export class LocationView extends ItemView {
         }
 
         // Add location to this world button
-        const addBtn = container.createEl('button', { cls: 'location-add-to-world-btn', text: `+ Add location to ${world.name}` });
+        const addBtn = container.createEl('button', { cls: 'location-add-to-world-btn', text: legacyUi(`+ Add location to ${world.name}`, `+ Add location to ${world.name}`) });
         addBtn.addEventListener('click', () => this.promptNewLocation(world.name));
     }
 
@@ -2041,20 +2042,20 @@ export class LocationView extends ItemView {
 
         // Stats
         const statsBox = container.createDiv('location-side-stats');
-        statsBox.createEl('h4', { text: 'Location info' });
+        statsBox.createEl('h4', { text: legacyUi('Location info', 'Location info') });
 
         if (loc.world) {
             const worldInfo = statsBox.createDiv('location-side-world-info');
             const worldIcon = worldInfo.createSpan();
             obsidian.setIcon(worldIcon, 'globe');
-            worldInfo.createSpan({ text: ` ${loc.world}` });
+            worldInfo.createSpan({ text: legacyUi(` ${loc.world}`, ` ${loc.world}`) });
         }
 
         if (loc.parent) {
             const parentInfo = statsBox.createDiv('location-side-parent-info');
             const parentIcon = parentInfo.createSpan();
             obsidian.setIcon(parentIcon, 'corner-down-right');
-            parentInfo.createSpan({ text: ` Inside: ${loc.parent}` });
+            parentInfo.createSpan({ text: legacyUi(` Inside: ${loc.parent}`, ` Inside: ${loc.parent}`) });
         }
 
         const statGrid = statsBox.createDiv('location-stat-grid');
@@ -2069,7 +2070,7 @@ export class LocationView extends ItemView {
         // Scene list
         if (locScenes.length > 0) {
             const listSection = container.createDiv('location-side-scenes');
-            listSection.createEl('h4', { text: 'Scenes here' });
+            listSection.createEl('h4', { text: legacyUi('Scenes here', 'Scenes here') });
             for (const scene of locScenes) {
                 const item = listSection.createDiv('location-side-scene-item');
                 // Shared formatter handles string acts ("1.1", "Prologue")
@@ -2077,8 +2078,8 @@ export class LocationView extends ItemView {
                 const act = formatActChapterPrefix(scene.act, '??');
                 const seq = scene.sequence !== undefined ? String(scene.sequence).padStart(2, '0') : '??';
 
-                item.createSpan({ cls: 'scene-id', text: `[${act}-${seq}]` });
-                item.createSpan({ cls: 'scene-title', text: ` ${scene.title}` });
+                item.createSpan({ cls: 'scene-id', text: legacyUi(`[${act}-${seq}]`, `[${act}-${seq}]`) });
+                item.createSpan({ cls: 'scene-title', text: legacyUi(` ${scene.title}`, ` ${scene.title}`) });
 
                 const statusCfg = resolveStatusCfg(scene.status || 'idea');
                 const statusBadge = item.createSpan({
@@ -2125,14 +2126,14 @@ export class LocationView extends ItemView {
         }
         if (charsHere.size > 0) {
             const charSection = container.createDiv('location-side-chars');
-            charSection.createEl('h4', { text: 'Characters here' });
+            charSection.createEl('h4', { text: legacyUi('Characters here', 'Characters here') });
             const sorted = Array.from(charsHere.entries()).sort((a, b) => b[1] - a[1]);
             for (const [name, count] of sorted) {
                 const item = charSection.createDiv('location-side-char-item');
                 const icon = item.createSpan();
                 obsidian.setIcon(icon, 'user');
-                item.createSpan({ text: ` ${name}` });
-                item.createSpan({ cls: 'location-side-char-count', text: `${count}` });
+                item.createSpan({ text: legacyUi(` ${name}`, ` ${name}`) });
+                item.createSpan({ cls: 'location-side-char-count', text: legacyUi(`${count}`, `${count}`) });
             }
         }
     }
@@ -2143,7 +2144,7 @@ export class LocationView extends ItemView {
         if (!refs || refs.length === 0) return;
 
         const section = container.createDiv('location-references-panel');
-        section.createEl('h3', { text: 'Referenced by' });
+        section.createEl('h3', { text: tr('common.referencedBy') });
 
         const groups: Record<string, typeof refs> = {};
         for (const ref of refs) {
@@ -2185,13 +2186,13 @@ export class LocationView extends ItemView {
         return new Promise(resolve => {
             let resolved = false;
             const modal = new Modal(this.app);
-            modal.titleEl.setText('Add custom location type');
+            modal.titleEl.setText(legacyUi('Add custom location type', 'Add custom location type'));
             let name = '';
             new Setting(modal.contentEl)
-                .setName('Type name')
-                .setDesc('E.g. Planet, star system, galaxy, dimension???')
+                .setName(legacyUi('Type name', 'Type name'))
+                .setDesc(legacyUi('E.g. Planet, star system, galaxy, dimension???', 'E.g. Planet, star system, galaxy, dimension???'))
                 .addText((text: TextComponent) => {
-                    text.setPlaceholder('Planet');
+                    text.setPlaceholder(legacyUi('Planet', 'Planet'));
                     text.onChange((v: string) => (name = v));
                     window.setTimeout(() => text.inputEl?.focus(), 0);
                     text.inputEl?.addEventListener('keydown', (e: KeyboardEvent) => {
@@ -2208,10 +2209,10 @@ export class LocationView extends ItemView {
                 });
             new Setting(modal.contentEl)
                 .addButton((btn: ButtonComponent) => {
-                    btn.setButtonText('Add').setCta().onClick(() => {
+                    btn.setButtonText(legacyUi('Add', 'Add')).setCta().onClick(() => {
                         const trimmed = name.trim();
                         if (!trimmed) {
-                            new Notice('Please enter a type name.');
+                            new Notice(legacyUi('Please enter a type name.', 'Please enter a type name.'));
                             return;
                         }
                         resolved = true;
@@ -2220,7 +2221,7 @@ export class LocationView extends ItemView {
                     });
                 })
                 .addButton((btn: ButtonComponent) => {
-                    btn.setButtonText('Cancel').onClick(() => {
+                    btn.setButtonText(legacyUi('Cancel', 'Cancel')).onClick(() => {
                         resolved = true;
                         modal.close();
                         resolve(null);
@@ -2333,7 +2334,7 @@ export class LocationView extends ItemView {
                     await service.cascadeLocationRename(oldName, newName);
                 }
                 this.originalItemName = newName;
-                new Notice(`Updated ${total} reference${total !== 1 ? 's' : ''} from "${oldName}" to "${newName}"`);
+                new Notice(legacyUi(`Updated ${total} reference${total !== 1 ? 's' : ''} from "${oldName}" to "${newName}"`, `Updated ${total} reference${total !== 1 ? 's' : ''} from "${oldName}" to "${newName}"`));
             },
             () => {
                 // User cancelled — revert the name back
@@ -2371,21 +2372,21 @@ export class LocationView extends ItemView {
 
     private promptNewWorld(): void {
         const modal = new Modal(this.app);
-        modal.titleEl.setText('New world');
+        modal.titleEl.setText(legacyUi('New world', 'New world'));
 
         let name = '';
         new Setting(modal.contentEl)
-            .setName('World name')
+            .setName(legacyUi('World name', 'World name'))
             .addText(text => {
-                text.setPlaceholder('Enter world name\u2026')
+                text.setPlaceholder(legacyUi('Enter world name\u2026', 'Enter world name\u2026'))
                     .onChange(v => (name = v));
                 window.setTimeout(() => text.inputEl.focus(), 50);
             });
 
         new Setting(modal.contentEl)
             .addButton(btn => {
-                btn.setButtonText('Create').setCta().onClick(async () => {
-                    if (!name.trim()) { new Notice('Please enter a name.'); return; }
+                btn.setButtonText(legacyUi('Create', 'Create')).setCta().onClick(async () => {
+                    if (!name.trim()) { new Notice(legacyUi('Please enter a name.', 'Please enter a name.')); return; }
                     try {
                         const w = await this.locationManager.createWorld(
                             this.sceneManager.getLocationFolder(), name.trim()
@@ -2393,7 +2394,7 @@ export class LocationView extends ItemView {
                         this.selectedItem = w.filePath;
                         modal.close();
                         this.renderView(this.rootContainer!);
-                        new Notice(`World "${name.trim()}" created`);
+                        new Notice(legacyUi(`World "${name.trim()}" created`, `World "${name.trim()}" created`));
                     } catch (e) { new Notice(String(e)); }
                 });
             });
@@ -2403,15 +2404,15 @@ export class LocationView extends ItemView {
 
     private promptNewLocation(worldName?: string): void {
         const modal = new Modal(this.app);
-        modal.titleEl.setText('New location');
+        modal.titleEl.setText(legacyUi('New location', 'New location'));
 
         let name = '';
         let selectedWorld = worldName || '';
 
         new Setting(modal.contentEl)
-            .setName('Location name')
+            .setName(legacyUi('Location name', 'Location name'))
             .addText(text => {
-                text.setPlaceholder('Enter location name\u2026')
+                text.setPlaceholder(legacyUi('Enter location name\u2026', 'Enter location name\u2026'))
                     .onChange(v => (name = v));
                 window.setTimeout(() => text.inputEl.focus(), 50);
             });
@@ -2420,10 +2421,10 @@ export class LocationView extends ItemView {
         const worlds = this.locationManager.getAllWorlds();
         if (worlds.length > 0) {
             new Setting(modal.contentEl)
-                .setName('World')
-                .setDesc('Which world does this location belong to?')
+                .setName(legacyUi('World', 'World'))
+                .setDesc(legacyUi('Which world does this location belong to?', 'Which world does this location belong to?'))
                 .addDropdown(dd => {
-                    dd.addOption('', 'None (standalone)');
+                    dd.addOption('', legacyUi('None (standalone)', 'None (standalone)'));
                     for (const w of worlds) {
                         dd.addOption(w.name, w.name);
                     }
@@ -2434,8 +2435,8 @@ export class LocationView extends ItemView {
 
         new Setting(modal.contentEl)
             .addButton(btn => {
-                btn.setButtonText('Create').setCta().onClick(async () => {
-                    if (!name.trim()) { new Notice('Please enter a name.'); return; }
+                btn.setButtonText(legacyUi('Create', 'Create')).setCta().onClick(async () => {
+                    if (!name.trim()) { new Notice(legacyUi('Please enter a name.', 'Please enter a name.')); return; }
                     try {
                         const loc = await this.locationManager.createLocation(
                             this.sceneManager.getLocationFolder(),
@@ -2445,7 +2446,7 @@ export class LocationView extends ItemView {
                         this.selectedItem = loc.filePath;
                         modal.close();
                         this.renderView(this.rootContainer!);
-                        new Notice(`Location "${name.trim()}" created`);
+                        new Notice(legacyUi(`Location "${name.trim()}" created`, `Location "${name.trim()}" created`));
                     } catch (e) { new Notice(String(e)); }
                 });
             });
@@ -2460,20 +2461,20 @@ export class LocationView extends ItemView {
             );
             this.selectedItem = loc.filePath;
             this.renderView(this.rootContainer!);
-            new Notice(`Location profile created for "${name}"`);
+            new Notice(legacyUi(`Location profile created for "${name}"`, `Location profile created for "${name}"`));
         } catch (e) { new Notice(String(e)); }
     }
 
     private confirmDelete(item: WorldOrLocation): void {
         const modal = new Modal(this.app);
-        modal.titleEl.setText(`Delete ${item.type === 'world' ? 'World' : 'Location'}`);
+        modal.titleEl.setText(legacyUi(`Delete ${item.type === 'world' ? 'World' : 'Location'}`, `Delete ${item.type === 'world' ? 'World' : 'Location'}`));
         modal.contentEl.createEl('p', {
-            text: `Are you sure you want to delete "${item.name}"? The file will be moved to trash.`
+            text: legacyUi(`Are you sure you want to delete "${item.name}"? The file will be moved to trash.`, `Are you sure you want to delete "${item.name}"? The file will be moved to trash.`)
         });
 
         new Setting(modal.contentEl)
             .addButton(btn => {
-                btn.setButtonText('Delete').setClass('mod-warning').onClick(async () => {
+                btn.setButtonText(legacyUi('Delete', 'Delete')).setClass('mod-warning').onClick(async () => {
                     // Record undo before deleting
                     const undoMgr = this.plugin.sceneManager?.undoManager;
                     if (undoMgr) {
@@ -2487,10 +2488,10 @@ export class LocationView extends ItemView {
                     this.selectedItem = null;
                     modal.close();
                     this.renderView(this.rootContainer!);
-                    new Notice(`"${item.name}" deleted`);
+                    new Notice(legacyUi(`"${item.name}" deleted`, `"${item.name}" deleted`));
                 });
             })
-            .addButton(btn => btn.setButtonText('Cancel').onClick(() => modal.close()));
+            .addButton(btn => btn.setButtonText(legacyUi('Cancel', 'Cancel')).onClick(() => modal.close()));
 
         modal.open();
     }
@@ -2516,7 +2517,7 @@ export class LocationView extends ItemView {
             const leaf = this.app.workspace.getLeaf('tab');
             await leaf.openFile(file, { state: { mode: 'source', source: false } });
         } else {
-            new Notice(`Could not find file: ${scene.filePath}`);
+            new Notice(legacyUi(`Could not find file: ${scene.filePath}`, `Could not find file: ${scene.filePath}`));
         }
     }
 
@@ -2529,7 +2530,7 @@ export class LocationView extends ItemView {
         await this.plugin.reloadEntities();
         const item = this.locationManager.getItem(filePath);
         if (!item) {
-            new Notice('Location not found in the active project.');
+            new Notice(legacyUi('Location not found in the active project.', 'Location not found in the active project.'));
             return;
         }
         this.selectedItem = filePath;
@@ -2567,13 +2568,13 @@ export class LocationView extends ItemView {
         const header = wrapper.createDiv('character-gallery-header');
         const chevron = header.createSpan('location-section-chevron');
         obsidian.setIcon(chevron, isCollapsed ? 'chevron-right' : 'chevron-down');
-        header.createEl('h4', { text: 'Gallery' });
+        header.createEl('h4', { text: legacyUi('Gallery', 'Gallery') });
 
         // Add button in header
         if (gallery.length < MAX_GALLERY) {
             const addBtn = header.createEl('button', {
                 cls: 'character-section-add-field-btn',
-                attr: { title: `Add image (${gallery.length}/${MAX_GALLERY})`, 'aria-label': 'Add gallery image' }
+                attr: { title: legacyUi(`Add image (${gallery.length}/${MAX_GALLERY})`, `Add image (${gallery.length}/${MAX_GALLERY})`), 'aria-label': 'Add gallery image' }
             });
             obsidian.setIcon(addBtn, 'plus');
             addBtn.addEventListener('click', (e) => {
@@ -2650,7 +2651,7 @@ export class LocationView extends ItemView {
                 // Editable caption
                 const captionInput = captionEl.createEl('input', {
                     cls: 'character-gallery-caption-input',
-                    attr: { type: 'text', placeholder: 'Add caption\u2026', value: entry.caption || '' }
+                    attr: { type: 'text', placeholder: legacyUi('Add caption\u2026', 'Add caption\u2026'), value: entry.caption || '' }
                 });
                 const idx = activeIndex;
                 captionInput.addEventListener('input', () => {
@@ -2662,7 +2663,7 @@ export class LocationView extends ItemView {
                 // Remove button for active image
                 const removeBtn = captionEl.createEl('button', {
                     cls: 'character-gallery-remove-btn',
-                    attr: { title: 'Remove this image' }
+                    attr: { title: legacyUi('Remove this image', 'Remove this image') }
                 });
                 obsidian.setIcon(removeBtn, 'x');
                 removeBtn.addEventListener('click', () => {
@@ -2681,7 +2682,7 @@ export class LocationView extends ItemView {
 
         // Navigation row: prev | thumbs | next
         const nav = body.createDiv('character-gallery-nav');
-        const prevBtn = nav.createEl('button', { cls: 'character-gallery-arrow', attr: { title: 'Previous' } });
+        const prevBtn = nav.createEl('button', { cls: 'character-gallery-arrow', attr: { title: legacyUi('Previous', 'Previous') } });
         obsidian.setIcon(prevBtn, 'chevron-left');
         prevBtn.addEventListener('click', () => {
             if (gallery.length === 0) return;
@@ -2692,7 +2693,7 @@ export class LocationView extends ItemView {
 
         const thumbStrip = nav.createDiv('character-gallery-thumbs');
 
-        const nextBtn = nav.createEl('button', { cls: 'character-gallery-arrow', attr: { title: 'Next' } });
+        const nextBtn = nav.createEl('button', { cls: 'character-gallery-arrow', attr: { title: legacyUi('Next', 'Next') } });
         obsidian.setIcon(nextBtn, 'chevron-right');
         nextBtn.addEventListener('click', () => {
             if (gallery.length === 0) return;
@@ -2759,14 +2760,14 @@ export class LocationView extends ItemView {
         // Titlebar (draggable)
         const titlebar = win.createDiv('gallery-lightbox-titlebar');
         const titleText = titlebar.createSpan({ cls: 'gallery-lightbox-title' });
-        const closeBtn = titlebar.createEl('button', { cls: 'gallery-lightbox-close', attr: { title: 'Close' } });
+        const closeBtn = titlebar.createEl('button', { cls: 'gallery-lightbox-close', attr: { title: legacyUi('Close', 'Close') } });
         obsidian.setIcon(closeBtn, 'x');
         closeBtn.addEventListener('click', () => { cleanup(); win.remove(); });
 
         // Content area with nav + image
         const contentRow = win.createDiv('gallery-lightbox-content-row');
 
-        const prevBtn = contentRow.createEl('button', { cls: 'gallery-lightbox-nav-btn', attr: { title: 'Previous' } });
+        const prevBtn = contentRow.createEl('button', { cls: 'gallery-lightbox-nav-btn', attr: { title: legacyUi('Previous', 'Previous') } });
         obsidian.setIcon(prevBtn, 'chevron-left');
         prevBtn.addEventListener('click', () => {
             currentIndex = (currentIndex - 1 + gallery.length) % gallery.length;
@@ -2775,7 +2776,7 @@ export class LocationView extends ItemView {
 
         const imgContainer = contentRow.createDiv('gallery-lightbox-content');
 
-        const nextBtn = contentRow.createEl('button', { cls: 'gallery-lightbox-nav-btn', attr: { title: 'Next' } });
+        const nextBtn = contentRow.createEl('button', { cls: 'gallery-lightbox-nav-btn', attr: { title: legacyUi('Next', 'Next') } });
         obsidian.setIcon(nextBtn, 'chevron-right');
         nextBtn.addEventListener('click', () => {
             currentIndex = (currentIndex + 1) % gallery.length;

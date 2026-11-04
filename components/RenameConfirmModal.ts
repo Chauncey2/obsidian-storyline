@@ -1,6 +1,7 @@
  
 import { Modal, App, Setting } from 'obsidian';
 import { RenamePreview } from '../services/CascadeRenameService';
+import { tr } from '../i18n';
 
 /**
  * Modal that shows the user what a rename will affect and asks for confirmation.
@@ -32,11 +33,11 @@ export class RenameConfirmModal extends Modal {
         const { contentEl } = this;
         const label = this.entityType.charAt(0).toUpperCase() + this.entityType.slice(1);
 
-        this.titleEl.setText(`Rename ${label}`);
+        this.titleEl.setText(`${tr('common.rename')} ${label}`);
 
         // Description
         contentEl.createEl('p', {
-            text: `Rename "${this.oldName}" → "${this.newName}"?`,
+            text: tr('common.renameQuestion', { oldName: this.oldName, newName: this.newName }),
         }).setCssStyles({ fontWeight: '600' });
 
         contentEl.createEl('p', {
@@ -53,22 +54,22 @@ export class RenameConfirmModal extends Modal {
         });
 
         if (this.preview.sceneCount > 0) {
-            details.createDiv({ text: `• ${this.preview.sceneCount} scene${this.preview.sceneCount !== 1 ? 's' : ''} (pov, characters, location fields)` });
+            details.createDiv({ text: tr('common.renameScenes', { count: this.preview.sceneCount }) });
         }
         if (this.preview.relationCount > 0) {
-            details.createDiv({ text: `• ${this.preview.relationCount} character relationship${this.preview.relationCount !== 1 ? 's' : ''}` });
+            details.createDiv({ text: tr('common.renameRelationships', { count: this.preview.relationCount }) });
         }
         if (this.preview.locationCount > 0) {
-            details.createDiv({ text: `• ${this.preview.locationCount} child location${this.preview.locationCount !== 1 ? 's' : ''} (world/parent fields)` });
+            details.createDiv({ text: tr('common.renameChildLocations', { count: this.preview.locationCount }) });
         }
         if (this.preview.characterLocationCount > 0) {
-            details.createDiv({ text: `• ${this.preview.characterLocationCount} character location reference${this.preview.characterLocationCount !== 1 ? 's' : ''}` });
+            details.createDiv({ text: tr('common.renameCharacterLocations', { count: this.preview.characterLocationCount }) });
         }
 
         // Buttons
         new Setting(contentEl)
             .addButton(btn => {
-                btn.setButtonText('Cancel')
+                btn.setButtonText(tr('common.cancel'))
                     .onClick(() => {
                         this.resolved = true;
                         this.close();
@@ -76,7 +77,7 @@ export class RenameConfirmModal extends Modal {
                     });
             })
             .addButton(btn => {
-                btn.setButtonText('Update references')
+                btn.setButtonText(tr('common.updateReferences'))
                     .setCta()
                     .onClick(async () => {
                         this.resolved = true;

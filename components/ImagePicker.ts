@@ -1,3 +1,4 @@
+import { legacyUi } from '../i18n';
 /* eslint-disable @typescript-eslint/no-misused-promises, @typescript-eslint/no-unused-vars -- Obsidian's API surface and several untyped third-party libraries force dynamic dispatch; floating promises are intentional in DOM/event handlers; matching enable at end of file */
 /**
  * ImagePicker — shared image selection component.
@@ -159,11 +160,11 @@ function importImageFromComputer(app: App, sceneFolder: string): Promise<string 
                 // Write to vault
                 await app.vault.createBinary(targetPath, buffer);
 
-                new Notice(`Image imported: ${targetPath.split('/').pop()}`);
+                new Notice(legacyUi(`Image imported: ${targetPath.split('/').pop()}`, `Image imported: ${targetPath.split('/').pop()}`));
                 
                 complete(targetPath);
             } catch (err) {
-                new Notice(`❌ Failed to import image: ${String(err)}`);
+                new Notice(legacyUi(`❌ Failed to import image: ${String(err)}`, `❌ Failed to import image: ${String(err)}`));
                 complete(undefined);
             }
         };
@@ -228,7 +229,7 @@ class ImageChoiceModal extends Modal {
         contentEl.empty();
         contentEl.addClass('storyline-image-choice-modal');
 
-        contentEl.createEl('h3', { text: 'Set image' });
+        contentEl.createEl('h3', { text: legacyUi('Set image', 'Set image') });
 
         // Current image preview
         if (this.currentImage) {
@@ -250,12 +251,12 @@ class ImageChoiceModal extends Modal {
                 img.onerror = () => {
                     img.remove();
                     const placeholder = preview.createDiv('image-choice-preview-placeholder');
-                    placeholder.setText('Image not found');
+                    placeholder.setText(legacyUi('Image not found', 'Image not found'));
                 };
             } catch (error) {
                 // Image failed to load — leave preview empty
                 const placeholder = preview.createDiv('image-choice-preview-placeholder');
-                placeholder.setText('Image not found');
+                placeholder.setText(legacyUi('Image not found', 'Image not found'));
             }
 
             const pathLabel = preview.createDiv();
@@ -270,7 +271,7 @@ class ImageChoiceModal extends Modal {
         const btnRow = contentEl.createDiv('image-choice-buttons');
 
         // Import from computer
-        const importBtn = btnRow.createEl('button', { cls: 'mod-cta', text: 'Import from computer' });
+        const importBtn = btnRow.createEl('button', { cls: 'mod-cta', text: legacyUi('Import from computer', 'Import from computer') });
         const importIcon = importBtn.createSpan({ cls: 'image-choice-btn-icon' });
         obsidian.setIcon(importIcon, 'upload');
         importBtn.prepend(importIcon);
@@ -282,7 +283,7 @@ class ImageChoiceModal extends Modal {
         });
 
         // Choose from vault
-        const vaultBtn = btnRow.createEl('button', { text: 'Choose from vault' });
+        const vaultBtn = btnRow.createEl('button', { text: legacyUi('Choose from vault', 'Choose from vault') });
         const vaultIcon = vaultBtn.createSpan({ cls: 'image-choice-btn-icon' });
         obsidian.setIcon(vaultIcon, 'folder-open');
         vaultBtn.prepend(vaultIcon);
@@ -302,7 +303,7 @@ class ImageChoiceModal extends Modal {
 
         // Remove image (only if one is set)
         if (this.currentImage) {
-            const removeBtn = btnRow.createEl('button', { cls: 'mod-warning', text: 'Remove image' });
+            const removeBtn = btnRow.createEl('button', { cls: 'mod-warning', text: legacyUi('Remove image', 'Remove image') });
             const removeIcon = removeBtn.createSpan({ cls: 'image-choice-btn-icon' });
             obsidian.setIcon(removeIcon, 'x');
             removeBtn.prepend(removeIcon);
@@ -333,7 +334,7 @@ class VaultImagePickerModal extends FuzzySuggestModal<TFile> {
         super(app);
         this.imageFiles = files;
         this.onSelect = onSelect;
-        this.setPlaceholder('Search for an image file…');
+        this.setPlaceholder(legacyUi('Search for an image file…', 'Search for an image file…'));
     }
 
     getItems(): TFile[] {

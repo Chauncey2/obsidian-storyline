@@ -1,3 +1,4 @@
+import { legacyUi } from '../i18n';
 import { App, Modal, Notice, Setting, setIcon } from 'obsidian';
 import type { CodexVisualGroup } from '../settings';
 
@@ -102,7 +103,7 @@ export function openCodexVisualGroupManager(
     onDone: () => void,
 ): void {
     const modal = new Modal(app);
-    modal.titleEl.setText(`Visual groups - ${categoryLabel}`);
+    modal.titleEl.setText(legacyUi(`Visual groups - ${categoryLabel}`, `Visual groups - ${categoryLabel}`));
     let draggedGroupId: string | null = null;
     let draggedRow: HTMLElement | null = null;
     let dropTargetRow: HTMLElement | null = null;
@@ -118,12 +119,12 @@ export function openCodexVisualGroupManager(
         modal.contentEl.addClass('codex-category-manager');
         modal.contentEl.createEl('p', {
             cls: 'setting-item-description',
-            text: `Create named display groups for ${categoryLabel.toLowerCase()}. Groups only change the codex view and do not modify entry files.`,
+            text: legacyUi(`Create named display groups for ${categoryLabel.toLowerCase()}. Groups only change the codex view and do not modify entry files.`, `Create named display groups for ${categoryLabel.toLowerCase()}. Groups only change the codex view and do not modify entry files.`),
         });
 
         const groups = getCodexVisualGroups(store, categoryKey);
         if (groups.length > 0) {
-            modal.contentEl.createEl('h4', { text: 'Groups' });
+            modal.contentEl.createEl('h4', { text: legacyUi('Groups', 'Groups') });
             for (const group of groups) {
                 const row = modal.contentEl.createDiv('codex-category-manager-row');
                 row.dataset.groupId = group.id;
@@ -188,13 +189,13 @@ export function openCodexVisualGroupManager(
                 });
                 row.createSpan({
                     cls: 'codex-visual-group-count',
-                    text: `${group.entryPaths.length} entr${group.entryPaths.length === 1 ? 'y' : 'ies'}`,
+                    text: legacyUi(`${group.entryPaths.length} entr${group.entryPaths.length === 1 ? 'y' : 'ies'}`, `${group.entryPaths.length} entr${group.entryPaths.length === 1 ? 'y' : 'ies'}`),
                 });
                 const deleteBtn = row.createEl('button', {
                     cls: 'codex-category-delete-btn clickable-icon',
                     attr: { 'aria-label': `Delete ${group.name}`, draggable: 'false' },
                 });
-                deleteBtn.setText('×');
+                deleteBtn.setText(legacyUi('×', '×'));
                 deleteBtn.addEventListener('click', () => {
                     const index = groups.indexOf(group);
                     if (index >= 0) groups.splice(index, 1);
@@ -204,26 +205,26 @@ export function openCodexVisualGroupManager(
             }
         }
 
-        modal.contentEl.createEl('h4', { text: 'Add group' });
+        modal.contentEl.createEl('h4', { text: legacyUi('Add group', 'Add group') });
         let groupInput: HTMLInputElement | null = null;
         new Setting(modal.contentEl)
-            .setName('Group name')
+            .setName(legacyUi('Group name', 'Group name'))
             .addText(text => {
-                text.setPlaceholder('Friends');
+                text.setPlaceholder(legacyUi('Friends', 'Friends'));
                 groupInput = text.inputEl;
             });
         new Setting(modal.contentEl)
             .addButton(button => button
-                .setButtonText('Create group')
+                .setButtonText(legacyUi('Create group', 'Create group'))
                 .setCta()
                 .onClick(() => {
                     const name = groupInput?.value.trim() ?? '';
                     if (!name) {
-                        new Notice('Enter a group name.');
+                        new Notice(legacyUi('Enter a group name.', 'Enter a group name.'));
                         return;
                     }
                     if (groups.some(group => group.name.toLowerCase() === name.toLowerCase())) {
-                        new Notice('A group with that name already exists.');
+                        new Notice(legacyUi('A group with that name already exists.', 'A group with that name already exists.'));
                         return;
                     }
                     groups.push({ id: `${categoryKey}-${Date.now()}-${Math.random().toString(36).slice(2)}`, name, entryPaths: [] });
@@ -232,7 +233,7 @@ export function openCodexVisualGroupManager(
                 }));
         new Setting(modal.contentEl)
             .addButton(button => button
-                .setButtonText('Done')
+                .setButtonText(legacyUi('Done', 'Done'))
                 .onClick(() => {
                     modal.close();
                     onDone();

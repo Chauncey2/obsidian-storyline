@@ -1,3 +1,4 @@
+import { legacyUi } from '../i18n';
 /* eslint-disable @typescript-eslint/no-floating-promises, @typescript-eslint/no-misused-promises, @typescript-eslint/no-unused-vars -- Obsidian's API surface and several untyped third-party libraries force dynamic dispatch; floating promises are intentional in DOM/event handlers; matching enable at end of file */
 import { Modal, App, Notice } from 'obsidian';
 import * as obsidian from 'obsidian';
@@ -113,10 +114,10 @@ export class InspectorComponent {
 
         // Header
         const header = this.container.createDiv('inspector-header');
-        header.createEl('h3', { text: 'Scene details' });
+        header.createEl('h3', { text: legacyUi('Scene details', 'Scene details') });
         const closeBtn = header.createEl('button', {
             cls: 'clickable-icon inspector-close',
-            text: '×'
+            text: legacyUi('×', '×')
         });
         closeBtn.addEventListener('click', () => this.hide());
 
@@ -153,7 +154,7 @@ export class InspectorComponent {
         const titleSection = this.container.createDiv('inspector-title-section');
         const titleInput = titleSection.createEl('input', {
             cls: 'inspector-title-input',
-            attr: { type: 'text', placeholder: 'Scene title…' },
+            attr: { type: 'text', placeholder: legacyUi('Scene title…', 'Scene title…') },
         });
         titleInput.value = scene.title || '';
         titleInput.setCssStyles({
@@ -179,7 +180,7 @@ export class InspectorComponent {
                 // Cascade rename: update setup_scenes / payoff_scenes in other scenes
                 const updated = await this.plugin.cascadeRename.cascadeSceneTitleRename(oldTitle, val);
                 if (updated > 0) {
-                    new Notice(`Updated ${updated} setup/payoff link${updated !== 1 ? 's' : ''}`);
+                    new Notice(legacyUi(`Updated ${updated} setup/payoff link${updated !== 1 ? 's' : ''}`, `Updated ${updated} setup/payoff link${updated !== 1 ? 's' : ''}`));
                 }
             }
         });
@@ -187,7 +188,7 @@ export class InspectorComponent {
         // ── Subtitle (optional) ──
         const subtitleInput = titleSection.createEl('input', {
             cls: 'inspector-subtitle-input',
-            attr: { type: 'text', placeholder: 'Subtitle (optional)…' },
+            attr: { type: 'text', placeholder: legacyUi('Subtitle (optional)…', 'Subtitle (optional)…') },
         });
         subtitleInput.value = scene.subtitle || '';
         styleInput(subtitleInput);
@@ -208,11 +209,11 @@ export class InspectorComponent {
 
         // Act
         const actGroup = acRow.createDiv();
-        actGroup.createSpan({ cls: 'inspector-label', text: 'Act' });
+        actGroup.createSpan({ cls: 'inspector-label', text: legacyUi('Act', 'Act') });
         // Use a free-text input (not a dropdown) so users can name acts
         // however they like — "1", "1.1", "Prologue", etc.  parseActChapterInput
         // keeps integers as numbers and anything else as a trimmed string.
-        const actInput = actGroup.createEl('input', { attr: { type: 'text', placeholder: '#' } });
+        const actInput = actGroup.createEl('input', { attr: { type: 'text', placeholder: legacyUi('#', '#') } });
         styleInput(actInput);
         actInput.value = scene.act !== undefined ? String(scene.act) : '';
         actInput.addEventListener('change', async () => {
@@ -222,7 +223,7 @@ export class InspectorComponent {
             // the folder name itself, but the user should know the on-disk
             // name will differ from what they typed.
             if (typeof val === 'string' && actChapterHasIllegalPathChars(val)) {
-                new Notice(`Act name contains characters that aren't allowed in folder names; they'll be replaced with "-".`);
+                new Notice(legacyUi(`Act name contains characters that aren't allowed in folder names; they'll be replaced with "-".`, `Act name contains characters that aren't allowed in folder names; they'll be replaced with "-".`));
             }
             await this.sceneManager.updateScene(scene.filePath, { act: val });
             scene.act = val;
@@ -235,7 +236,7 @@ export class InspectorComponent {
         const actQuickRow = actGroup.createDiv('sl-inspector-act-quick');
         const prologueBtn = actQuickRow.createEl('button', {
             cls: `sl-inspector-act-quick-btn ${isPrologueAct(scene.act) ? 'is-active' : ''}`,
-            text: 'Prologue',
+            text: legacyUi('Prologue', 'Prologue'),
         });
         prologueBtn.addEventListener('click', async () => {
             const newVal = isPrologueAct(scene.act) ? undefined : PROLOGUE_ACT;
@@ -247,7 +248,7 @@ export class InspectorComponent {
         });
         const epilogueBtn = actQuickRow.createEl('button', {
             cls: `sl-inspector-act-quick-btn ${isEpilogueAct(scene.act) ? 'is-active' : ''}`,
-            text: 'Epilogue',
+            text: legacyUi('Epilogue', 'Epilogue'),
         });
         epilogueBtn.addEventListener('click', async () => {
             const newVal = isEpilogueAct(scene.act) ? undefined : EPILOGUE_ACT;
@@ -260,14 +261,14 @@ export class InspectorComponent {
 
         // Chapter
         const chGroup = acRow.createDiv();
-        chGroup.createSpan({ cls: 'inspector-label', text: 'Chapter' });
-        const chInput = chGroup.createEl('input', { attr: { type: 'text', placeholder: '#' } });
+        chGroup.createSpan({ cls: 'inspector-label', text: legacyUi('Chapter', 'Chapter') });
+        const chInput = chGroup.createEl('input', { attr: { type: 'text', placeholder: legacyUi('#', '#') } });
         styleInput(chInput);
         chInput.value = scene.chapter !== undefined ? String(scene.chapter) : '';
         chInput.addEventListener('change', async () => {
             const val = parseActChapterInput(chInput.value);
             if (typeof val === 'string' && actChapterHasIllegalPathChars(val)) {
-                new Notice(`Chapter name contains characters that aren't allowed in folder names; they'll be replaced with "-".`);
+                new Notice(legacyUi(`Chapter name contains characters that aren't allowed in folder names; they'll be replaced with "-".`, `Chapter name contains characters that aren't allowed in folder names; they'll be replaced with "-".`));
             }
             await this.sceneManager.updateScene(scene.filePath, { chapter: val });
             scene.chapter = val;
@@ -275,8 +276,8 @@ export class InspectorComponent {
 
         // Sequence
         const seqGroup = acRow.createDiv();
-        seqGroup.createSpan({ cls: 'inspector-label', text: 'Sequence' });
-        const seqInput = seqGroup.createEl('input', { attr: { type: 'number', placeholder: '#' } });
+        seqGroup.createSpan({ cls: 'inspector-label', text: legacyUi('Sequence', 'Sequence') });
+        const seqInput = seqGroup.createEl('input', { attr: { type: 'number', placeholder: legacyUi('#', '#') } });
         styleInput(seqInput);
         seqInput.value = scene.sequence !== undefined ? String(scene.sequence) : '';
         seqInput.addEventListener('change', async () => {
@@ -287,8 +288,8 @@ export class InspectorComponent {
 
         // ── Chronological Order ──
         const chronoSection = this.container.createDiv('inspector-section');
-        chronoSection.createSpan({ cls: 'inspector-label', text: 'Chronological Order: ' });
-        const chronoInput = chronoSection.createEl('input', { attr: { type: 'number', placeholder: 'Same as sequence if blank' } });
+        chronoSection.createSpan({ cls: 'inspector-label', text: legacyUi('Chronological Order: ', 'Chronological Order: ') });
+        const chronoInput = chronoSection.createEl('input', { attr: { type: 'number', placeholder: legacyUi('Same as sequence if blank', 'Same as sequence if blank') } });
         styleInput(chronoInput);
         chronoInput.value = scene.chronologicalOrder !== undefined ? String(scene.chronologicalOrder) : '';
         chronoInput.addEventListener('change', async () => {
@@ -299,7 +300,7 @@ export class InspectorComponent {
 
         // ── Status dropdown (custom with Lucide icons) ──
         const statusSection = this.container.createDiv('inspector-section');
-        statusSection.createSpan({ cls: 'inspector-label', text: 'Status: ' });
+        statusSection.createSpan({ cls: 'inspector-label', text: legacyUi('Status: ', 'Status: ') });
         
         const statusDropdown = statusSection.createDiv('inspector-status-dropdown');
         const currentStatus = scene.status || 'idea';
@@ -354,10 +355,10 @@ export class InspectorComponent {
         const inactiveLabel = inactiveSection.createEl('label', { cls: 'inspector-checkbox-row' });
         const inactiveCheckbox = inactiveLabel.createEl('input', { type: 'checkbox' });
         inactiveCheckbox.checked = !!scene.inactive;
-        inactiveLabel.createSpan({ text: 'Inactive scene' });
+        inactiveLabel.createSpan({ text: legacyUi('Inactive scene', 'Inactive scene') });
         inactiveSection.createDiv({
             cls: 'inspector-help-text',
-            text: 'Inactive scenes stay in the project but are hidden from Manuscript and exports by default.',
+            text: legacyUi('Inactive scenes stay in the project but are hidden from Manuscript and exports by default.', 'Inactive scenes stay in the project but are hidden from Manuscript and exports by default.'),
         });
         inactiveCheckbox.addEventListener('change', async () => {
             const inactive = inactiveCheckbox.checked;
@@ -368,7 +369,7 @@ export class InspectorComponent {
 
         // ── POV (autocomplete input) ──
         const povSection = this.container.createDiv('inspector-section');
-        povSection.createSpan({ cls: 'inspector-label', text: 'POV: ' });
+        povSection.createSpan({ cls: 'inspector-label', text: legacyUi('POV: ', 'POV: ') });
         const povContainer = povSection.createDiv('inspector-pov-autocomplete');
         renderAutocompleteInput({
             container: povContainer,
@@ -390,12 +391,12 @@ export class InspectorComponent {
                 await this.sceneManager.updateScene(scene.filePath, { pov: val });
                 scene.pov = val;
             },
-            placeholder: 'Search characters…',
+            placeholder: legacyUi('Search characters…', 'Search characters…'),
         });
 
         // ── Characters (autocomplete tag-pill input) ──
         const charSection = this.container.createDiv('inspector-section');
-        charSection.createSpan({ cls: 'inspector-label', text: 'Characters:' });
+        charSection.createSpan({ cls: 'inspector-label', text: legacyUi('Characters:', 'Characters:') });
         const charPillContainer = charSection.createDiv('inspector-chip-list');
 
         renderTagPillInput({
@@ -417,14 +418,14 @@ export class InspectorComponent {
                 await this.sceneManager.updateScene(scene.filePath, { characters: values });
                 scene.characters = values;
             },
-            placeholder: 'Add character…',
+            placeholder: legacyUi('Add character…', 'Add character…'),
             highlightValue: scene.pov,
             highlightLabel: '(POV)',
         });
 
         // ── Location (autocomplete input) ──
         const locSection = this.container.createDiv('inspector-section');
-        locSection.createSpan({ cls: 'inspector-label', text: 'Location: ' });
+        locSection.createSpan({ cls: 'inspector-label', text: legacyUi('Location: ', 'Location: ') });
         const locContainer = locSection.createDiv('inspector-location-autocomplete');
         renderTagPillInput({
             container: locContainer,
@@ -435,7 +436,7 @@ export class InspectorComponent {
                 await this.sceneManager.updateScene(scene.filePath, { location: value || undefined });
                 scene.location = value || undefined;
             },
-            placeholder: 'Search locations…',
+            placeholder: legacyUi('Search locations…', 'Search locations…'),
             getDisplayLabel: this.getLocationDisplayLabel(),
         });
 
@@ -451,7 +452,7 @@ export class InspectorComponent {
         });
 
         const tmGroup = tmRow.createDiv();
-        tmGroup.createSpan({ cls: 'inspector-label', text: 'Timeline Mode' });
+        tmGroup.createSpan({ cls: 'inspector-label', text: legacyUi('Timeline Mode', 'Timeline Mode') });
         const tmSelect = tmGroup.createEl('select');
         styleSelect(tmSelect);
         for (const m of TIMELINE_MODES) {
@@ -465,7 +466,7 @@ export class InspectorComponent {
         });
 
         const strandGroup = tmRow.createDiv();
-        strandGroup.createSpan({ cls: 'inspector-label', text: 'Strand' });
+        strandGroup.createSpan({ cls: 'inspector-label', text: legacyUi('Strand', 'Strand') });
         const strandInput = strandGroup.createEl('input', { attr: { type: 'text', placeholder: 'E.g. "1943", "outer"' } });
         styleInput(strandInput);
         strandInput.value = scene.timeline_strand || '';
@@ -485,7 +486,7 @@ export class InspectorComponent {
         arcCheckbox.addClass('inspector-arc-checkbox');
         const arcLabel = arcRow.createEl('label', {
             attr: { for: 'arc-anchor-toggle' },
-            text: 'Arc point',
+            text: legacyUi('Arc point', 'Arc point'),
         });
         arcLabel.addClass('inspector-arc-label');
         arcCheckbox.addEventListener('change', async () => {
@@ -503,8 +504,8 @@ export class InspectorComponent {
         });
 
         const dateGroup = dtRow.createDiv();
-        dateGroup.createSpan({ cls: 'inspector-label', text: 'Story Date' });
-        const dateInput = dateGroup.createEl('input', { attr: { type: 'text', placeholder: 'E.g. 2026-02-17, day 3' } });
+        dateGroup.createSpan({ cls: 'inspector-label', text: legacyUi('Story Date', 'Story Date') });
+        const dateInput = dateGroup.createEl('input', { attr: { type: 'text', placeholder: legacyUi('E.g. 2026-02-17, day 3', 'E.g. 2026-02-17, day 3') } });
         styleInput(dateInput);
         dateInput.value = scene.storyDate || scene.timeline || '';
         dateInput.addEventListener('change', async () => {
@@ -514,8 +515,8 @@ export class InspectorComponent {
         });
 
         const timeGroup = dtRow.createDiv();
-        timeGroup.createSpan({ cls: 'inspector-label', text: 'Story Time' });
-        const timeInput = timeGroup.createEl('input', { attr: { type: 'text', placeholder: 'E.g. Morning, 14:00' } });
+        timeGroup.createSpan({ cls: 'inspector-label', text: legacyUi('Story Time', 'Story Time') });
+        const timeInput = timeGroup.createEl('input', { attr: { type: 'text', placeholder: legacyUi('E.g. Morning, 14:00', 'E.g. Morning, 14:00') } });
         styleInput(timeInput);
         timeInput.value = scene.storyTime || '';
         timeInput.addEventListener('change', async () => {
@@ -534,7 +535,7 @@ export class InspectorComponent {
 
         const wcGroup = wcRow.createDiv();
         const useChars = this.plugin.settings.countUnit === 'chars';
-        wcGroup.createSpan({ cls: 'inspector-label', text: useChars ? 'Characters' : 'Words' });
+        wcGroup.createSpan({ cls: 'inspector-label', text: legacyUi(useChars ? 'Characters' : 'Words', useChars ? 'Characters' : 'Words') });
         const wcDisplay = wcGroup.createDiv();
         wcDisplay.setCssStyles({
             marginTop: '4px',
@@ -543,7 +544,7 @@ export class InspectorComponent {
         wcDisplay.textContent = String(useChars ? (scene.charcount || 0) : (scene.wordcount || 0));
 
         const targetGroup = wcRow.createDiv();
-        targetGroup.createSpan({ cls: 'inspector-label', text: 'Target' });
+        targetGroup.createSpan({ cls: 'inspector-label', text: legacyUi('Target', 'Target') });
         const targetInput = targetGroup.createEl('input', { attr: { type: 'number', placeholder: String(this.plugin.settings.defaultTargetWordCount || '') } });
         styleInput(targetInput);
         targetInput.value = scene.target_wordcount ? String(scene.target_wordcount) : '';
@@ -555,7 +556,7 @@ export class InspectorComponent {
 
         // ── Tags / Plotlines (autocomplete tag-pill input) ──
         const tagSection = this.container.createDiv('inspector-section');
-        tagSection.createSpan({ cls: 'inspector-label', text: 'Plotlines / Tags:' });
+        tagSection.createSpan({ cls: 'inspector-label', text: legacyUi('Plotlines / Tags:', 'Plotlines / Tags:') });
         const tagPillContainer = tagSection.createDiv('inspector-chip-list');
         tagPillContainer.setCssStyles({
             marginTop: '4px',
@@ -573,7 +574,7 @@ export class InspectorComponent {
                 await this.sceneManager.updateScene(scene.filePath, { tags: values });
                 scene.tags = values;
             },
-            placeholder: 'Add plotline…',
+            placeholder: legacyUi('Add plotline…', 'Add plotline…'),
         });
 
         // ── Synopsis (editable) ──
@@ -583,10 +584,10 @@ export class InspectorComponent {
         // v1.10.17.)
         {
             const synSection = this.container.createDiv('inspector-section');
-            synSection.createSpan({ cls: 'inspector-label', text: 'Synopsis:' });
+            synSection.createSpan({ cls: 'inspector-label', text: legacyUi('Synopsis:', 'Synopsis:') });
             const synInput = synSection.createEl('textarea', {
                 cls: 'inspector-synopsis-input',
-                attr: { placeholder: 'One- or two-sentence summary of the scene…', rows: '6' },
+                attr: { placeholder: legacyUi('One- or two-sentence summary of the scene…', 'One- or two-sentence summary of the scene…'), rows: '6' },
             });
             synInput.value = scene.synopsis || '';
             styleInput(synInput);
@@ -604,10 +605,10 @@ export class InspectorComponent {
         // ── Scene Draft (body text — editable) ──
         {
             const descSection = this.container.createDiv('inspector-section');
-            descSection.createSpan({ cls: 'inspector-label', text: 'Scene Draft:' });
+            descSection.createSpan({ cls: 'inspector-label', text: legacyUi('Scene Draft:', 'Scene Draft:') });
             const descInput = descSection.createEl('textarea', {
                 cls: 'inspector-description-input',
-                attr: { placeholder: 'Write your scene draft here…', rows: '12' },
+                attr: { placeholder: legacyUi('Write your scene draft here…', 'Write your scene draft here…'), rows: '12' },
             });
             descInput.value = scene.body || '';
             styleInput(descInput);
@@ -627,10 +628,10 @@ export class InspectorComponent {
 
         // ── Conflict (editable) ──
         const conflictSection = this.container.createDiv('inspector-section');
-        conflictSection.createSpan({ cls: 'inspector-label', text: 'Conflict:' });
+        conflictSection.createSpan({ cls: 'inspector-label', text: legacyUi('Conflict:', 'Conflict:') });
         const conflictInput = conflictSection.createEl('textarea', {
             cls: 'inspector-conflict-input',
-            attr: { placeholder: 'What is the main conflict?', rows: '12' },
+            attr: { placeholder: legacyUi('What is the main conflict?', 'What is the main conflict?'), rows: '12' },
         });
         conflictInput.value = scene.conflict || '';
         styleInput(conflictInput);
@@ -646,10 +647,10 @@ export class InspectorComponent {
 
         // ── Emotion (editable) ──
         const emotionSection = this.container.createDiv('inspector-section');
-        emotionSection.createSpan({ cls: 'inspector-label', text: 'Emotion: ' });
+        emotionSection.createSpan({ cls: 'inspector-label', text: legacyUi('Emotion: ', 'Emotion: ') });
         const emotionInput = emotionSection.createEl('input', {
             cls: 'inspector-emotion-input',
-            attr: { type: 'text', placeholder: 'E.g. Tense, hopeful, melancholic' },
+            attr: { type: 'text', placeholder: legacyUi('E.g. Tense, hopeful, melancholic', 'E.g. Tense, hopeful, melancholic') },
         });
         emotionInput.value = scene.emotion || '';
         styleInput(emotionInput);
@@ -661,7 +662,7 @@ export class InspectorComponent {
 
         // Intensity slider (always shown, editable)
         const intensitySection = this.container.createDiv('inspector-section inspector-intensity');
-        intensitySection.createSpan({ cls: 'inspector-label', text: 'Intensity: ' });
+        intensitySection.createSpan({ cls: 'inspector-label', text: legacyUi('Intensity: ', 'Intensity: ') });
         const intensityRow = intensitySection.createDiv('inspector-intensity-row');
         const slider = intensityRow.createEl('input', {
             attr: {
@@ -709,12 +710,12 @@ export class InspectorComponent {
 
         const editBtn = actions.createEl('button', {
             cls: 'mod-cta',
-            text: 'Edit scene'
+            text: legacyUi('Edit scene', 'Edit scene')
         });
         editBtn.addEventListener('click', () => this.onEdit(scene));
 
         const splitBtn = actions.createEl('button', {
-            text: 'Split scene'
+            text: legacyUi('Split scene', 'Split scene')
         });
         splitBtn.addEventListener('click', () => {
             new SplitSceneModal(this.plugin, scene, () => {
@@ -726,11 +727,11 @@ export class InspectorComponent {
 
         const deleteBtn = actions.createEl('button', {
             cls: 'mod-warning',
-            text: 'Delete'
+            text: legacyUi('Delete', 'Delete')
         });
         deleteBtn.addEventListener('click', () => {
             openConfirmModal(this.plugin.app, {
-                title: 'Delete Scene',
+                title: legacyUi('Delete Scene', 'Delete Scene'),
                 message: `Delete scene "${scene.title || 'Untitled'}"?`,
                 confirmLabel: 'Delete',
                 onConfirm: () => {
@@ -752,11 +753,11 @@ export class InspectorComponent {
 
         const section = this.container.createDiv('inspector-section inspector-universal-fields');
         const header = section.createDiv('inspector-universal-header');
-        header.createSpan({ cls: 'inspector-label', text: 'Custom Fields' });
+        header.createSpan({ cls: 'inspector-label', text: legacyUi('Custom Fields', 'Custom Fields') });
 
         const addBtn = header.createEl('button', {
             cls: 'inspector-universal-add-btn clickable-icon',
-            attr: { title: 'Add custom field', 'aria-label': 'Add custom field' },
+            attr: { title: legacyUi('Add custom field', 'Add custom field'), 'aria-label': 'Add custom field' },
         });
         obsidian.setIcon(addBtn, 'plus');
         addBtn.addEventListener('click', () => {
@@ -807,7 +808,7 @@ export class InspectorComponent {
 
         const editBtn = labelWrap.createEl('button', {
             cls: 'inspector-universal-edit-btn clickable-icon',
-            attr: { title: 'Edit or remove this field', 'aria-label': 'Edit field' },
+            attr: { title: legacyUi('Edit or remove this field', 'Edit or remove this field'), 'aria-label': 'Edit field' },
         });
         obsidian.setIcon(editBtn, 'pencil');
         editBtn.addEventListener('click', () => {
@@ -863,7 +864,7 @@ export class InspectorComponent {
                 for (const item of selected) {
                     const pill = pillsEl.createSpan({ cls: 'story-line-chip' });
                     pill.createSpan({ text: item });
-                    const x = pill.createSpan({ cls: 'inspector-sp-remove', text: '×' });
+                    const x = pill.createSpan({ cls: 'inspector-sp-remove', text: legacyUi('×', '×') });
                     x.addEventListener('click', async () => {
                         const idx = selected.indexOf(item);
                         if (idx >= 0) selected.splice(idx, 1);
@@ -939,7 +940,7 @@ export class InspectorComponent {
      */
     private renderSetupPayoff(scene: Scene): void {
         const section = this.container.createDiv('inspector-section inspector-setup-payoff');
-        section.createSpan({ cls: 'inspector-label', text: 'Setup / Payoff:' });
+        section.createSpan({ cls: 'inspector-label', text: legacyUi('Setup / Payoff:', 'Setup / Payoff:') });
 
         const allSceneTitles = this.sceneManager.getAllScenes()
             .filter(s => s.filePath !== scene.filePath)
@@ -950,7 +951,7 @@ export class InspectorComponent {
         const payoffLabel = section.createDiv('inspector-sp-row');
         const payoffIcon = payoffLabel.createSpan();
         obsidian.setIcon(payoffIcon, 'arrow-right');
-        payoffLabel.createSpan({ text: ' Sets up:', cls: 'inspector-sp-label' });
+        payoffLabel.createSpan({ text: legacyUi(' Sets up:', ' Sets up:'), cls: 'inspector-sp-label' });
 
         const payoffContainer = section.createDiv('inspector-sp-list');
         renderTagPillInput({
@@ -985,14 +986,14 @@ export class InspectorComponent {
                     }
                 }
             },
-            placeholder: 'Search scenes…',
+            placeholder: legacyUi('Search scenes…', 'Search scenes…'),
         });
 
         // --- "Set up by" (scenes that set this one up) ---
         const setupLabel = section.createDiv('inspector-sp-row');
         const setupIcon = setupLabel.createSpan();
         obsidian.setIcon(setupIcon, 'arrow-left');
-        setupLabel.createSpan({ text: ' Set up by:', cls: 'inspector-sp-label' });
+        setupLabel.createSpan({ text: legacyUi(' Set up by:', ' Set up by:'), cls: 'inspector-sp-label' });
 
         const setupContainer = section.createDiv('inspector-sp-list');
         renderTagPillInput({
@@ -1027,7 +1028,7 @@ export class InspectorComponent {
                     }
                 }
             },
-            placeholder: 'Search scenes…',
+            placeholder: legacyUi('Search scenes…', 'Search scenes…'),
         });
 
         // Warning: dangling setup (this scene sets up something but the target doesn't exist)
@@ -1041,7 +1042,7 @@ export class InspectorComponent {
                 const warn = section.createDiv('inspector-sp-warning');
                 const warnIcon = warn.createSpan();
                 obsidian.setIcon(warnIcon, 'alert-triangle');
-                warn.createSpan({ text: ` Missing payoff target: ${dangling.join(', ')}` });
+                warn.createSpan({ text: legacyUi(` Missing payoff target: ${dangling.join(', ')}`, ` Missing payoff target: ${dangling.join(', ')}`) });
             }
         }
     }
@@ -1070,7 +1071,7 @@ export class InspectorComponent {
             });
             const iconEl = labelRow.createSpan();
             obsidian.setIcon(iconEl, catDef.icon);
-            labelRow.createSpan({ cls: 'inspector-label', text: `${catDef.label}:` });
+            labelRow.createSpan({ cls: 'inspector-label', text: legacyUi(`${catDef.label}:`, `${catDef.label}:`) });
 
             const pillContainer = section.createDiv('inspector-chip-list');
 
@@ -1126,7 +1127,7 @@ export class InspectorComponent {
         const headerRow = section.createDiv('inspector-detected-header');
         const hdrIcon = headerRow.createSpan();
         obsidian.setIcon(hdrIcon, 'scan-search');
-        headerRow.createSpan({ cls: 'inspector-label', text: ' Detected in text' });
+        headerRow.createSpan({ cls: 'inspector-label', text: legacyUi(' Detected in text', ' Detected in text') });
 
         const pillContainer = section.createDiv('inspector-detected-pills');
         const typeIcons: Record<string, string> = {
@@ -1198,7 +1199,7 @@ export class InspectorComponent {
         const sceneForIgnore = this.currentScene;
         if (sceneForIgnore) {
             menu.addItem(item => {
-                item.setTitle('Ignore in this scene')
+                item.setTitle(legacyUi('Ignore in this scene', 'Ignore in this scene'))
                     .setIcon('eye-off')
                     .onClick(async () => {
                         const cur = sceneForIgnore.ignored_detections || [];
@@ -1257,12 +1258,12 @@ export class InspectorComponent {
         const labelRow = section.createDiv('inspector-notes-header');
         const icon = labelRow.createSpan();
         obsidian.setIcon(icon, 'message-square');
-        labelRow.createSpan({ cls: 'inspector-label', text: ' Notes / Comments' });
+        labelRow.createSpan({ cls: 'inspector-label', text: legacyUi(' Notes / Comments', ' Notes / Comments') });
 
         // "Open notes file" button — creates/opens an external .md file
         const openFileBtn = labelRow.createEl('button', {
             cls: 'clickable-icon',
-            attr: { title: 'Open as separate notes file', 'aria-label': 'Open notes file' },
+            attr: { title: legacyUi('Open as separate notes file', 'Open as separate notes file'), 'aria-label': 'Open notes file' },
         });
         obsidian.setIcon(openFileBtn, 'file-text');
         openFileBtn.addEventListener('click', async () => {
@@ -1286,7 +1287,7 @@ export class InspectorComponent {
         if (!notesText) {
             // Empty state — show a clickable placeholder that opens the editor
             const placeholder = container.createDiv('inspector-notes-live is-empty');
-            placeholder.createDiv({ cls: 'inspector-notes-placeholder', text: 'Click to add notes…' });
+            placeholder.createDiv({ cls: 'inspector-notes-placeholder', text: legacyUi('Click to add notes…', 'Click to add notes…') });
             placeholder.addEventListener('click', () => {
                 this.renderInspectorNotesEditor(container, scene, '');
             });
@@ -1351,7 +1352,7 @@ export class InspectorComponent {
 
         const textarea = editorEl.createEl('textarea', {
             cls: 'inspector-notes-textarea',
-            attr: { placeholder: 'Write notes in Markdown — use - [ ] for checkboxes, **bold**, [[wikilinks]]', rows: '4' },
+            attr: { placeholder: legacyUi('Write notes in Markdown — use - [ ] for checkboxes, **bold**, [[wikilinks]]', 'Write notes in Markdown — use - [ ] for checkboxes, **bold**, [[wikilinks]]'), rows: '4' },
         });
         textarea.value = currentNotes;
 
@@ -1422,11 +1423,11 @@ export class InspectorComponent {
         const headerRow = section.createDiv('inspector-snapshots-header');
         const hdrIcon = headerRow.createSpan();
         obsidian.setIcon(hdrIcon, 'history');
-        headerRow.createSpan({ cls: 'inspector-label', text: ' Snapshots' });
+        headerRow.createSpan({ cls: 'inspector-label', text: legacyUi(' Snapshots', ' Snapshots') });
 
         const saveBtn = headerRow.createEl('button', {
             cls: 'inspector-snapshot-save-btn clickable-icon',
-            attr: { title: 'Save snapshot' },
+            attr: { title: legacyUi('Save snapshot', 'Save snapshot') },
         });
         obsidian.setIcon(saveBtn, 'save');
 
@@ -1438,7 +1439,7 @@ export class InspectorComponent {
             listEl.empty();
             const snapshots = await mgr.listSnapshots(scene.filePath);
             if (snapshots.length === 0) {
-                listEl.createSpan({ cls: 'inspector-sp-empty', text: 'No snapshots yet' });
+                listEl.createSpan({ cls: 'inspector-sp-empty', text: legacyUi('No snapshots yet', 'No snapshots yet') });
                 return;
             }
             for (const snap of snapshots) {
@@ -1447,7 +1448,7 @@ export class InspectorComponent {
                 info.createSpan({ cls: 'inspector-snapshot-label', text: snap.label });
                 const dateStr = snap.timestamp.split('T')[0];
                 const wcStr = snap.wordcount ? ` · ${snap.wordcount}w` : '';
-                info.createSpan({ cls: 'inspector-snapshot-meta', text: `${dateStr}${wcStr}` });
+                info.createSpan({ cls: 'inspector-snapshot-meta', text: legacyUi(`${dateStr}${wcStr}`, `${dateStr}${wcStr}`) });
 
                 const btns = row.createDiv('inspector-snapshot-btns');
 
@@ -1456,7 +1457,7 @@ export class InspectorComponent {
                 // deciding whether to restore.
                 const viewBtn = btns.createEl('button', {
                     cls: 'clickable-icon',
-                    attr: { title: 'Open snapshot in a new tab (compare)' },
+                    attr: { title: legacyUi('Open snapshot in a new tab (compare)', 'Open snapshot in a new tab (compare)') },
                 });
                 obsidian.setIcon(viewBtn, 'file-text');
                 viewBtn.addEventListener('click', async () => {
@@ -1471,12 +1472,12 @@ export class InspectorComponent {
 
                 const restoreBtn = btns.createEl('button', {
                     cls: 'clickable-icon',
-                    attr: { title: 'Restore this snapshot' },
+                    attr: { title: legacyUi('Restore this snapshot', 'Restore this snapshot') },
                 });
                 obsidian.setIcon(restoreBtn, 'undo-2');
                 restoreBtn.addEventListener('click', () => {
                     openConfirmModal(this.plugin.app, {
-                        title: 'Restore Snapshot',
+                        title: legacyUi('Restore Snapshot', 'Restore Snapshot'),
                         message: `Replace scene with snapshot "${snap.label}"? Save a snapshot first to avoid losing current content.`,
                         confirmLabel: 'Restore',
                         onConfirm: async () => {
@@ -1490,7 +1491,7 @@ export class InspectorComponent {
 
                 const delBtn = btns.createEl('button', {
                     cls: 'clickable-icon',
-                    attr: { title: 'Delete snapshot' },
+                    attr: { title: legacyUi('Delete snapshot', 'Delete snapshot') },
                 });
                 obsidian.setIcon(delBtn, 'trash-2');
                 delBtn.addEventListener('click', async () => {
@@ -1580,11 +1581,11 @@ class SnapshotLabelModal extends Modal {
 
     onOpen(): void {
         const { contentEl } = this;
-        contentEl.createEl('h3', { text: 'Save snapshot' });
-        contentEl.createEl('p', { text: 'Enter a name for this snapshot (e.g. "before major rewrite")' });
+        contentEl.createEl('h3', { text: legacyUi('Save snapshot', 'Save snapshot') });
+        contentEl.createEl('p', { text: legacyUi('Enter a name for this snapshot (e.g. "before major rewrite")', 'Enter a name for this snapshot (e.g. "before major rewrite")') });
 
         const input = contentEl.createEl('input', {
-            attr: { type: 'text', placeholder: 'Snapshot label…' },
+            attr: { type: 'text', placeholder: legacyUi('Snapshot label…', 'Snapshot label…') },
             cls: 'snapshot-label-input',
         });
         input.setCssStyles({
@@ -1600,10 +1601,10 @@ class SnapshotLabelModal extends Modal {
             justifyContent: 'flex-end',
         });
 
-        const cancelBtn = btnRow.createEl('button', { text: 'Cancel' });
+        const cancelBtn = btnRow.createEl('button', { text: legacyUi('Cancel', 'Cancel') });
         cancelBtn.addEventListener('click', () => this.close());
 
-        const saveBtn = btnRow.createEl('button', { text: 'Save', cls: 'mod-cta' });
+        const saveBtn = btnRow.createEl('button', { text: legacyUi('Save', 'Save'), cls: 'mod-cta' });
         const doSave = () => {
             const label = input.value.trim() || `Snapshot ${new Date().toLocaleDateString()}`;
             this.onSubmit(label);
