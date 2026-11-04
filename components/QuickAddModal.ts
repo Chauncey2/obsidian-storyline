@@ -6,7 +6,7 @@ import { renderAutocompleteInput, renderTagPillInput } from './InlineSuggest';
 import { isPureNumericActChapter, nextNumericActChapter, getActDisplayLabel } from '../utils/actChapter';
 import { App, Modal, Notice, Setting } from 'obsidian';
 import { getBuiltinSceneTemplates } from '../i18n/content';
-import { getContentLocale, legacyUi } from '../i18n';
+import { tr, getContentLocale, legacyUi } from '../i18n';
 
 /**
  * Modal for quickly creating new scenes
@@ -133,7 +133,7 @@ export class QuickAddModal extends Modal {
                 : `Chapter ${ch} (${scenesInCh} scene${scenesInCh !== 1 ? 's' : ''})`;
             chapterSelect.createEl('option', { text: display, value: String(ch) });
         }
-        chapterSelect.createEl('option', { text: legacyUi(`+ New chapter (${nextChapter})`, `+ New chapter (${nextChapter})`), value: String(nextChapter) });
+        chapterSelect.createEl('option', { text: tr("tpl.f3d5d6880d", { p0: nextChapter }), value: String(nextChapter) });
 
         if (this.result.chapter != null) {
             chapterSelect.value = String(this.result.chapter);

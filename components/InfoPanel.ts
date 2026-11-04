@@ -101,7 +101,7 @@ export class InfoPanelComponent {
             this.container.addClass('sl-info-panel-mode-synopsis');
             // Title kept small for context
             const titleEl = this.container.createDiv('sl-info-title');
-            titleEl.setText(scene.title || 'Untitled');
+            titleEl.setText(scene.title || legacyUi('Untitled', 'Untitled'));
             this.renderSynopsis(scene);
             return;
         }
@@ -109,14 +109,14 @@ export class InfoPanelComponent {
         if (this.mode === 'notes') {
             this.container.addClass('sl-info-panel-mode-notes');
             const titleEl = this.container.createDiv('sl-info-title');
-            titleEl.setText(scene.title || 'Untitled');
+            titleEl.setText(scene.title || legacyUi('Untitled', 'Untitled'));
             this.renderNotes(scene);
             return;
         }
 
         // Title
         const titleEl = this.container.createDiv('sl-info-title');
-        titleEl.setText(scene.title || 'Untitled');
+        titleEl.setText(scene.title || legacyUi('Untitled', 'Untitled'));
 
         // ── Status ──
         this.renderStatusRow(scene);
@@ -313,7 +313,7 @@ export class InfoPanelComponent {
     }
 
     private stripRedundantNotesHeadings(content: string, scene: Scene): string {
-        const title = (scene.title || 'Untitled').trim();
+        const title = (scene.title || legacyUi('Untitled', 'Untitled')).trim();
         const lines = content.replace(/^\uFEFF/, '').split(/\r?\n/);
 
         let index = 0;

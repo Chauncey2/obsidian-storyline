@@ -205,7 +205,7 @@ function showCodexDropdown(
     };
 
     // "Codex" hub item — reset to hub (no category selected)
-    addDropdownItem(menu, 'book-open', 'Codex', activeViewType === CODEX_VIEW_TYPE, async () => {
+    addDropdownItem(menu, 'book-open', trValue('viewName', 'Codex'), activeViewType === CODEX_VIEW_TYPE, async () => {
         menu.remove();
         removeClickOutside();
         try {
@@ -223,10 +223,10 @@ function showCodexDropdown(
     menu.createDiv('codex-dropdown-divider');
 
     // Characters
-    addDropdownItem(menu, 'users', 'Characters', activeViewType === CHARACTER_VIEW_TYPE, () => switchTo(CHARACTER_VIEW_TYPE));
+    addDropdownItem(menu, 'users', tr('common.characters'), activeViewType === CHARACTER_VIEW_TYPE, () => switchTo(CHARACTER_VIEW_TYPE));
 
     // Locations
-    addDropdownItem(menu, 'map-pin', 'Locations', activeViewType === LOCATION_VIEW_TYPE, () => switchTo(LOCATION_VIEW_TYPE));
+    addDropdownItem(menu, 'map-pin', tr('common.locations'), activeViewType === LOCATION_VIEW_TYPE, () => switchTo(LOCATION_VIEW_TYPE));
 
     // Enabled codex categories
     const enabledIds = plugin.settings.codexEnabledCategories || [];
@@ -239,7 +239,7 @@ function showCodexDropdown(
         const def = builtin || custom;
         if (def) {
             // Codex category — navigate to CodexView with this category active
-            addDropdownItem(menu, def.icon, def.label, false, async () => {
+            addDropdownItem(menu, def.icon, trValue('fieldLabel', def.label), false, async () => {
                 menu.remove();
                 removeClickOutside();
                 // Switch to CodexView, then set active category via the view instance

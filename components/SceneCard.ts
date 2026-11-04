@@ -1,4 +1,4 @@
-import { legacyUi } from '../i18n';
+import { tr, legacyUi } from '../i18n';
 /* eslint-disable @typescript-eslint/no-unsafe-return, @typescript-eslint/no-floating-promises, @typescript-eslint/no-misused-promises, @typescript-eslint/no-unnecessary-type-assertion -- Obsidian's API surface and several untyped third-party libraries force dynamic dispatch; floating promises are intentional in DOM/event handlers; matching enable at end of file */
 import * as obsidian from 'obsidian';
 import { Modal, App } from 'obsidian';
@@ -41,7 +41,7 @@ export class SceneCardComponent {
         });
         if (scene.inactive) {
             card.addClass('scene-card-inactive');
-            card.setAttribute('aria-label', `${scene.title || 'Untitled'} inactive scene`);
+            card.setAttribute('aria-label', `${scene.title || legacyUi('Untitled', 'Untitled')} inactive scene`);
         }
 
         // Corkboard notes get sticky-note styling instead of the scene look
@@ -118,9 +118,9 @@ export class SceneCardComponent {
             const modeBadge = card.createDiv({ cls: `scene-card-timeline-mode timeline-mode-${cardTlMode}` });
             const modeIcon = modeBadge.createSpan();
             obsidian.setIcon(modeIcon, TIMELINE_MODE_ICONS[cardTlMode] || 'clock');
-            modeBadge.createSpan({ text: legacyUi(` ${TIMELINE_MODE_LABELS[cardTlMode]}`, ` ${TIMELINE_MODE_LABELS[cardTlMode]}`) });
+            modeBadge.createSpan({ text: tr("tpl.07d23d27a7", { p0: TIMELINE_MODE_LABELS[cardTlMode] }) });
             if (scene.timeline_strand) {
-                modeBadge.createSpan({ cls: 'scene-card-strand', text: legacyUi(` · ${scene.timeline_strand}`, ` · ${scene.timeline_strand}`) });
+                modeBadge.createSpan({ cls: 'scene-card-strand', text: tr("tpl.192a458639", { p0: scene.timeline_strand }) });
             }
         }
 
@@ -162,7 +162,7 @@ export class SceneCardComponent {
                 if (povName) {
                     charList.createSpan({
                         cls: 'scene-card-char-tag',
-                        text: legacyUi(`POV: ${povName}`, `POV: ${povName}`),
+                        text: tr("tpl.4601b02483", { p0: povName }),
                     });
                     renderedCount += 1;
                 }
@@ -178,7 +178,7 @@ export class SceneCardComponent {
                 if (totalChars > renderedCount) {
                     charList.createSpan({
                         cls: 'scene-card-char-more',
-                        text: legacyUi(`+${totalChars - renderedCount}`, `+${totalChars - renderedCount}`),
+                        text: tr("tpl.d9989599e5", { p0: totalChars - renderedCount }),
                     });
                 }
             }
@@ -320,7 +320,7 @@ export class SceneCardComponent {
                 if (!badgesEl) badgesEl = card.createDiv('scene-card-custom-fields');
                 const text = display.length > 24 ? display.slice(0, 23) + '…' : display;
                 const badge = badgesEl.createSpan({ cls: 'scene-card-custom-badge' });
-                badge.createSpan({ cls: 'scene-card-custom-badge-label', text: legacyUi(`${tpl.label}: `, `${tpl.label}: `) });
+                badge.createSpan({ cls: 'scene-card-custom-badge-label', text: tr("tpl.c35ef1f39b", { p0: tpl.label }) });
                 badge.createSpan({ text });
                 badge.setAttribute('title', `${tpl.label}: ${display}`);
                 shown++;
@@ -397,7 +397,7 @@ export class SceneCardComponent {
         }
 
         const title = (scene.title || '').trim();
-        return title || 'Untitled';
+        return title || legacyUi('Untitled', 'Untitled');
     }
 
     /**

@@ -377,7 +377,7 @@ export class Validator {
 
     private static checkStructure(scenes: Scene[], warnings: PlotWarning[]): void {
         // Missing titles
-        const untitled = scenes.filter(s => !s.title || s.title === 'Untitled Scene' || s.title === 'Untitled');
+        const untitled = scenes.filter(s => !s.title || s.title === 'Untitled Scene' || s.title === 'Untitled' || s.title === '未命名场景' || s.title === '未命名');
         if (untitled.length > 0) {
             warnings.push({
                 severity: 'info',

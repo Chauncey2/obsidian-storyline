@@ -447,7 +447,7 @@ export default class SceneCardsPlugin extends Plugin {
                     new SceneFilenameSyncModal(this.app, changes, async () => {
                         const count = await this.sceneManager.synchronizeSceneFileNames();
                         this.refreshOpenViews();
-                        new Notice(legacyUi(`Synchronized ${count} scene filename${count === 1 ? '' : 's'}.`, `Synchronized ${count} scene filename${count === 1 ? '' : 's'}.`));
+                        new Notice(tr("tpl.992d73eb5d", { p0: count }));
                     }).open();
                 }
                 return true;
@@ -470,7 +470,7 @@ export default class SceneCardsPlugin extends Plugin {
                 const modal = new ProjectSwitcherModal(this.app, projects, async (project) => {
                     await this.sceneManager.setActiveProject(project);
                     this.refreshOpenViews();
-                    new Notice(legacyUi(`Switched to "${project.title}"`, `Switched to "${project.title}"`));
+                    new Notice(tr("tpl.3f71d5f247", { p0: project.title }));
                 });
                 modal.open();
             },
@@ -679,7 +679,7 @@ export default class SceneCardsPlugin extends Plugin {
                     const r = await importer.import(scrivPath, destination);
                     const parts = [`${r.scenesImported} scenes`, `${r.charactersImported} characters`, `${r.locationsImported} locations`];
                     if (r.filesImported > 0) parts.push(`${r.filesImported} files`);
-                    new Notice(legacyUi(`Imported "${r.projectTitle}": ${parts.join(', ')}`, `Imported "${r.projectTitle}": ${parts.join(', ')}`), 8000);
+                    new Notice(tr("tpl.016e7375bc", { p0: r.projectTitle, p1: parts.join(', ') }), 8000);
                 } catch (err: unknown) {
                     new Notice('Import failed: ' + (err instanceof Error ? err.message : String(err)));
                 }
@@ -1602,7 +1602,7 @@ export default class SceneCardsPlugin extends Plugin {
             }
         }
         if (touched > 0) {
-            new Notice(legacyUi(`StoryLine: synced custom-field YAML in ${touched} file${touched === 1 ? '' : 's'}.`, `StoryLine: synced custom-field YAML in ${touched} file${touched === 1 ? '' : 's'}.`));
+            new Notice(tr("tpl.08e97dafe8", { p0: touched }));
         }
     }
 
@@ -2728,7 +2728,23 @@ export default class SceneCardsPlugin extends Plugin {
             setTooltip(this.ribbonIconEl, label);
             this.ribbonIconEl.setAttr('aria-label', label);
         }
-        await this.refreshOpenViews();
+        await this.rebuildStoryLineViews();
+    }
+
+    /** Views build static UI in onOpen(), so a language change needs a full re-open. Deferred leaves build on first reveal. */
+    private async rebuildStoryLineViews(): Promise<void> {
+        for (const viewType of ALL_STORYLINE_VIEW_TYPES) {
+            for (const leaf of this.app.workspace.getLeavesOfType(viewType)) {
+                if (leaf.isDeferred) continue;
+                const viewState = leaf.getViewState();
+                const scrollState = this.captureViewScrollState(leaf.view.containerEl);
+                await leaf.setViewState({ type: 'empty' });
+                await leaf.setViewState(viewState);
+                const root = leaf.view.containerEl;
+                window.requestAnimationFrame(() => this.restoreViewScrollState(root, scrollState));
+                (leaf as unknown as { updateHeader?: () => void }).updateHeader?.();
+            }
+        }
     }
 
     private addLocalizedCommand(nameKey: PlainKey, command: Omit<Command, 'name'>): void {
@@ -3296,7 +3312,7 @@ export default class SceneCardsPlugin extends Plugin {
 
             new Setting(modal.contentEl)
                 .setName(legacyUi('Location', 'Location'))
-                .setDesc(legacyUi(`Leave empty to use default (${this.settings.storyLineRoot}). Or enter a vault folder path like "Writing/Novels".`, `Leave empty to use default (${this.settings.storyLineRoot}). Or enter a vault folder path like "Writing/Novels".`))
+                .setDesc(tr("tpl.42c3d9fdfc", { p0: this.settings.storyLineRoot }))
                 .addText((text: TextComponent) => {
                     text.setPlaceholder(this.settings.storyLineRoot);
                     text.onChange((v: string) => (customFolder = v.trim()));
@@ -3351,7 +3367,7 @@ export default class SceneCardsPlugin extends Plugin {
             return;
         }
         const modal = new Modal(this.app);
-        modal.titleEl.setText(legacyUi(`Fork "${activeProject.title}"`, `Fork "${activeProject.title}"`));
+        modal.titleEl.setText(tr("tpl.bc532c1b50", { p0: activeProject.title }));
         let newTitle = `${activeProject.title} - Variant`;
 
         new Setting(modal.contentEl)
@@ -3393,7 +3409,7 @@ export default class SceneCardsPlugin extends Plugin {
         }
 
         const modal = new Modal(this.app);
-        modal.titleEl.setText(legacyUi(`Delete "${activeProject.title}"`, `Delete "${activeProject.title}"`));
+        modal.titleEl.setText(tr("tpl.b615d2a04e", { p0: activeProject.title }));
 
         // Warning banner
         const warningEl = modal.contentEl.createDiv({ cls: 'sl-delete-warning' });
@@ -3418,7 +3434,7 @@ export default class SceneCardsPlugin extends Plugin {
         let typed = '';
         new Setting(modal.contentEl)
             .setName(legacyUi('Confirm by typing the project title', 'Confirm by typing the project title'))
-            .setDesc(legacyUi(`Type "${expected}" to enable the Delete button.`, `Type "${expected}" to enable the Delete button.`))
+            .setDesc(tr("tpl.e33d8e2bb0", { p0: expected }))
             .addText((text: TextComponent) => {
                 text.setPlaceholder(expected);
                 text.onChange((v: string) => {
@@ -3472,7 +3488,7 @@ export default class SceneCardsPlugin extends Plugin {
 
         new Setting(modal.contentEl)
             .setName(legacyUi('Series name', 'Series name'))
-            .setDesc(legacyUi(`"${project.title}" will become the first book in this series. Its codex will be shared.`, `"${project.title}" will become the first book in this series. Its codex will be shared.`))
+            .setDesc(tr("tpl.d708ee3069", { p0: project.title }))
             .addText((text: TextComponent) => {
                 text.setPlaceholder(legacyUi('My trilogy', 'My trilogy'));
                 text.onChange((v: string) => (seriesName = v));
@@ -3522,10 +3538,10 @@ export default class SceneCardsPlugin extends Plugin {
 
         new Setting(modal.contentEl)
             .setName(legacyUi('Series', 'Series'))
-            .setDesc(legacyUi(`"${project.title}" will be added to the selected series. Its codex will be merged into the shared series codex.`, `"${project.title}" will be added to the selected series. Its codex will be merged into the shared series codex.`))
+            .setDesc(tr("tpl.1e377b4b74", { p0: project.title }))
             .addDropdown((dropdown: DropdownComponent) => {
                 for (const s of seriesList) {
-                    dropdown.addOption(s.folder, legacyUi(`${s.meta.name} (${s.meta.bookOrder.length} books)`, `${s.meta.name} (${s.meta.bookOrder.length} books)`));
+                    dropdown.addOption(s.folder, tr("tpl.dd5faec59c", { p0: s.meta.name, p1: s.meta.bookOrder.length }));
                 }
                 dropdown.onChange((v: string) => (selectedFolder = v));
             });
@@ -3576,7 +3592,7 @@ export default class SceneCardsPlugin extends Plugin {
                     try {
                         this.seriesManager.checkLinkSettings();
                         await this.sceneManager.renameProject(project, newTitle.trim());
-                        new Notice(legacyUi(`Project renamed to "${newTitle.trim()}"`, `Project renamed to "${newTitle.trim()}"`));
+                        new Notice(tr("tpl.8e3173bf09", { p0: newTitle.trim() }));
                         modal.close();
                         this.refreshOpenViews();
                     } catch (e: unknown) {
@@ -3964,7 +3980,7 @@ class SeriesManagementModal extends Modal {
                     try {
                         await this.plugin.seriesManager.renameSeriesName(folder, newName.trim());
 
-                        new Notice(legacyUi(`Series renamed to "${newName.trim()}"`, `Series renamed to "${newName.trim()}"`));
+                        new Notice(tr("tpl.163fd9212b", { p0: newName.trim() }));
                         modal.close();
                         this.plugin.refreshOpenViews();
                         this.render();
@@ -3994,7 +4010,7 @@ class SeriesManagementModal extends Modal {
         });
 
         if (!bookProject) {
-            new Notice(legacyUi(`Could not find project "${bookName}" — it may have been moved or deleted.`, `Could not find project "${bookName}" — it may have been moved or deleted.`));
+            new Notice(tr("tpl.10eab52a45", { p0: bookName }));
             return;
         }
 
@@ -4003,7 +4019,7 @@ class SeriesManagementModal extends Modal {
             const m = new Modal(this.app);
             m.titleEl.setText(legacyUi('Remove from series', 'Remove from series'));
             m.contentEl.createEl('p', {
-                text: legacyUi(`Remove "${bookName}" from "${meta.name}"? The shared codex will be copied into the book's local folder.`, `Remove "${bookName}" from "${meta.name}"? The shared codex will be copied into the book's local folder.`),
+                text: tr("tpl.690561e288", { p0: bookName, p1: meta.name }),
             });
             new Setting(m.contentEl)
                 .addButton((btn: ButtonComponent) => btn.setButtonText(legacyUi('Remove', 'Remove')).setClass('mod-warning').onClick(() => { m.close(); resolve(true); }))
@@ -4043,16 +4059,16 @@ class SeriesManagementModal extends Modal {
         });
 
         if (!bookProject) {
-            new Notice(legacyUi(`Could not find project "${bookName}" — it may have been moved or deleted.`, `Could not find project "${bookName}" — it may have been moved or deleted.`));
+            new Notice(tr("tpl.10eab52a45", { p0: bookName }));
             return;
         }
 
         const modal = new Modal(this.app);
-        modal.titleEl.setText(legacyUi(`Delete "${bookName}"`, `Delete "${bookName}"`));
+        modal.titleEl.setText(tr("tpl.b615d2a04e", { p0: bookName }));
 
         const warningEl = modal.contentEl.createDiv({ cls: 'sl-delete-warning' });
         warningEl.createEl('p', {
-            text: legacyUi(`\u26a0\ufe0f This will permanently delete "${bookName}" and everything inside it:`, `\u26a0\ufe0f This will permanently delete "${bookName}" and everything inside it:`),
+            text: tr("tpl.5534d56c9d", { p0: bookName }),
         });
         const list = warningEl.createEl('ul');
         list.createEl('li', { text: legacyUi('All scenes', 'All scenes') });
@@ -4069,7 +4085,7 @@ class SeriesManagementModal extends Modal {
         let deleteBtn: ButtonComponent;
         new Setting(modal.contentEl)
             .setName(legacyUi('Confirm by typing the book title', 'Confirm by typing the book title'))
-            .setDesc(legacyUi(`Type "${expected}" to enable the Delete button.`, `Type "${expected}" to enable the Delete button.`))
+            .setDesc(tr("tpl.e33d8e2bb0", { p0: expected }))
             .addText((text: TextComponent) => {
                 text.setPlaceholder(expected);
                 text.onChange((v: string) => {
@@ -4111,7 +4127,7 @@ class SeriesManagementModal extends Modal {
         });
 
         if (!bookProject) {
-            new Notice(legacyUi(`Could not find project "${bookName}".`, `Could not find project "${bookName}".`));
+            new Notice(tr("tpl.b2fe199a42", { p0: bookName }));
             return;
         }
 
@@ -4137,7 +4153,7 @@ class SeriesManagementModal extends Modal {
                     }
                     try {
                         await this.plugin.sceneManager.renameProject(bookProject, newTitle.trim());
-                        new Notice(legacyUi(`Book renamed to "${newTitle.trim()}"`, `Book renamed to "${newTitle.trim()}"`));
+                        new Notice(tr("tpl.493812f436", { p0: newTitle.trim() }));
                         modal.close();
                         this.plugin.refreshOpenViews();
                         this.render();
@@ -4160,7 +4176,7 @@ class SeriesManagementModal extends Modal {
         }
 
         const modal = new Modal(this.app);
-        modal.titleEl.setText(legacyUi(`Add book to "${meta.name}"`, `Add book to "${meta.name}"`));
+        modal.titleEl.setText(tr("tpl.69bd4f3ecf", { p0: meta.name }));
         let selectedPath = projects[0].filePath;
 
         new Setting(modal.contentEl)

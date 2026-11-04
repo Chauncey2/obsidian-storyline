@@ -1,4 +1,4 @@
-import { legacyUi } from '../i18n';
+import { tr, legacyUi } from '../i18n';
 import { App, Modal, Notice, Setting, TextComponent, DropdownComponent } from 'obsidian';
 import { Scene } from '../models/Scene';
 import { SceneManager } from '../services/SceneManager';
@@ -82,7 +82,7 @@ export class ShiftDatesModal extends Modal {
         contentEl.addClass('story-line-shift-dates');
 
         contentEl.createEl('h2', {
-            text: legacyUi(`Shift dates — ${this.selectedScenes.length} scenes`, `Shift dates — ${this.selectedScenes.length} scenes`),
+            text: tr("tpl.dc632164f0", { p0: this.selectedScenes.length }),
         });
         contentEl.createEl('p', {
             cls: 'setting-item-description',
@@ -132,7 +132,7 @@ export class ShiftDatesModal extends Modal {
         if (this.mode === 'anchor') {
             const anchor = this.selectedScenes[0];
             const anchorLabel = anchor
-                ? `“${anchor.title || 'Untitled'}”`
+                ? `“${anchor.title || legacyUi('Untitled', 'Untitled')}”`
                 : '(no scenes)';
 
             new Setting(this.inputsEl)
@@ -246,17 +246,17 @@ export class ShiftDatesModal extends Modal {
 
         const tbody = table.createEl('tbody');
         for (const row of this.previewRows) {
-            const tr = tbody.createEl('tr');
-            if (row.notes.length > 0) tr.addClass('row-skipped');
-            tr.createEl('td', { text: row.scene.title || 'Untitled' });
-            tr.createEl('td', { text: legacyUi(`${row.oldDate} ${row.oldTime}`, `${row.oldDate} ${row.oldTime}`).trim() || '—' });
-            tr.createEl('td', { text: legacyUi('→', '→') });
-            const newCell = tr.createEl('td');
-            newCell.createSpan({ text: legacyUi(`${row.newDate} ${row.newTime}`, `${row.newDate} ${row.newTime}`).trim() || '—' });
+            const rowEl = tbody.createEl('tr');
+            if (row.notes.length > 0) rowEl.addClass('row-skipped');
+            rowEl.createEl('td', { text: row.scene.title || legacyUi('Untitled', 'Untitled') });
+            rowEl.createEl('td', { text: tr("tpl.c8e559d4e4", { p0: row.oldDate, p1: row.oldTime }).trim() || '—' });
+            rowEl.createEl('td', { text: legacyUi('→', '→') });
+            const newCell = rowEl.createEl('td');
+            newCell.createSpan({ text: tr("tpl.c8e559d4e4", { p0: row.newDate, p1: row.newTime }).trim() || '—' });
             if (row.notes.length > 0) {
                 newCell.createSpan({
                     cls: 'story-line-shift-note',
-                    text: legacyUi(` (${row.notes.join('; ')})`, ` (${row.notes.join('; ')})`),
+                    text: tr("tpl.d82d77bfd7", { p0: row.notes.join('; ') }),
                 });
             }
         }
@@ -267,7 +267,7 @@ export class ShiftDatesModal extends Modal {
             this.warningEl.empty();
             this.warningEl.setCssStyles({ display: '' });
             this.warningEl.createEl('strong', {
-                text: legacyUi(`${skipped.length} scene(s) have unparseable dates/times and will be skipped.`, `${skipped.length} scene(s) have unparseable dates/times and will be skipped.`),
+                text: tr("tpl.7231b5f70e", { p0: skipped.length }),
             });
         } else {
             this.warningEl.setCssStyles({ display: 'none' });
@@ -370,7 +370,7 @@ export class ShiftDatesModal extends Modal {
         }
 
         if (changed > 0) {
-            new Notice(legacyUi(`Shifted dates for ${changed} scene(s)${skipped > 0 ? ` (${skipped} skipped)` : ''}.`, `Shifted dates for ${changed} scene(s)${skipped > 0 ? ` (${skipped} skipped)` : ''}.`));
+            new Notice(tr("tpl.d5de97f13d", { p0: changed, p1: skipped > 0 ? ` (${skipped} skipped)` : '' }));
         } else {
             new Notice(legacyUi('No scenes were changed.', 'No scenes were changed.'));
         }

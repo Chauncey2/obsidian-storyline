@@ -6,7 +6,7 @@
 import * as obsidian from 'obsidian';
 import type SceneCardsPlugin from '../main';
 import { CHARACTER_VIEW_TYPE, LOCATION_VIEW_TYPE, CODEX_VIEW_TYPE } from '../constants';
-import { tr } from '../i18n';
+import { tr, trValue } from '../i18n';
 
 export interface CodexTabsOptions {
     /** The view type that should be highlighted as active ('Characters' | 'Locations' | category id) */
@@ -56,11 +56,11 @@ export function renderCodexCategoryTabs(parent: HTMLElement, opts: CodexTabsOpti
         const isActive = activeId === cat.id;
         const tab = tabs.createEl('button', {
             cls: `codex-tab ${isActive ? 'active' : ''}`,
-            attr: { 'aria-label': cat.label },
+            attr: { 'aria-label': trValue('fieldLabel', cat.label) },
         });
         const icon = tab.createSpan({ cls: 'codex-tab-icon' });
         obsidian.setIcon(icon, cat.icon);
-        tab.createSpan({ cls: 'codex-tab-label', text: cat.label });
+        tab.createSpan({ cls: 'codex-tab-label', text: trValue('fieldLabel', cat.label) });
 
         if (!isActive) {
             tab.addEventListener('click', () => {

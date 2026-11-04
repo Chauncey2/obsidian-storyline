@@ -1,4 +1,4 @@
-import { legacyUi } from '../i18n';
+import { tr, legacyUi } from '../i18n';
 import { App, Modal, Setting } from 'obsidian';
 
 export interface SceneFilenameSyncChange {
@@ -20,7 +20,7 @@ export class SceneFilenameSyncModal extends Modal {
         contentEl.empty();
         this.titleEl.setText(legacyUi('Synchronize scene filenames', 'Synchronize scene filenames'));
         contentEl.createEl('p', {
-            text: legacyUi(`${this.changes.length} scene filename${this.changes.length === 1 ? '' : 's'} will be updated from current metadata. Scene content and frontmatter will not be changed.`, `${this.changes.length} scene filename${this.changes.length === 1 ? '' : 's'} will be updated from current metadata. Scene content and frontmatter will not be changed.`),
+            text: tr("tpl.fa1b3e6257", { p0: this.changes.length }),
         });
 
         const list = contentEl.createEl('ul', { cls: 'storyline-filename-sync-list' });
@@ -32,7 +32,7 @@ export class SceneFilenameSyncModal extends Modal {
         }
         if (this.changes.length > 100) {
             contentEl.createEl('p', {
-                text: legacyUi(`Showing the first 100 changes of ${this.changes.length}.`, `Showing the first 100 changes of ${this.changes.length}.`),
+                text: tr("tpl.3f89dd5533", { p0: this.changes.length }),
                 cls: 'mod-muted',
             });
         }

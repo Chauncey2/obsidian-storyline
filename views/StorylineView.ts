@@ -13,7 +13,7 @@ import { resolveTagColor, getPlotlineHSL, contrastTextColor } from '../settings'
 import { attachTooltip } from '../components/Tooltip';
 import { compareScenesByActChapter, getActDisplayLabel } from '../utils/actChapter';
 import { displayGroupKey } from '../utils/groupLabels';
-import { legacyUi } from '../i18n';
+import { tr, legacyUi } from '../i18n';
 
 type SortMode = 'alpha' | 'scenes-desc' | 'scenes-asc' | 'reading-order';
 type PlotlineViewMode = 'list' | 'subway';
@@ -126,19 +126,19 @@ export class StorylineView extends ItemView {
         sortBtn.addEventListener('click', (e) => {
             const menu = new Menu();
             menu.addItem((item: MenuItem) => {
-                item.setTitle(legacyUi(`${this.sortMode === 'alpha' ? '✓ ' : ''}Alphabetical`, `${this.sortMode === 'alpha' ? '✓ ' : ''}Alphabetical`))
+                item.setTitle(tr("tpl.247edcf583", { p0: this.sortMode === 'alpha' ? '✓ ' : '' }))
                     .onClick(() => { this.setSortMode('alpha'); });
             });
             menu.addItem((item: MenuItem) => {
-                item.setTitle(legacyUi(`${this.sortMode === 'scenes-desc' ? '✓ ' : ''}Most scenes first`, `${this.sortMode === 'scenes-desc' ? '✓ ' : ''}Most scenes first`))
+                item.setTitle(tr("tpl.fefc139fde", { p0: this.sortMode === 'scenes-desc' ? '✓ ' : '' }))
                     .onClick(() => { this.setSortMode('scenes-desc'); });
             });
             menu.addItem((item: MenuItem) => {
-                item.setTitle(legacyUi(`${this.sortMode === 'scenes-asc' ? '✓ ' : ''}Fewest scenes first`, `${this.sortMode === 'scenes-asc' ? '✓ ' : ''}Fewest scenes first`))
+                item.setTitle(tr("tpl.14f88821fc", { p0: this.sortMode === 'scenes-asc' ? '✓ ' : '' }))
                     .onClick(() => { this.setSortMode('scenes-asc'); });
             });
             menu.addItem((item: MenuItem) => {
-                item.setTitle(legacyUi(`${this.sortMode === 'reading-order' ? '✓ ' : ''}Reading order (chapter #)`, `${this.sortMode === 'reading-order' ? '✓ ' : ''}Reading order (chapter #)`))
+                item.setTitle(tr("tpl.ac523c06d2", { p0: this.sortMode === 'reading-order' ? '✓ ' : '' }))
                     .onClick(() => { this.setSortMode('reading-order'); });
             });
             menu.showAtPosition({ x: e.clientX, y: e.clientY });
@@ -199,7 +199,7 @@ export class StorylineView extends ItemView {
                 for (const tag of allTags) {
                     const isHidden = this.hiddenPlotlines.has(tag);
                     menu.addItem((item: MenuItem) => {
-                        item.setTitle(legacyUi(`${isHidden ? '   ' : '✓ '}${this.formatPlotlineName(tag)}`, `${isHidden ? '   ' : '✓ '}${this.formatPlotlineName(tag)}`))
+                        item.setTitle(tr("tpl.bde3f1f2b2", { p0: isHidden ? '   ' : '✓ ', p1: this.formatPlotlineName(tag) }))
                             .onClick(() => {
                                 if (isHidden) {
                                     this.hiddenPlotlines.delete(tag);
@@ -347,7 +347,7 @@ export class StorylineView extends ItemView {
             const header = unassignedSection.createDiv('storyline-header storyline-unassigned-header');
             header.createSpan({
                 cls: 'storyline-unassigned-label',
-                text: legacyUi(`${displayGroupKey('Unassigned')} (${unassigned.length} scenes)`, `${displayGroupKey('Unassigned')} (${unassigned.length} scenes)`)
+                text: tr("tpl.94764b8841", { p0: displayGroupKey('Unassigned'), p1: unassigned.length })
             });
             header.createSpan({
                 cls: 'storyline-unassigned-hint',
@@ -697,7 +697,7 @@ export class StorylineView extends ItemView {
 
                 // ── Scene title below node ──
                 const labelY1 = y + NODE_RADIUS + 16;
-                const labelText = `[${actStr}-${seqStr}] ${scene.title || 'Untitled'}`;
+                const labelText = `[${actStr}-${seqStr}] ${scene.title || legacyUi('Untitled', 'Untitled')}`;
 
                 const sceneLabel = activeDocument.createElementNS(svgNS, 'text');
                 sceneLabel.setAttribute('x', String(x));
@@ -751,7 +751,7 @@ export class StorylineView extends ItemView {
     }
 
     private buildSubwayTooltip(scene: Scene, isArcPoint: boolean, actStr: string, seqStr: string): string {
-        const lines: string[] = [`[${actStr}-${seqStr}] ${scene.title || 'Untitled'}`];
+        const lines: string[] = [`[${actStr}-${seqStr}] ${scene.title || legacyUi('Untitled', 'Untitled')}`];
         if (scene.subtitle?.trim()) lines.push(scene.subtitle.trim());
         if (scene.synopsis?.trim()) lines.push(`Synopsis: ${this.compactTooltipText(scene.synopsis, 220)}`);
         if (isArcPoint) lines.push('Arc Point');
@@ -791,7 +791,7 @@ export class StorylineView extends ItemView {
         const toggle = header.createSpan({ cls: 'storyline-toggle', text: legacyUi('▼ ', '▼ ') });
         header.createSpan({
             cls: 'storyline-plotline-title',
-            text: legacyUi(`${this.formatPlotlineName(plotline)} (${scenes.length})`, `${this.formatPlotlineName(plotline)} (${scenes.length})`)
+            text: tr("tpl.2c03736ded", { p0: this.formatPlotlineName(plotline), p1: scenes.length })
         });
 
         // Header action buttons (right side)
@@ -975,7 +975,7 @@ export class StorylineView extends ItemView {
         const summary = body.createDiv('plotline-summary');
         summary.createSpan({
             cls: 'plotline-summary-text',
-            text: legacyUi(`${scenes.length} of ${totalScenes} scenes (${pct}%)`, `${scenes.length} of ${totalScenes} scenes (${pct}%)`)
+            text: tr("tpl.eb551ace81", { p0: scenes.length, p1: totalScenes, p2: pct })
         });
         // Mini progress bar
         const bar = summary.createDiv('plotline-progress-bar');
@@ -1005,11 +1005,11 @@ export class StorylineView extends ItemView {
 
         node.createSpan({
             cls: 'storyline-node-id',
-            text: legacyUi(`[${act}-${seq}]`, `[${act}-${seq}]`)
+            text: tr("tpl.9279a8924e", { p0: act, p1: seq })
         });
         node.createSpan({
             cls: 'storyline-node-title',
-            text: legacyUi(` ${scene.title || 'Untitled'}`, ` ${scene.title || 'Untitled'}`)
+            text: tr("tpl.07d23d27a7", { p0: scene.title || legacyUi('Untitled', 'Untitled') })
         });
 
         // Show existing tags as small badges
@@ -1037,7 +1037,7 @@ export class StorylineView extends ItemView {
             this.showTagAssignMenu(scene, node);
         });
 
-        node.setAttribute('title', `${scene.title || 'Untitled'}\nTags: ${scene.tags?.join(', ') || 'none'}\nClick to assign/remove plotline`);
+        node.setAttribute('title', `${scene.title || legacyUi('Untitled', 'Untitled')}\nTags: ${scene.tags?.join(', ') || 'none'}\nClick to assign/remove plotline`);
     }
 
     /**
@@ -1052,7 +1052,7 @@ export class StorylineView extends ItemView {
             for (const tag of allTags) {
                 const hasTag = sceneTags.has(tag);
                 menu.addItem((item: MenuItem) => {
-                    item.setTitle(legacyUi(`${hasTag ? '✓ ' : '   '}${this.formatPlotlineName(tag)}`, `${hasTag ? '✓ ' : '   '}${this.formatPlotlineName(tag)}`))
+                    item.setTitle(tr("tpl.bde3f1f2b2", { p0: hasTag ? '✓ ' : '   ', p1: this.formatPlotlineName(tag) }))
                         .onClick(async () => {
                             const newTags = hasTag
                                 ? (scene.tags || []).filter((t: string) => t !== tag)
@@ -1084,7 +1084,7 @@ export class StorylineView extends ItemView {
 
         new Setting(modal.contentEl)
             .setName(legacyUi('Plotline name', 'Plotline name'))
-            .setDesc(legacyUi(`Current tag: "${plotline}". The tag will be updated in all scenes that use it.`, `Current tag: "${plotline}". The tag will be updated in all scenes that use it.`))
+            .setDesc(tr("tpl.03a29098fd", { p0: plotline }))
             .addText((text: TextComponent) => {
                 text.setValue(plotline);
                 text.onChange((v: string) => (newName = v));
@@ -1106,7 +1106,7 @@ export class StorylineView extends ItemView {
                         delete this.plugin.settings.plotlineDescriptions[plotline];
                         await this.plugin.saveSettings();
                     }
-                    new Notice(legacyUi(`Renamed plotline in ${count} scene${count !== 1 ? 's' : ''}`, `Renamed plotline in ${count} scene${count !== 1 ? 's' : ''}`));
+                    new Notice(tr("tpl.9fc560479d", { p0: count, p1: count !== 1 ? 's' : '' }));
                     this.refresh();
                     modal.close();
                 });
@@ -1118,7 +1118,7 @@ export class StorylineView extends ItemView {
 
     private openPlotlineDescriptionModal(plotline: string): void {
         const modal = new Modal(this.app);
-        modal.titleEl.setText(legacyUi(`Plotline description — ${this.formatPlotlineName(plotline)}`, `Plotline description — ${this.formatPlotlineName(plotline)}`));
+        modal.titleEl.setText(tr("tpl.631f65fa72", { p0: this.formatPlotlineName(plotline) }));
         let desc = this.plugin.settings.plotlineDescriptions?.[plotline] || '';
 
         const setting = new Setting(modal.contentEl)
@@ -1160,7 +1160,7 @@ export class StorylineView extends ItemView {
         const modal = new Modal(this.app);
         modal.titleEl.setText(legacyUi('Delete plotline', 'Delete plotline'));
         modal.contentEl.createEl('p', {
-            text: legacyUi(`Remove the tag "${plotline}" from ${sceneCount} scene${sceneCount !== 1 ? 's' : ''}? The scenes themselves will not be deleted.`, `Remove the tag "${plotline}" from ${sceneCount} scene${sceneCount !== 1 ? 's' : ''}? The scenes themselves will not be deleted.`)
+            text: tr("tpl.31cf26daa3", { p0: plotline, p1: sceneCount, p2: sceneCount !== 1 ? 's' : '' })
         });
 
         new Setting(modal.contentEl)
@@ -1175,7 +1175,7 @@ export class StorylineView extends ItemView {
                         delete this.plugin.settings.plotlineDescriptions[plotline];
                         await this.plugin.saveSettings();
                     }
-                    new Notice(legacyUi(`Removed plotline from ${count} scene${count !== 1 ? 's' : ''}`, `Removed plotline from ${count} scene${count !== 1 ? 's' : ''}`));
+                    new Notice(tr("tpl.af86532601", { p0: count, p1: count !== 1 ? 's' : '' }));
                     this.refresh();
                     modal.close();
                 });
@@ -1192,7 +1192,7 @@ export class StorylineView extends ItemView {
 
         new Setting(modal.contentEl)
             .setName(legacyUi('Plotline name', 'Plotline name'))
-            .setDesc(legacyUi(`Will be added to "${scene.title || 'Untitled'}"`, `Will be added to "${scene.title || 'Untitled'}"`))
+            .setDesc(tr("tpl.09ee220ce0", { p0: scene.title || legacyUi('Untitled', 'Untitled') }))
             .addText((text: TextComponent) => {
                 text.setPlaceholder(legacyUi('E.g. Main-mystery', 'E.g. Main-mystery'));
                 text.onChange((v: string) => (tagName = v));
@@ -1240,7 +1240,7 @@ export class StorylineView extends ItemView {
         scenes.forEach(scene => {
             const row = sceneList.createDiv('storyline-scene-picker-row');
             const cb = row.createEl('input', { type: 'checkbox' });
-            row.createSpan({ text: legacyUi(`[${String(scene.act ?? '?').toString().padStart(2, '0')}-${String(scene.sequence ?? '?').toString().padStart(2, '0')}] ${scene.title || 'Untitled'}`, `[${String(scene.act ?? '?').toString().padStart(2, '0')}-${String(scene.sequence ?? '?').toString().padStart(2, '0')}] ${scene.title || 'Untitled'}`) });
+            row.createSpan({ text: tr("tpl.1659161f77", { p0: String(scene.act ?? '?').toString().padStart(2, '0'), p1: String(scene.sequence ?? '?').toString().padStart(2, '0'), p2: scene.title || legacyUi('Untitled', 'Untitled') }) });
             cb.addEventListener('change', () => {
                 if (cb.checked) selectedPaths.add(scene.filePath);
                 else selectedPaths.delete(scene.filePath);
@@ -1274,7 +1274,7 @@ export class StorylineView extends ItemView {
         allScenes: Scene[]
     ): void {
         const modal = new Modal(this.app);
-        modal.titleEl.setText(legacyUi(`Add scenes to "${this.formatPlotlineName(plotline)}"`, `Add scenes to "${this.formatPlotlineName(plotline)}"`));
+        modal.titleEl.setText(tr("tpl.5d4dc676d8", { p0: this.formatPlotlineName(plotline) }));
 
         const currentPaths = new Set(currentScenes.map(s => s.filePath));
         const available = allScenes.filter(s => !currentPaths.has(s.filePath));
@@ -1287,7 +1287,7 @@ export class StorylineView extends ItemView {
             available.forEach(scene => {
                 const row = sceneList.createDiv('storyline-scene-picker-row');
                 const cb = row.createEl('input', { type: 'checkbox' });
-                row.createSpan({ text: legacyUi(`[${String(scene.act ?? '?').toString().padStart(2, '0')}-${String(scene.sequence ?? '?').toString().padStart(2, '0')}] ${scene.title || 'Untitled'}`, `[${String(scene.act ?? '?').toString().padStart(2, '0')}-${String(scene.sequence ?? '?').toString().padStart(2, '0')}] ${scene.title || 'Untitled'}`) });
+                row.createSpan({ text: tr("tpl.1659161f77", { p0: String(scene.act ?? '?').toString().padStart(2, '0'), p1: String(scene.sequence ?? '?').toString().padStart(2, '0'), p2: scene.title || legacyUi('Untitled', 'Untitled') }) });
                 cb.addEventListener('change', () => {
                     if (cb.checked) selectedPaths.add(scene.filePath);
                     else selectedPaths.delete(scene.filePath);
@@ -1376,7 +1376,7 @@ export class StorylineView extends ItemView {
             const leaf = this.app.workspace.getLeaf('tab');
             await leaf.openFile(file, { state: { mode: 'source', source: false } });
         } else {
-            new Notice(legacyUi(`Could not find file: ${scene.filePath}`, `Could not find file: ${scene.filePath}`));
+            new Notice(tr("tpl.f84439c762", { p0: scene.filePath }));
         }
     }
 

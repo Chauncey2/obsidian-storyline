@@ -18,7 +18,7 @@ import * as obsidian from 'obsidian';
 import type { Scene } from '../models/Scene';
 import type { Character } from '../models/Character';
 import { RELATION_BASE_TYPE_BY_CATEGORY, extractCharacterProps, extractCharacterLocationTags } from '../models/Character';
-import { tr } from '../i18n';
+import { legacyUi, tr } from '../i18n';
 import type { LinkScanResult } from '../services/LinkScanner';
 
 // ── Types ─────────────────────────────────────────────
@@ -318,7 +318,7 @@ export class StoryGraph {
             if (!result || result.links.length === 0) continue;
 
             const sceneId = `scene::${scene.filePath}`;
-            ensureNode(sceneId, scene.title || 'Untitled', 'scene');
+            ensureNode(sceneId, scene.title || legacyUi('Untitled', 'Untitled'), 'scene');
 
             for (const link of result.links) {
                 const resolvedType = (this.tagTypeOverrides[link.name.toLowerCase()] || link.type) as EntityType;

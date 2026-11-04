@@ -1,4 +1,4 @@
-import { legacyUi } from '../i18n';
+import { tr, legacyUi } from '../i18n';
  
 import { Modal, Setting, Notice } from 'obsidian';
 import type SceneCardsPlugin from '../main';
@@ -29,8 +29,8 @@ export class SplitSceneModal extends Modal {
         this.plugin = plugin;
         this.scene = scene;
         this.onDone = onDone;
-        this.titleA = scene.title || 'Untitled';
-        this.titleB = `${scene.title || 'Untitled'} (part 2)`;
+        this.titleA = scene.title || legacyUi('Untitled', 'Untitled');
+        this.titleB = `${scene.title || legacyUi('Untitled', 'Untitled')} (part 2)`;
     }
 
     onOpen(): void {
@@ -141,7 +141,7 @@ export class SplitSceneModal extends Modal {
         const wordCountB = partB ? tokenizeWords(partB, splitLocale).length : 0;
 
         this.previewEl.createDiv({
-            text: legacyUi(`Scene A: ~${wordCountA} words  |  Scene B: ~${wordCountB} words`, `Scene A: ~${wordCountA} words  |  Scene B: ~${wordCountB} words`),
+            text: tr("tpl.fbd7ba786d", { p0: wordCountA, p1: wordCountB }),
             cls: 'setting-item-description',
         });
 
@@ -194,15 +194,15 @@ export class MergeSceneModal extends Modal {
 
         // List scenes being merged
         contentEl.createEl('p', {
-            text: legacyUi(`Merging ${this.scenes.length} scenes (in sequence order). The first scene's file will be kept.`, `Merging ${this.scenes.length} scenes (in sequence order). The first scene's file will be kept.`),
+            text: tr("tpl.216f993a13", { p0: this.scenes.length }),
             cls: 'setting-item-description',
         });
 
         const list = contentEl.createEl('ol', { cls: 'storyline-merge-scene-list' });
         for (const s of this.scenes) {
             const li = list.createEl('li');
-            li.createEl('strong', { text: s.title || 'Untitled' });
-            li.createSpan({ text: legacyUi(` — ${s.wordcount ?? 0} words, status: ${BUILTIN_STATUS_CONFIG[s.status as SceneStatus]?.label || s.status}`, ` — ${s.wordcount ?? 0} words, status: ${BUILTIN_STATUS_CONFIG[s.status as SceneStatus]?.label || s.status}`) });
+            li.createEl('strong', { text: s.title || legacyUi('Untitled', 'Untitled') });
+            li.createSpan({ text: tr("tpl.c80b11dd6f", { p0: s.wordcount ?? 0, p1: BUILTIN_STATUS_CONFIG[s.status as SceneStatus]?.label || s.status }) });
         }
 
         // Title
@@ -227,7 +227,7 @@ export class MergeSceneModal extends Modal {
         // Combined word count
         const totalWords = this.scenes.reduce((sum, s) => sum + (s.wordcount ?? 0), 0);
         contentEl.createEl('p', {
-            text: legacyUi(`Combined word count: ~${totalWords.toLocaleString()}`, `Combined word count: ~${totalWords.toLocaleString()}`),
+            text: tr("tpl.1aa20eaf60", { p0: totalWords.toLocaleString() }),
             cls: 'setting-item-description',
         });
 

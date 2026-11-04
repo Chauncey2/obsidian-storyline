@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-floating-promises, @typescript-eslint/no-misused-promises, @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-unused-vars -- Obsidian's API surface and several untyped third-party libraries force dynamic dispatch; floating promises are intentional in DOM/event handlers; matching enable at end of file */
 import { ButtonComponent, ItemView, Modal, Notice, Setting, TFile, TextComponent, WorkspaceLeaf } from 'obsidian';
-import { tr, legacyUi } from '../i18n';
+import { tr, legacyUi, trValue } from '../i18n';
 import * as obsidian from 'obsidian';
 import { LOCATION_VIEW_TYPE } from '../constants';
 import { Scene, resolveStatusCfg } from '../models/Scene';
@@ -620,7 +620,7 @@ export class LocationView extends ItemView {
         const locLower = loc.name.toLowerCase();
         const sceneCount = scenes.filter(s => s.location?.toLowerCase() === locLower).length;
         if (sceneCount > 0) {
-            header.createSpan({ cls: 'location-tree-count', text: legacyUi(`${sceneCount} sc`, `${sceneCount} sc`) });
+            header.createSpan({ cls: 'location-tree-count', text: tr("tpl.391db411ec", { p0: sceneCount }) });
         }
 
         if (loc.locationType) {
@@ -755,7 +755,7 @@ export class LocationView extends ItemView {
         const locLower = name.toLowerCase();
         const sceneCount = scenes.filter(s => s.location?.toLowerCase() === locLower).length;
         if (sceneCount > 0) {
-            header.createSpan({ cls: 'location-tree-count', text: legacyUi(`${sceneCount} sc`, `${sceneCount} sc`) });
+            header.createSpan({ cls: 'location-tree-count', text: tr("tpl.391db411ec", { p0: sceneCount }) });
         }
 
         const createBtn = header.createEl('button', { cls: 'location-create-profile-btn', text: legacyUi('Create', 'Create') });
@@ -903,18 +903,18 @@ export class LocationView extends ItemView {
 
             if (allBooks) {
                 menu.addItem(it =>
-                    it.setTitle(legacyUi(`Restrict to "${currentBook}" only`, `Restrict to "${currentBook}" only`))
+                    it.setTitle(tr("tpl.88781b830a", { p0: currentBook }))
                         .setIcon('book-marked')
                         .onClick(() => this.setItemBooks(item, [currentBook])));
             } else if (inBook) {
                 menu.addItem(it =>
-                    it.setTitle(legacyUi(`Remove from "${currentBook}"`, `Remove from "${currentBook}"`))
+                    it.setTitle(tr("tpl.a26274f388", { p0: currentBook }))
                         .setIcon('book-x')
                         .onClick(() => this.setItemBooks(item,
                             (item.books || []).filter(b => b.toLowerCase() !== lower))));
             } else {
                 menu.addItem(it =>
-                    it.setTitle(legacyUi(`Add to "${currentBook}"`, `Add to "${currentBook}"`))
+                    it.setTitle(tr("tpl.018ad523fd", { p0: currentBook }))
                         .setIcon('book-plus')
                         .onClick(() => this.setItemBooks(item,
                             [...(item.books || []), currentBook])));
@@ -932,10 +932,10 @@ export class LocationView extends ItemView {
     private async moveItemTo(item: WorldOrLocation, target: string, verb: 'promoted' | 'demoted'): Promise<void> {
         try {
             await this.locationManager.moveItem(item, target);
-            new Notice(legacyUi(`"${item.name}" ${verb}`, `"${item.name}" ${verb}`));
+            new Notice(tr("tpl.622b5a6ca2", { p0: item.name, p1: verb }));
             await this.plugin.refreshOpenViews();
         } catch (err) {
-            new Notice(legacyUi(`Could not move: ${(err as Error).message}`, `Could not move: ${(err as Error).message}`));
+            new Notice(tr("tpl.f81de36fc5", { p0: (err as Error).message }));
         }
     }
 
@@ -960,7 +960,7 @@ export class LocationView extends ItemView {
             }
             await this.plugin.refreshOpenViews();
         } catch (err) {
-            new Notice(legacyUi(`Could not update book membership: ${(err as Error).message}`, `Could not update book membership: ${(err as Error).message}`));
+            new Notice(tr("tpl.92ccbd42df", { p0: (err as Error).message }));
         }
     }
 
@@ -1019,7 +1019,7 @@ export class LocationView extends ItemView {
         // Type label
         const typeLabel = container.createDiv('location-detail-type');
         obsidian.setIcon(typeLabel, isWorld ? 'globe' : 'map-pin');
-        typeLabel.createSpan({ text: legacyUi(` ${isWorld ? 'World' : 'Location'}`, ` ${isWorld ? 'World' : 'Location'}`) });
+        typeLabel.createSpan({ text: tr("tpl.07d23d27a7", { p0: isWorld ? 'World' : 'Location' }) });
 
         // Portrait area (clickable to change)
         const portraitArea = container.createDiv('location-detail-portrait');
@@ -1136,7 +1136,7 @@ export class LocationView extends ItemView {
         obsidian.setIcon(chevron, isCollapsed ? 'chevron-right' : 'chevron-down');
         const icon = sectionHeader.createSpan('location-section-icon');
         obsidian.setIcon(icon, category.icon);
-        sectionHeader.createSpan({ text: category.title });
+        sectionHeader.createSpan({ text: trValue('sectionTitle', category.title) });
 
         // ── Hide/unhide entire category button ──
         const hideCatBtn = sectionHeader.createSpan({
@@ -1248,7 +1248,7 @@ export class LocationView extends ItemView {
         if (hiddenFieldsInCat.length > 0) {
             const toggleEl = sectionBody.createDiv('hidden-fields-toggle');
             toggleEl.createEl('a', {
-                text: legacyUi(`Show ${hiddenFieldsInCat.length} hidden field${hiddenFieldsInCat.length > 1 ? 's' : ''}`, `Show ${hiddenFieldsInCat.length} hidden field${hiddenFieldsInCat.length > 1 ? 's' : ''}`),
+                text: tr("tpl.be838565ab", { p0: hiddenFieldsInCat.length, p1: hiddenFieldsInCat.length > 1 ? 's' : '' }),
                 cls: 'hidden-fields-toggle-link',
             });
             const hiddenContainer = sectionBody.createDiv('hidden-fields-container');
@@ -1279,7 +1279,7 @@ export class LocationView extends ItemView {
         const toggleEl = parent.createDiv('hidden-fields-toggle');
         const count = hiddenCategoryList.length;
         toggleEl.createEl('a', {
-            text: legacyUi(`Show ${count} hidden categor${count > 1 ? 'ies' : 'y'}`, `Show ${count} hidden categor${count > 1 ? 'ies' : 'y'}`),
+            text: tr("tpl.ff02fd3d45", { p0: count, p1: count > 1 ? 'ies' : 'y' }),
             cls: 'hidden-fields-toggle-link',
         });
         const hiddenContainer = parent.createDiv('hidden-categories-container');
@@ -1314,7 +1314,7 @@ export class LocationView extends ItemView {
         obsidian.setIcon(chevron, isCollapsed ? 'chevron-right' : 'chevron-down');
         const icon = sectionHeader.createSpan('location-section-icon');
         obsidian.setIcon(icon, category.icon);
-        sectionHeader.createSpan({ text: category.title });
+        sectionHeader.createSpan({ text: trValue('sectionTitle', category.title) });
 
         const showCatBtn = sectionHeader.createSpan({
             cls: 'character-section-hide-cat-btn',
@@ -1370,7 +1370,7 @@ export class LocationView extends ItemView {
 
     private renderField(parent: HTMLElement, field: LocationFieldDef, draft: WorldOrLocation, sectionTitle?: string, builtInKeys?: string[]): void {
         const row = parent.createDiv('location-field-row');
-        const labelEl = row.createEl('label', { cls: 'location-field-label', text: field.label });
+        const labelEl = row.createEl('label', { cls: 'location-field-label', text: trValue('fieldLabel', field.label) });
 
         // Up/down chevrons — reorder this built-in field within the section.
         if (sectionTitle && builtInKeys) {
@@ -1427,7 +1427,7 @@ export class LocationView extends ItemView {
             select.createEl('option', { text: field.placeholder, value: '' });
             // Built-in types
             for (const t of LOCATION_TYPES) {
-                const opt = select.createEl('option', { text: t, value: t.toLowerCase() });
+                const opt = select.createEl('option', { text: trValue('locationType', t), value: t.toLowerCase() });
                 if (String(value).toLowerCase() === t.toLowerCase()) opt.selected = true;
             }
             // User-defined custom types
@@ -1436,7 +1436,7 @@ export class LocationView extends ItemView {
                 const sep = select.createEl('option', { text: legacyUi('──────────', '──────────'), value: '' });
                 sep.disabled = true;
                 for (const t of customTypes) {
-                    const opt = select.createEl('option', { text: t, value: t.toLowerCase() });
+                    const opt = select.createEl('option', { text: trValue('locationType', t), value: t.toLowerCase() });
                     if (String(value).toLowerCase() === t.toLowerCase()) opt.selected = true;
                 }
             }
@@ -1478,7 +1478,7 @@ export class LocationView extends ItemView {
         } else if (field.multiline) {
             const textarea = row.createEl('textarea', {
                 cls: 'location-field-textarea',
-                attr: { placeholder: field.placeholder, rows: '3' },
+                attr: { placeholder: field.placeholder ? trValue('fieldPlaceholder', field.placeholder) : field.placeholder, rows: '3' },
             });
             textarea.value = value;
             textarea.addEventListener('input', () => {
@@ -1489,7 +1489,7 @@ export class LocationView extends ItemView {
             const input = row.createEl('input', {
                 cls: 'location-field-input',
                 type: 'text',
-                attr: { placeholder: field.placeholder },
+                attr: { placeholder: field.placeholder ? trValue('fieldPlaceholder', field.placeholder) : field.placeholder },
             });
             input.value = value;
             input.addEventListener('input', () => {
@@ -1522,7 +1522,7 @@ export class LocationView extends ItemView {
         const names = Array.from(new Set([...entityNames, ...selected])).sort((a, b) => a.localeCompare(b));
         const select = row.createEl('select', {
             cls: 'location-field-input dropdown storyline-entity-select',
-            attr: { 'aria-label': field.label, size: field.multiSelect ? '4' : '1' },
+            attr: { 'aria-label': trValue('fieldLabel', field.label), size: field.multiSelect ? '4' : '1' },
         });
         select.multiple = !!field.multiSelect;
         for (const name of names) {
@@ -2028,7 +2028,7 @@ export class LocationView extends ItemView {
         }
 
         // Add location to this world button
-        const addBtn = container.createEl('button', { cls: 'location-add-to-world-btn', text: legacyUi(`+ Add location to ${world.name}`, `+ Add location to ${world.name}`) });
+        const addBtn = container.createEl('button', { cls: 'location-add-to-world-btn', text: tr("tpl.d77e095075", { p0: world.name }) });
         addBtn.addEventListener('click', () => this.promptNewLocation(world.name));
     }
 
@@ -2048,14 +2048,14 @@ export class LocationView extends ItemView {
             const worldInfo = statsBox.createDiv('location-side-world-info');
             const worldIcon = worldInfo.createSpan();
             obsidian.setIcon(worldIcon, 'globe');
-            worldInfo.createSpan({ text: legacyUi(` ${loc.world}`, ` ${loc.world}`) });
+            worldInfo.createSpan({ text: tr("tpl.07d23d27a7", { p0: loc.world }) });
         }
 
         if (loc.parent) {
             const parentInfo = statsBox.createDiv('location-side-parent-info');
             const parentIcon = parentInfo.createSpan();
             obsidian.setIcon(parentIcon, 'corner-down-right');
-            parentInfo.createSpan({ text: legacyUi(` Inside: ${loc.parent}`, ` Inside: ${loc.parent}`) });
+            parentInfo.createSpan({ text: tr("tpl.e042941052", { p0: loc.parent }) });
         }
 
         const statGrid = statsBox.createDiv('location-stat-grid');
@@ -2078,8 +2078,8 @@ export class LocationView extends ItemView {
                 const act = formatActChapterPrefix(scene.act, '??');
                 const seq = scene.sequence !== undefined ? String(scene.sequence).padStart(2, '0') : '??';
 
-                item.createSpan({ cls: 'scene-id', text: legacyUi(`[${act}-${seq}]`, `[${act}-${seq}]`) });
-                item.createSpan({ cls: 'scene-title', text: legacyUi(` ${scene.title}`, ` ${scene.title}`) });
+                item.createSpan({ cls: 'scene-id', text: tr("tpl.9279a8924e", { p0: act, p1: seq }) });
+                item.createSpan({ cls: 'scene-title', text: tr("tpl.07d23d27a7", { p0: scene.title }) });
 
                 const statusCfg = resolveStatusCfg(scene.status || 'idea');
                 const statusBadge = item.createSpan({
@@ -2132,8 +2132,8 @@ export class LocationView extends ItemView {
                 const item = charSection.createDiv('location-side-char-item');
                 const icon = item.createSpan();
                 obsidian.setIcon(icon, 'user');
-                item.createSpan({ text: legacyUi(` ${name}`, ` ${name}`) });
-                item.createSpan({ cls: 'location-side-char-count', text: legacyUi(`${count}`, `${count}`) });
+                item.createSpan({ text: tr("tpl.07d23d27a7", { p0: name }) });
+                item.createSpan({ cls: 'location-side-char-count', text: tr("tpl.3cc5fd18eb", { p0: count }) });
             }
         }
     }
@@ -2334,7 +2334,7 @@ export class LocationView extends ItemView {
                     await service.cascadeLocationRename(oldName, newName);
                 }
                 this.originalItemName = newName;
-                new Notice(legacyUi(`Updated ${total} reference${total !== 1 ? 's' : ''} from "${oldName}" to "${newName}"`, `Updated ${total} reference${total !== 1 ? 's' : ''} from "${oldName}" to "${newName}"`));
+                new Notice(tr("tpl.175cdb7e1d", { p0: total, p1: total !== 1 ? 's' : '', p2: oldName, p3: newName }));
             },
             () => {
                 // User cancelled — revert the name back
@@ -2394,7 +2394,7 @@ export class LocationView extends ItemView {
                         this.selectedItem = w.filePath;
                         modal.close();
                         this.renderView(this.rootContainer!);
-                        new Notice(legacyUi(`World "${name.trim()}" created`, `World "${name.trim()}" created`));
+                        new Notice(tr("tpl.348449a0cc", { p0: name.trim() }));
                     } catch (e) { new Notice(String(e)); }
                 });
             });
@@ -2446,7 +2446,7 @@ export class LocationView extends ItemView {
                         this.selectedItem = loc.filePath;
                         modal.close();
                         this.renderView(this.rootContainer!);
-                        new Notice(legacyUi(`Location "${name.trim()}" created`, `Location "${name.trim()}" created`));
+                        new Notice(tr("tpl.106bb9a7ed", { p0: name.trim() }));
                     } catch (e) { new Notice(String(e)); }
                 });
             });
@@ -2461,15 +2461,15 @@ export class LocationView extends ItemView {
             );
             this.selectedItem = loc.filePath;
             this.renderView(this.rootContainer!);
-            new Notice(legacyUi(`Location profile created for "${name}"`, `Location profile created for "${name}"`));
+            new Notice(tr("tpl.f94c1f7136", { p0: name }));
         } catch (e) { new Notice(String(e)); }
     }
 
     private confirmDelete(item: WorldOrLocation): void {
         const modal = new Modal(this.app);
-        modal.titleEl.setText(legacyUi(`Delete ${item.type === 'world' ? 'World' : 'Location'}`, `Delete ${item.type === 'world' ? 'World' : 'Location'}`));
+        modal.titleEl.setText(tr("tpl.a1c32ed8cd", { p0: item.type === 'world' ? 'World' : 'Location' }));
         modal.contentEl.createEl('p', {
-            text: legacyUi(`Are you sure you want to delete "${item.name}"? The file will be moved to trash.`, `Are you sure you want to delete "${item.name}"? The file will be moved to trash.`)
+            text: tr("tpl.114e6f5bdc", { p0: item.name })
         });
 
         new Setting(modal.contentEl)
@@ -2488,7 +2488,7 @@ export class LocationView extends ItemView {
                     this.selectedItem = null;
                     modal.close();
                     this.renderView(this.rootContainer!);
-                    new Notice(legacyUi(`"${item.name}" deleted`, `"${item.name}" deleted`));
+                    new Notice(tr("tpl.ffad5618e7", { p0: item.name }));
                 });
             })
             .addButton(btn => btn.setButtonText(legacyUi('Cancel', 'Cancel')).onClick(() => modal.close()));
@@ -2517,7 +2517,7 @@ export class LocationView extends ItemView {
             const leaf = this.app.workspace.getLeaf('tab');
             await leaf.openFile(file, { state: { mode: 'source', source: false } });
         } else {
-            new Notice(legacyUi(`Could not find file: ${scene.filePath}`, `Could not find file: ${scene.filePath}`));
+            new Notice(tr("tpl.f84439c762", { p0: scene.filePath }));
         }
     }
 
@@ -2574,7 +2574,7 @@ export class LocationView extends ItemView {
         if (gallery.length < MAX_GALLERY) {
             const addBtn = header.createEl('button', {
                 cls: 'character-section-add-field-btn',
-                attr: { title: legacyUi(`Add image (${gallery.length}/${MAX_GALLERY})`, `Add image (${gallery.length}/${MAX_GALLERY})`), 'aria-label': 'Add gallery image' }
+                attr: { title: tr("tpl.74e19ab93b", { p0: gallery.length, p1: MAX_GALLERY }), 'aria-label': 'Add gallery image' }
             });
             obsidian.setIcon(addBtn, 'plus');
             addBtn.addEventListener('click', (e) => {

@@ -1,4 +1,5 @@
 import { BUILTIN_BEAT_SHEETS } from '../../models/Scene';
+import { beatDescriptionZh } from './beatDescriptions.zh-CN';
 
 export interface BeatSheetText {
     displayName: string;
@@ -130,7 +131,7 @@ export const zhCNBeatSheets: Record<string, BeatSheetText> = Object.fromEntries(
         beats: sheet.beats.map((beat) => ({
             label: labelTranslations[beat.label] ?? beat.label,
             subtitle: beat.subtitle ? (labelTranslations[beat.subtitle] ?? beat.subtitle) : undefined,
-            description: `围绕“${labelTranslations[beat.label] ?? beat.label}”推进故事情节。`,
+            description: beatDescriptionZh[beat.description] ?? beat.description,
         })),
     }]),
 );

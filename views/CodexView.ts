@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-floating-promises, @typescript-eslint/no-misused-promises, @typescript-eslint/no-unnecessary-type-assertion -- Obsidian's API surface and several untyped third-party libraries force dynamic dispatch; floating promises are intentional in DOM/event handlers; matching enable at end of file */
 import { App, ItemView, WorkspaceLeaf, Modal, Setting, Notice, normalizePath } from 'obsidian';
-import { tr, legacyUi } from '../i18n';
+import { tr, legacyUi, trValue } from '../i18n';
 import * as obsidian from 'obsidian';
 import type SceneCardsPlugin from '../main';
 import type { CodexVisualGroup } from '../settings';
@@ -292,11 +292,11 @@ export class CodexView extends ItemView {
         for (const cat of cats) {
             const tab = tabs.createEl('button', {
                 cls: `codex-tab ${cat.id === this.activeCategory ? 'active' : ''}`,
-                attr: { 'aria-label': cat.label },
+                attr: { 'aria-label': trValue('fieldLabel', cat.label) },
             });
             const icon = tab.createSpan({ cls: 'codex-tab-icon' });
             obsidian.setIcon(icon, cat.icon);
-            tab.createSpan({ cls: 'codex-tab-label', text: cat.label });
+            tab.createSpan({ cls: 'codex-tab-label', text: trValue('fieldLabel', cat.label) });
 
             tab.addEventListener('click', () => {
                 this.activeCategory = cat.id;
@@ -309,7 +309,7 @@ export class CodexView extends ItemView {
         if (this.activeCategory) {
             const catDef = this.codexManager.getCategoryDef(this.activeCategory);
             if (catDef) {
-                container.createEl('h3', { text: catDef.label });
+                container.createEl('h3', { text: trValue('fieldLabel', catDef.label) });
             }
         }
 
@@ -335,7 +335,7 @@ export class CodexView extends ItemView {
             { value: 'manual', label: 'Manual' },
         ];
         for (const opt of sortOptions) {
-            const el = sortSelect.createEl('option', { text: opt.label, value: opt.value });
+            const el = sortSelect.createEl('option', { text: legacyUi(opt.label, opt.label), value: opt.value });
             if (this.sortBy === opt.value) el.selected = true;
         }
         sortSelect.addEventListener('change', () => {
@@ -352,7 +352,8 @@ export class CodexView extends ItemView {
                 ...this.getVisualGroups().map(group => ({ value: `named:${group.id}`, label: group.name })),
             ];
             for (const opt of groupOptions) {
-                const el = groupSelect.createEl('option', { text: opt.label, value: opt.value });
+                const label = opt.value.startsWith('named:') ? opt.label : legacyUi(opt.label, opt.label);
+                const el = groupSelect.createEl('option', { text: label, value: opt.value });
                 const current = this.groupingMode === 'named'
                     ? `named:${this.activeVisualGroupId}`
                     : this.groupingMode;
@@ -495,10 +496,10 @@ export class CodexView extends ItemView {
                 container.createEl('p', { cls: 'codex-empty-state', text: tr('common.noMatchingEntries') });
             } else if (catDef) {
                 const empty = container.createDiv('codex-empty-state');
-                empty.createEl('p', { text: legacyUi(`No ${catDef.label.toLowerCase()} yet.`, `No ${catDef.label.toLowerCase()} yet.`) });
+                empty.createEl('p', { text: tr("tpl.d7ad4786d5", { p0: trValue('fieldLabel', catDef.label) }) });
                 const createBtn = empty.createEl('button', {
                     cls: 'mod-cta',
-                    text: legacyUi(`Create first ${catDef.label.toLowerCase().replace(/s$/, '')}`, `Create first ${catDef.label.toLowerCase().replace(/s$/, '')}`),
+                    text: tr("tpl.395c8a6b32", { p0: trValue('fieldLabel', catDef.label) }),
                 });
                 createBtn.addEventListener('click', () => this.promptNewEntry());
             }
@@ -541,7 +542,7 @@ export class CodexView extends ItemView {
                 if (entryCatDef) {
                     const shouldGroup = !isHub && this.groupingMode !== 'none';
                     if (shouldGroup) {
-                        const group = this.getTypeField(entry, entryCatDef) || 'Uncategorized';
+                        const group = this.getTypeField(entry, entryCatDef) || legacyUi('Uncategorized', 'Uncategorized');
                         if (group !== lastGroup) {
                             const section = list.createDiv('codex-visual-group');
                             section.createDiv({ cls: 'codex-entry-group-heading', text: group });
@@ -622,7 +623,7 @@ export class CodexView extends ItemView {
         const total = catDef.fieldKeys.length;
         if (total > 0) {
             const pct = Math.round((filled / total) * 100);
-            row.createSpan({ cls: 'codex-entry-pct', text: legacyUi(`${pct}%`, `${pct}%`) });
+            row.createSpan({ cls: 'codex-entry-pct', text: tr("tpl.dbd55baf5e", { p0: pct }) });
         }
 
         row.addEventListener('click', () => {
@@ -693,7 +694,7 @@ export class CodexView extends ItemView {
         const backBtn = header.createSpan({ cls: 'codex-back-link' });
         const backIcon = backBtn.createSpan();
         obsidian.setIcon(backIcon, 'circle-arrow-left');
-        backBtn.createSpan({ text: legacyUi(` All ${catDef.label}`, ` All ${catDef.label}`) });
+        backBtn.createSpan({ text: tr("tpl.1815f7af22", { p0: trValue('fieldLabel', catDef.label) }) });
         backBtn.addEventListener('click', async () => {
             await this.flushPendingSave();
             this.selectedEntry = null;
@@ -729,7 +730,7 @@ export class CodexView extends ItemView {
         const typeLabel = container.createDiv('codex-detail-type-label');
         const typeIcon = typeLabel.createSpan({ cls: 'codex-detail-type-icon' });
         obsidian.setIcon(typeIcon, catDef.icon);
-        typeLabel.createSpan({ text: catDef.label.replace(/s$/, '') });
+        typeLabel.createSpan({ text: trValue('fieldLabel', catDef.label) });
 
         // ── Portrait / image ───────────────────────────
         const portraitArea = container.createDiv('codex-detail-portrait');
@@ -831,7 +832,7 @@ export class CodexView extends ItemView {
         const catIcon = sectionHeader.createSpan({ cls: 'codex-section-icon' });
         obsidian.setIcon(catIcon, cat.icon);
 
-        sectionHeader.createSpan({ cls: 'codex-section-title', text: cat.title });
+        sectionHeader.createSpan({ cls: 'codex-section-title', text: trValue('sectionTitle', cat.title) });
 
         // ── Hide/unhide entire category button ──
         const hideCatBtn = sectionHeader.createSpan({
@@ -928,7 +929,7 @@ export class CodexView extends ItemView {
             if (hiddenFieldsInCat.length > 0) {
                 const toggleEl = body.createDiv('hidden-fields-toggle');
                 toggleEl.createEl('a', {
-                    text: legacyUi(`Show ${hiddenFieldsInCat.length} hidden field${hiddenFieldsInCat.length > 1 ? 's' : ''}`, `Show ${hiddenFieldsInCat.length} hidden field${hiddenFieldsInCat.length > 1 ? 's' : ''}`),
+                    text: tr("tpl.be838565ab", { p0: hiddenFieldsInCat.length, p1: hiddenFieldsInCat.length > 1 ? 's' : '' }),
                     cls: 'hidden-fields-toggle-link',
                 });
                 const hiddenContainer = body.createDiv('hidden-fields-container');
@@ -961,7 +962,7 @@ export class CodexView extends ItemView {
         const toggleEl = parent.createDiv('hidden-fields-toggle');
         const count = hiddenCategoryList.length;
         toggleEl.createEl('a', {
-            text: legacyUi(`Show ${count} hidden categor${count > 1 ? 'ies' : 'y'}`, `Show ${count} hidden categor${count > 1 ? 'ies' : 'y'}`),
+            text: tr("tpl.ff02fd3d45", { p0: count, p1: count > 1 ? 'ies' : 'y' }),
             cls: 'hidden-fields-toggle-link',
         });
         const hiddenContainer = parent.createDiv('hidden-categories-container');
@@ -1004,7 +1005,7 @@ export class CodexView extends ItemView {
         obsidian.setIcon(chevron, isCollapsed ? 'chevron-right' : 'chevron-down');
         const catIcon = sectionHeader.createSpan({ cls: 'codex-section-icon' });
         obsidian.setIcon(catIcon, cat.icon);
-        sectionHeader.createSpan({ cls: 'codex-section-title', text: cat.title });
+        sectionHeader.createSpan({ cls: 'codex-section-title', text: trValue('sectionTitle', cat.title) });
 
         const showCatBtn = sectionHeader.createSpan({
             cls: 'character-section-hide-cat-btn',
@@ -1056,7 +1057,7 @@ export class CodexView extends ItemView {
     ): void {
         const { key, label, placeholder, multiline, entityRef, toggle } = field;
         const row = container.createDiv('codex-field-row');
-        const labelEl = row.createEl('label', { cls: 'codex-field-label', text: label });
+        const labelEl = row.createEl('label', { cls: 'codex-field-label', text: trValue('fieldLabel', label) });
 
         // Up/down chevrons — reorder this built-in field within the section,
         // interleaved with universal fields. Only shown when we have the
@@ -1149,7 +1150,7 @@ export class CodexView extends ItemView {
                             this.selectedEntry = renamed.filePath;
                             if (this.rootContainer) this.renderView(this.rootContainer);
                         } catch (err) {
-                            new Notice(legacyUi(`Rename failed: ${err instanceof Error ? err.message : String(err)}`, `Rename failed: ${err instanceof Error ? err.message : String(err)}`));
+                            new Notice(tr("tpl.45b66b6b59", { p0: err instanceof Error ? err.message : String(err) }));
                         }
                     }
                 });
@@ -1174,10 +1175,10 @@ export class CodexView extends ItemView {
         const names = Array.from(new Set([...entityNames, ...selected])).sort((a, b) => a.localeCompare(b));
         const select = row.createEl('select', {
             cls: 'codex-field-input dropdown storyline-entity-select',
-            attr: { 'aria-label': field.label, size: field.multiSelect ? '4' : '1' },
+            attr: { 'aria-label': trValue('fieldLabel', field.label), size: field.multiSelect ? '4' : '1' },
         });
         select.multiple = !!field.multiSelect;
-        if (!field.multiSelect) select.createEl('option', { text: field.placeholder || 'Select entry', value: '' });
+        if (!field.multiSelect) select.createEl('option', { text: field.placeholder ? trValue('fieldPlaceholder', field.placeholder) : legacyUi('Select entry', 'Select entry'), value: '' });
         for (const name of names) {
             const option = select.createEl('option', { text: name, value: name });
             option.selected = selected.includes(name);
@@ -1255,7 +1256,7 @@ export class CodexView extends ItemView {
 
         // Label with an edit icon
         const labelWrap = row.createDiv('codex-universal-label-wrap');
-        labelWrap.createEl('label', { cls: 'codex-field-label', text: tpl.label });
+        labelWrap.createEl('label', { cls: 'codex-field-label', text: trValue('fieldLabel', tpl.label) });
 
         const editBtn = labelWrap.createSpan({
             cls: 'codex-universal-edit-btn',
@@ -1341,7 +1342,7 @@ export class CodexView extends ItemView {
             const msInput = inputRow.createEl('input', {
                 cls: 'universal-multi-input',
                 type: 'text',
-                attr: { placeholder: tpl.placeholder || 'Type to add\u2026' },
+                attr: { placeholder: tpl.placeholder ? trValue('fieldPlaceholder', tpl.placeholder) : legacyUi('Type to add…', 'Type to add…') },
             });
             // Issue #102 — portal dropdown to <body> so position:fixed coords are
             // relative to the viewport even when an ancestor uses `transform`,
@@ -1451,7 +1452,7 @@ export class CodexView extends ItemView {
         } else if (tpl.type === 'textarea') {
             const textarea = row.createEl('textarea', {
                 cls: 'codex-field-textarea',
-                attr: { placeholder: tpl.placeholder, rows: '2' },
+                attr: { placeholder: tpl.placeholder ? trValue('fieldPlaceholder', tpl.placeholder) : tpl.placeholder, rows: '2' },
             });
             textarea.value = value;
             const autoGrow = () => {
@@ -1468,7 +1469,7 @@ export class CodexView extends ItemView {
             const input = row.createEl('input', {
                 cls: 'codex-field-input',
                 type: 'number',
-                attr: { placeholder: tpl.placeholder, step: 'any' },
+                attr: { placeholder: tpl.placeholder ? trValue('fieldPlaceholder', tpl.placeholder) : tpl.placeholder, step: 'any' },
             });
             input.value = value;
             input.addEventListener('input', () => {
@@ -1493,7 +1494,7 @@ export class CodexView extends ItemView {
             const input = row.createEl('input', {
                 cls: 'codex-field-input',
                 type: 'text',
-                attr: { placeholder: tpl.placeholder },
+                attr: { placeholder: tpl.placeholder ? trValue('fieldPlaceholder', tpl.placeholder) : tpl.placeholder },
             });
             input.value = value;
             input.addEventListener('input', () => {
@@ -1551,7 +1552,7 @@ export class CodexView extends ItemView {
 
             const input = row.createEl('input', {
                 cls: 'codex-field-input',
-                attr: { type: 'text', placeholder: legacyUi(`Value for ${fieldName}`, `Value for ${fieldName}`) },
+                attr: { type: 'text', placeholder: tr("tpl.108e31de87", { p0: fieldName }) },
             });
             input.value = fieldValue;
             input.addEventListener('input', () => {
@@ -1737,7 +1738,7 @@ export class CodexView extends ItemView {
         if (gallery.length < MAX_GALLERY) {
             const addBtn = header.createEl('button', {
                 cls: 'character-section-add-field-btn',
-                attr: { title: legacyUi(`Add image (${gallery.length}/${MAX_GALLERY})`, `Add image (${gallery.length}/${MAX_GALLERY})`), 'aria-label': 'Add gallery image' },
+                attr: { title: tr("tpl.74e19ab93b", { p0: gallery.length, p1: MAX_GALLERY }), 'aria-label': 'Add gallery image' },
             });
             obsidian.setIcon(addBtn, 'plus');
             addBtn.addEventListener('click', (e) => {
@@ -1904,13 +1905,13 @@ export class CodexView extends ItemView {
         }
 
         const modal = new Modal(this.app);
-        modal.titleEl.setText(legacyUi(`New ${catDef.label.replace(/s$/, '')}`, `New ${catDef.label.replace(/s$/, '')}`));
+        modal.titleEl.setText(tr("tpl.eb9d21a976", { p0: trValue('fieldLabel', catDef.label) }));
 
         let nameValue = '';
         new Setting(modal.contentEl)
             .setName(legacyUi('Name', 'Name'))
             .addText(text => {
-                text.setPlaceholder(legacyUi(`Enter ${catDef.label.toLowerCase().replace(/s$/, '')} name`, `Enter ${catDef.label.toLowerCase().replace(/s$/, '')} name`));
+                text.setPlaceholder(tr("tpl.f7e02c94dc", { p0: trValue('fieldLabel', catDef.label) }));
                 text.onChange(v => { nameValue = v; });
                 // Allow Enter to create
                 text.inputEl.addEventListener('keydown', async (e) => {
@@ -1942,10 +1943,10 @@ export class CodexView extends ItemView {
             const codexFolder = this.sceneManager.getCodexFolder();
             const entry = await this.codexManager.createEntry(codexFolder, this.activeCategory, name);
             this.selectedEntry = entry.filePath;
-            new Notice(legacyUi(`Created ${name}`, `Created ${name}`));
+            new Notice(tr("tpl.86b49f92ca", { p0: name }));
             if (this.rootContainer) this.renderView(this.rootContainer);
         } catch (err) {
-            new Notice(legacyUi(`Failed to create entry: ${err instanceof Error ? err.message : String(err)}`, `Failed to create entry: ${err instanceof Error ? err.message : String(err)}`));
+            new Notice(tr("tpl.34b7401372", { p0: err instanceof Error ? err.message : String(err) }));
         }
     }
 
@@ -1953,7 +1954,7 @@ export class CodexView extends ItemView {
         const modal = new Modal(this.app);
         modal.titleEl.setText(legacyUi('Delete entry', 'Delete entry'));
         modal.contentEl.createEl('p', {
-            text: legacyUi(`Are you sure you want to delete "${entry.name}"? This cannot be undone.`, `Are you sure you want to delete "${entry.name}"? This cannot be undone.`),
+            text: tr("tpl.edee4e8329", { p0: entry.name }),
         });
         new Setting(modal.contentEl)
             .addButton(btn => btn
@@ -1966,7 +1967,7 @@ export class CodexView extends ItemView {
                         this.selectedEntry = null;
                         if (this.rootContainer) this.renderView(this.rootContainer);
                     } catch (err) {
-                        new Notice(legacyUi(`Delete failed: ${err instanceof Error ? err.message : String(err)}`, `Delete failed: ${err instanceof Error ? err.message : String(err)}`));
+                        new Notice(tr("tpl.560c649ab3", { p0: err instanceof Error ? err.message : String(err) }));
                     }
                 }))
             .addButton(btn => btn.setButtonText(legacyUi('Cancel', 'Cancel')).onClick(() => modal.close()));
@@ -2207,12 +2208,12 @@ export class CodexView extends ItemView {
         modal.titleEl.setText(legacyUi('Add linked Codex entry', 'Add linked Codex entry'));
         modal.contentEl.createEl('p', {
             cls: 'setting-item-description',
-            text: legacyUi(`Choose an entry and field that should link to "${target.name}".`, `Choose an entry and field that should link to "${target.name}".`),
+            text: tr("tpl.93311e3675", { p0: target.name }),
         });
         const sourceSelect = modal.contentEl.createEl('select', { cls: 'codex-relation-modal-select' });
         for (const candidate of candidates) {
             sourceSelect.createEl('option', {
-                text: legacyUi(`${candidate.entry.name} (${candidate.entry.type})`, `${candidate.entry.name} (${candidate.entry.type})`),
+                text: tr("tpl.2c03736ded", { p0: candidate.entry.name, p1: candidate.entry.type }),
                 value: candidate.entry.filePath,
             });
         }
@@ -2222,7 +2223,7 @@ export class CodexView extends ItemView {
             const candidate = candidates.find(item => item.entry.filePath === sourceSelect.value);
             for (const field of candidate?.fields ?? []) {
                 fieldSelect.createEl('option', {
-                    text: legacyUi(`${field.label} (${field.type})`, `${field.label} (${field.type})`),
+                    text: tr("tpl.2c03736ded", { p0: field.label, p1: field.type }),
                     value: `${field.kind}:${field.key}`,
                 });
             }
@@ -2261,7 +2262,7 @@ export class CodexView extends ItemView {
         const header = section.createDiv('codex-stale-header');
         const icon = header.createSpan();
         obsidian.setIcon(icon, 'alert-triangle');
-        header.createSpan({ text: legacyUi(` Modified — ${match.affectedScenes.length} scene${match.affectedScenes.length !== 1 ? 's' : ''} may need review`, ` Modified — ${match.affectedScenes.length} scene${match.affectedScenes.length !== 1 ? 's' : ''} may need review`) });
+        header.createSpan({ text: tr("tpl.068b986ba0", { p0: match.affectedScenes.length, p1: match.affectedScenes.length !== 1 ? 's' : '' }) });
 
         const list = section.createEl('ul', { cls: 'codex-stale-scene-list' });
         for (const ref of match.affectedScenes) {
@@ -2312,7 +2313,7 @@ export class CodexView extends ItemView {
             toggle.checked = enabled.has(cat.id);
             const iconSpan = row.createSpan({ cls: 'codex-category-manager-icon' });
             obsidian.setIcon(iconSpan, cat.icon);
-            row.createSpan({ text: cat.label });
+            row.createSpan({ text: trValue('fieldLabel', cat.label) });
 
             // Sidebar toggle
             const sidebarLabel = row.createEl('label', { cls: 'codex-sidebar-toggle' });
@@ -2569,7 +2570,7 @@ export class CodexView extends ItemView {
                 });
                 row.createSpan({
                     cls: 'codex-visual-group-count',
-                    text: legacyUi(`${group.entryPaths.length} entr${group.entryPaths.length === 1 ? 'y' : 'ies'}`, `${group.entryPaths.length} entr${group.entryPaths.length === 1 ? 'y' : 'ies'}`),
+                    text: tr("tpl.877a6a9458", { p0: group.entryPaths.length }),
                 });
                 const deleteBtn = row.createEl('button', {
                     cls: 'codex-category-delete-btn clickable-icon',

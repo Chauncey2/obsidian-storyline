@@ -8,7 +8,7 @@ import { ResearchView } from './ResearchView';
 import { HelpView } from './HelpView';
 import { ManuscriptView } from './ManuscriptView';
 import { attachTooltip } from '../components/Tooltip';
-import { tr } from '../i18n';
+import { tr, trValue } from '../i18n';
 import {
     SCENE_INSPECTOR_VIEW_TYPE,
     MANUSCRIPT_VIEW_TYPE,
@@ -102,7 +102,7 @@ export class SceneInspectorView extends ItemView {
         // ── Tab bar ──
         this.tabBarEl = container.createDiv('sl-inspector-tabbar');
         for (const def of TAB_DEFS) {
-            this.createTabButton(def.id, def.label, def.icon);
+            this.createTabButton(def.id, trValue('fieldLabel', def.label), def.icon);
         }
 
         // ── Tab panels host ──

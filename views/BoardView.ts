@@ -331,7 +331,7 @@ export class BoardView extends ItemView {
                 const newNum = await this.sceneManager.insertChapter();
                 await this.sceneManager.initialize();
                 this.refreshBoard();
-                new Notice(legacyUi(`Added Chapter ${newNum}. Group by Chapter to see it.`, `Added Chapter ${newNum}. Group by Chapter to see it.`));
+                new Notice(tr("tpl.30a0ba9914", { p0: newNum }));
             });
         }
 
@@ -361,7 +361,7 @@ export class BoardView extends ItemView {
 
             this.corkboardZoomLabel = iconGroup.createSpan({
                 cls: 'story-line-corkboard-zoom-value',
-                text: legacyUi(`${Math.round(this.corkboardCamera.zoom * 100)}%`, `${Math.round(this.corkboardCamera.zoom * 100)}%`),
+                text: tr("tpl.dbd55baf5e", { p0: Math.round(this.corkboardCamera.zoom * 100) }),
             });
 
             const zoomInBtn = iconGroup.createEl('button', {
@@ -1143,7 +1143,7 @@ export class BoardView extends ItemView {
 
     private applyCorkboardCamera(canvas: HTMLElement): void {
         canvas.setCssStyles({ transform: `translate(${this.corkboardCamera.x}px, ${this.corkboardCamera.y}px) scale(${this.corkboardCamera.zoom})` });
-        this.corkboardZoomLabel?.setText(legacyUi(`${Math.round(this.corkboardCamera.zoom * 100)}%`, `${Math.round(this.corkboardCamera.zoom * 100)}%`));
+        this.corkboardZoomLabel?.setText(tr("tpl.dbd55baf5e", { p0: Math.round(this.corkboardCamera.zoom * 100) }));
     }
 
     private zoomCorkboardBy(delta: number): void {
@@ -1691,7 +1691,7 @@ export class BoardView extends ItemView {
         const notePresets = resolveStickyNoteColors(this.plugin.settings);
         notePresets.forEach((preset) => {
             menu.addItem(item => item
-                .setTitle(legacyUi(`Color: ${preset.label}`, `Color: ${preset.label}`))
+                .setTitle(tr("tpl.3ca6cdbc52", { p0: preset.label }))
                 .setIcon('palette')
                 .onClick(() => { void this.setCorkboardNoteColor(scene, preset.color); }));
         });
@@ -1987,7 +1987,7 @@ export class BoardView extends ItemView {
         const displayTitle = this.getColumnDisplayTitle(title);
         header.createSpan({
             cls: 'story-line-column-title',
-            text: legacyUi(`${displayTitle} (${scenes.length})`, `${displayTitle} (${scenes.length})`)
+            text: tr("tpl.2c03736ded", { p0: displayTitle, p1: scenes.length })
         });
 
         // Show description subtitle if available (for act / chapter columns)
@@ -2414,7 +2414,7 @@ export class BoardView extends ItemView {
         const count = this.selectedScenes.size;
         this.bulkBarEl.createSpan({
             cls: 'bulk-bar-label',
-            text: legacyUi(`${count} scenes selected`, `${count} scenes selected`)
+            text: tr("tpl.9388fbc666", { p0: count })
         });
 
         // Bulk status change
@@ -2429,12 +2429,12 @@ export class BoardView extends ItemView {
             const statuses = getStatusOrder();
             statuses.forEach(status => {
                 menu.addItem(item => {
-                    item.setTitle(resolveStatusCfg(status).label)
+                    item.setTitle(trValue('statusLabel', resolveStatusCfg(status).label))
                         .onClick(async () => {
                             for (const fp of this.selectedScenes) {
                                 await this.sceneManager.updateScene(fp, { status });
                             }
-                            new Notice(legacyUi(`Updated status to "${status}" for ${count} scenes`, `Updated status to "${status}" for ${count} scenes`));
+                            new Notice(tr("tpl.e4d84df73d", { p0: status, p1: count }));
                             this.selectedScenes.clear();
                             this.refreshBoard();
                             this.updateBulkBar();
@@ -2464,7 +2464,7 @@ export class BoardView extends ItemView {
                                 for (const fp of this.selectedScenes) {
                                     await this.sceneManager.updateScene(fp, { act: Number(act) || act }, { moveFile: true });
                                 }
-                                new Notice(legacyUi(`Moved ${count} scenes to ${getActDisplayLabel(act)}`, `Moved ${count} scenes to ${getActDisplayLabel(act)}`));
+                                new Notice(tr("tpl.8c340f285a", { p0: count, p1: getActDisplayLabel(act) }));
                                 this.selectedScenes.clear();
                                 this.refreshBoard();
                                 this.updateBulkBar();
@@ -2479,7 +2479,7 @@ export class BoardView extends ItemView {
                                 for (const fp of this.selectedScenes) {
                                     await this.sceneManager.updateScene(fp, { act }, { moveFile: true });
                                 }
-                                new Notice(legacyUi(`Moved ${count} scenes to ${getActDisplayLabel(act)}`, `Moved ${count} scenes to ${getActDisplayLabel(act)}`));
+                                new Notice(tr("tpl.8c340f285a", { p0: count, p1: getActDisplayLabel(act) }));
                                 this.selectedScenes.clear();
                                 this.refreshBoard();
                                 this.updateBulkBar();
@@ -2515,7 +2515,7 @@ export class BoardView extends ItemView {
                                     }
                                 }
                             }
-                            new Notice(legacyUi(`Added tag "${tag}" to ${count} scenes`, `Added tag "${tag}" to ${count} scenes`));
+                            new Notice(tr("tpl.6ed9909054", { p0: tag, p1: count }));
                             this.selectedScenes.clear();
                             this.refreshBoard();
                             this.updateBulkBar();
@@ -2552,7 +2552,7 @@ export class BoardView extends ItemView {
                                         }
                                     }
                                 }
-                                new Notice(legacyUi(`Added tag "${newTag}" to ${count} scenes`, `Added tag "${newTag}" to ${count} scenes`));
+                                new Notice(tr("tpl.6ed9909054", { p0: newTag, p1: count }));
                                 this.selectedScenes.clear();
                                 this.refreshBoard();
                                 this.updateBulkBar();
@@ -2585,7 +2585,7 @@ export class BoardView extends ItemView {
                     for (const fp of this.selectedScenes) {
                         await this.sceneManager.deleteScene(fp);
                     }
-                    new Notice(legacyUi(`Deleted ${count} scenes`, `Deleted ${count} scenes`));
+                    new Notice(tr("tpl.95dc609ab8", { p0: count }));
                     this.selectedScenes.clear();
                     this.refreshBoard();
                     this.updateBulkBar();
@@ -2649,7 +2649,7 @@ export class BoardView extends ItemView {
             const leaf = this.app.workspace.getLeaf('tab');
             await leaf.openFile(file, { state: { mode: 'source', source: false } });
         } else {
-            new Notice(legacyUi(`Could not find file: ${scene.filePath}`, `Could not find file: ${scene.filePath}`));
+            new Notice(tr("tpl.f84439c762", { p0: scene.filePath }));
         }
     }
 
@@ -2729,7 +2729,7 @@ export class BoardView extends ItemView {
         const statuses = getStatusOrder();
         statuses.forEach(status => {
             menu.addItem(item => {
-                item.setTitle(legacyUi(`Status: ${resolveStatusCfg(status).label}`, `Status: ${resolveStatusCfg(status).label}`))
+                item.setTitle(tr("tpl.c1031b5e5a", { p0: resolveStatusCfg(status).label }))
                     .setChecked(scene.status === status)
                     .onClick(async () => {
                         await this.sceneManager.updateScene(scene.filePath, { status });
@@ -2790,8 +2790,8 @@ export class BoardView extends ItemView {
                 .setIcon('file-plus')
                 .onClick(() => {
                     const tpl: SceneTemplate = {
-                        name: `Template from "${scene.title || 'Untitled'}"`,
-                        description: `Saved from scene "${scene.title || 'Untitled'}"`,
+                        name: `Template from "${scene.title || legacyUi('Untitled', 'Untitled')}"`,
+                        description: `Saved from scene "${scene.title || legacyUi('Untitled', 'Untitled')}"`,
                         defaultFields: {
                             status: scene.status,
                             emotion: scene.emotion,
@@ -2803,7 +2803,7 @@ export class BoardView extends ItemView {
                     };
                     this.plugin.settings.sceneTemplates.push(tpl);
                     this.plugin.saveSettings();
-                    new Notice(legacyUi(`Scene template "${tpl.name}" saved`, `Scene template "${tpl.name}" saved`));
+                    new Notice(tr("tpl.461b9dff4f", { p0: tpl.name }));
                 });
         });
 
@@ -2835,7 +2835,7 @@ export class BoardView extends ItemView {
                 .onClick(async () => {
                     openConfirmModal(this.app, {
                         title: legacyUi('Delete Scene', 'Delete Scene'),
-                        message: `Delete scene "${scene.title || 'Untitled'}"?`,
+                        message: `Delete scene "${scene.title || legacyUi('Untitled', 'Untitled')}"?`,
                         confirmLabel: 'Delete',
                         onConfirm: () => this.deleteScene(scene),
                     });
@@ -2978,14 +2978,14 @@ export class BoardView extends ItemView {
                                     await this.sceneManager.removeAct(actNum);
                                     await this.sceneManager.setActLabel(actNum, '');
                                     this.refreshBoard();
-                                    new Notice(legacyUi(`Deleted ${actDisplay}`, `Deleted ${actDisplay}`));
+                                    new Notice(tr("tpl.bbd6da64de", { p0: actDisplay }));
                                 },
                             });
                         } else {
                             this.sceneManager.removeAct(actNum).then(() => {
                                 this.sceneManager.setActLabel(actNum, '').then(() => {
                                     this.refreshBoard();
-                                    new Notice(legacyUi(`Deleted Act ${actNum}`, `Deleted Act ${actNum}`));
+                                    new Notice(tr("tpl.1bdd0983a8", { p0: actNum }));
                                 });
                             });
                         }
@@ -3014,7 +3014,7 @@ export class BoardView extends ItemView {
                         await this.sceneManager.insertChapter(chNum);
                         await this.sceneManager.initialize();
                         this.refreshBoard();
-                        new Notice(legacyUi(`Inserted new Chapter ${chNum}`, `Inserted new Chapter ${chNum}`));
+                        new Notice(tr("tpl.5408ce5901", { p0: chNum }));
                     });
             });
 
@@ -3025,7 +3025,7 @@ export class BoardView extends ItemView {
                         await this.sceneManager.insertChapter(chNum + 1);
                         await this.sceneManager.initialize();
                         this.refreshBoard();
-                        new Notice(legacyUi(`Inserted new Chapter ${chNum + 1}`, `Inserted new Chapter ${chNum + 1}`));
+                        new Notice(tr("tpl.5408ce5901", { p0: chNum + 1 }));
                     });
             });
 
@@ -3073,7 +3073,7 @@ export class BoardView extends ItemView {
                             await this.sceneManager.deleteChapterAndShift(chNum);
                             await this.sceneManager.initialize();
                             this.refreshBoard();
-                            new Notice(legacyUi(`Deleted Chapter ${chNum}`, `Deleted Chapter ${chNum}`));
+                            new Notice(tr("tpl.9b0407028f", { p0: chNum }));
                         };
 
                         if (scenes.length > 0) {
@@ -3113,13 +3113,13 @@ export class BoardView extends ItemView {
      */
     private openDescriptionModal(type: string, num: number, current: string, onSave: (desc: string) => Promise<void>): void {
         const modal = new Modal(this.app);
-        modal.titleEl.setText(legacyUi(`${type} ${num} Description`, `${type} ${num} Description`));
+        modal.titleEl.setText(tr("tpl.d5cd73c282", { p0: type, p1: num }));
         const { contentEl } = modal;
 
         let value = current;
         new Setting(contentEl)
             .setName(legacyUi('Description', 'Description'))
-            .setDesc(legacyUi(`A short summary for ${type} ${num}. Leave blank to remove.`, `A short summary for ${type} ${num}. Leave blank to remove.`));
+            .setDesc(tr("tpl.90e29b98e4", { p0: type, p1: num }));
         const textArea = contentEl.createEl('textarea', {
             cls: 'storyline-description-textarea',
         });
@@ -3166,12 +3166,12 @@ export class BoardView extends ItemView {
         const label = field === 'chapter'
             ? `Chapter ${value}` + (cleanChLbl ? ` — ${cleanChLbl}` : '')
             : actDisplay + (cleanActLbl ? ` — ${cleanActLbl}` : '');
-        modal.titleEl.setText(legacyUi(`Add scenes to ${label}`, `Add scenes to ${label}`));
+        modal.titleEl.setText(tr("tpl.7d9c0fd925", { p0: label }));
 
         const { contentEl } = modal;
         contentEl.createEl('p', {
             cls: 'setting-item-description',
-            text: legacyUi(`Select scenes to assign to ${label}. Only scenes not already in a ${field} are shown.`, `Select scenes to assign to ${label}. Only scenes not already in a ${field} are shown.`)
+            text: tr("tpl.3c879ad3f9", { p0: label, p1: field })
         });
 
         const allScenes = this.sceneManager.queryService.getFilteredScenes(
@@ -3213,7 +3213,7 @@ export class BoardView extends ItemView {
             const cb = row.createEl('input', { type: 'checkbox' }) as HTMLInputElement;
             const currentVal = field === 'chapter' ? scene.chapter : scene.act;
             const info = currentVal !== undefined ? ` [${field} ${currentVal}]` : ' [unassigned]';
-            row.createSpan({ text: legacyUi(`${scene.title}${info}`, `${scene.title}${info}`) });
+            row.createSpan({ text: tr("tpl.bde3f1f2b2", { p0: scene.title, p1: info }) });
 
             cb.addEventListener('change', () => {
                 if (cb.checked) selectedPaths.add(scene.filePath);
@@ -3239,7 +3239,7 @@ export class BoardView extends ItemView {
                 else updates.act = value;
                 await this.sceneManager.updateScene(fp, updates);
             }
-            new Notice(legacyUi(`Assigned ${selectedPaths.size} scene(s) to ${label}`, `Assigned ${selectedPaths.size} scene(s) to ${label}`));
+            new Notice(tr("tpl.366b0c8fbb", { p0: selectedPaths.size, p1: label }));
             modal.close();
             this.refreshBoard();
         });
@@ -3316,9 +3316,9 @@ export class BoardView extends ItemView {
                                 const count = await this.sceneManager.createScenesFromBeats(template);
                                 new Notice(count > 0
                                     ? `Applied "${template.name}" \u2014 created ${count} placeholder scene(s)`
-                                    : legacyUi(`Applied "${template.name}" template`, `Applied "${template.name}" template`) );
+                                    : tr("tpl.77b5d451e4", { p0: template.name }) );
                             } else {
-                                new Notice(legacyUi(legacyUi(`Applied "${template.name}" template`, `Applied "${template.name}" template`) , legacyUi(`Applied "${template.name}" template`, `Applied "${template.name}" template`) ));
+                                new Notice(legacyUi(tr("tpl.77b5d451e4", { p0: template.name }) , tr("tpl.77b5d451e4", { p0: template.name }) ));
                             }
                             renderActsList();
                             renderChaptersList();
@@ -3341,12 +3341,12 @@ export class BoardView extends ItemView {
 
             // Summary line + expandable beat list under the Setting description
             const descFrag: DocumentFragment = createFragment();
-            const summaryLine = descFrag.createDiv({ cls: 'beat-sheet-row-summary', text: legacyUi(`${template.summary} \u00b7 ${parts.join(' \u00b7 ')}`, `${template.summary} \u00b7 ${parts.join(' \u00b7 ')}`) });
+            const summaryLine = descFrag.createDiv({ cls: 'beat-sheet-row-summary', text: tr("tpl.1f1e8ee77c", { p0: template.summary, p1: parts.join(' \u00b7 ') }) });
             const details = descFrag.createEl('details', { cls: 'beat-sheet-details' });
             details.createEl('summary', { cls: 'beat-sheet-details-summary', text: legacyUi('Show beats', 'Show beats') });
             for (const beat of template.beats) {
                 const item = details.createDiv({ cls: 'beat-sheet-beat-item' });
-                item.createSpan({ cls: 'beat-sheet-beat-act', text: legacyUi(`A${beat.act}`, `A${beat.act}`) });
+                item.createSpan({ cls: 'beat-sheet-beat-act', text: tr("tpl.c9c4f902e2", { p0: beat.act }) });
                 item.createSpan({ cls: 'beat-sheet-beat-label', text: beat.label });
                 item.createSpan({ cls: 'beat-sheet-beat-desc', text: beat.description });
             }
@@ -3385,7 +3385,7 @@ export class BoardView extends ItemView {
                 const actDisplay = getActDisplayLabel(act);
                 const labelText = cleanLabel ? `${actDisplay} — ${cleanLabel}` : actDisplay;
                 row.createSpan({ cls: 'structure-label', text: labelText });
-                row.createSpan({ cls: 'structure-count', text: legacyUi(`${count} scene${count !== 1 ? 's' : ''}`, `${count} scene${count !== 1 ? 's' : ''}`) });
+                row.createSpan({ cls: 'structure-count', text: tr("tpl.3b5a93b353", { p0: count, p1: count !== 1 ? 's' : '' }) });
                 const removeBtn = row.createEl('button', {
                     cls: 'clickable-icon structure-remove',
                     attr: { 'aria-label': `Remove ${actDisplay}` }
@@ -3423,7 +3423,7 @@ export class BoardView extends ItemView {
                     await this.sceneManager.addActs(nums);
                     input.value = '';
                     renderActsList();
-                    new Notice(legacyUi(`Added ${nums.length} act(s)`, `Added ${nums.length} act(s)`));
+                    new Notice(tr("tpl.7d81f499f9", { p0: nums.length }));
                 });
             });
 
@@ -3460,7 +3460,7 @@ export class BoardView extends ItemView {
                 const cleanChLabel = chLabel?.replace(/^Ch(?:apter)?\s*\d+\s*[—:]\s*/i, '');
                 const labelText = cleanChLabel ? `Chapter ${ch} — ${cleanChLabel}` : `Chapter ${ch}`;
                 row.createSpan({ cls: 'structure-label', text: labelText });
-                row.createSpan({ cls: 'structure-count', text: legacyUi(`${count} scene${count !== 1 ? 's' : ''}`, `${count} scene${count !== 1 ? 's' : ''}`) });
+                row.createSpan({ cls: 'structure-count', text: tr("tpl.3b5a93b353", { p0: count, p1: count !== 1 ? 's' : '' }) });
                 const removeBtn = row.createEl('button', {
                     cls: 'clickable-icon structure-remove',
                     attr: { 'aria-label': `Remove Chapter ${ch}` }
@@ -3560,17 +3560,17 @@ export class BoardView extends ItemView {
                 if (template.chapters.length > 0) parts.push(`${template.chapters.length} chapters`);
                 const row = new Setting(customBeatSheetsList)
                     .setName(template.name)
-                    .setDesc(legacyUi(`${template.summary} · ${parts.join(' · ')}`, `${template.summary} · ${parts.join(' · ')}`))
+                    .setDesc(tr("tpl.1f1e8ee77c", { p0: template.summary, p1: parts.join(' · ') }))
                     .addButton(btn => btn.setButtonText(legacyUi('Apply', 'Apply')).setCta().onClick(async () => {
                         const doApply = async () => {
                             await this.sceneManager.applyBeatSheet(template);
                             if (createPlaceholderScenes) {
                                 const count = await this.sceneManager.createScenesFromBeats(template);
                                 new Notice(count > 0
-                                    ? legacyUi(legacyUi(`Applied "${template.name}" — created ${count} placeholder scene(s)`, `Applied "${template.name}" — created ${count} placeholder scene(s)`) , legacyUi(`Applied "${template.name}" — created ${count} placeholder scene(s)`, `Applied "${template.name}" — created ${count} placeholder scene(s)`) )
-                                    : legacyUi(legacyUi(`Applied "${template.name}" template`, `Applied "${template.name}" template`) , legacyUi(`Applied "${template.name}" template`, `Applied "${template.name}" template`) ));
+                                    ? legacyUi(tr("tpl.0f5b8c1881", { p0: template.name, p1: count }) , tr("tpl.0f5b8c1881", { p0: template.name, p1: count }) )
+                                    : legacyUi(tr("tpl.77b5d451e4", { p0: template.name }) , tr("tpl.77b5d451e4", { p0: template.name }) ));
                             } else {
-                                new Notice(legacyUi(legacyUi(`Applied "${template.name}" template`, `Applied "${template.name}" template`) , legacyUi(`Applied "${template.name}" template`, `Applied "${template.name}" template`) ));
+                                new Notice(legacyUi(tr("tpl.77b5d451e4", { p0: template.name }) , tr("tpl.77b5d451e4", { p0: template.name }) ));
                             }
                             renderActsList();
                             renderChaptersList();
@@ -3639,11 +3639,11 @@ export class BoardView extends ItemView {
             customActsDraft.forEach((act, actIndex) => {
                 const actBlock = customEditor.createDiv('structure-custom-act');
                 const actHeader = actBlock.createDiv('structure-custom-act-header');
-                actHeader.createSpan({ cls: 'structure-custom-act-number', text: legacyUi(`Act ${actIndex + 1}`, `Act ${actIndex + 1}`) });
+                actHeader.createSpan({ cls: 'structure-custom-act-number', text: tr("tpl.44b416f778", { p0: actIndex + 1 }) });
                 const actInput = actHeader.createEl('input', {
                     type: 'text',
                     cls: 'structure-custom-name-input',
-                    placeholder: legacyUi(`Act ${actIndex + 1} name`, `Act ${actIndex + 1} name`),
+                    placeholder: tr("tpl.05e72e5e51", { p0: actIndex + 1 }),
                 });
                 actInput.value = act.label;
                 actInput.addEventListener('input', () => { act.label = actInput.value; });
@@ -3662,7 +3662,7 @@ export class BoardView extends ItemView {
                 const beatsList = actBlock.createDiv('structure-custom-beats');
                 act.beats.forEach((beat, beatIndex) => {
                     const beatRow = beatsList.createDiv('structure-custom-beat');
-                    const beatNumber = beatRow.createSpan({ cls: 'structure-custom-beat-number', text: legacyUi(`${beatIndex + 1}.`, `${beatIndex + 1}.`) });
+                    const beatNumber = beatRow.createSpan({ cls: 'structure-custom-beat-number', text: tr("tpl.5d265da7f8", { p0: beatIndex + 1 }) });
                     beatNumber.setAttr('aria-hidden', 'true');
                     const beatFields = beatRow.createDiv('structure-custom-beat-fields');
                     const nameInput = beatFields.createEl('input', {
@@ -3794,8 +3794,8 @@ export class BoardView extends ItemView {
                     renderActsList();
                     renderChaptersList();
                     new Notice(customCreateScenes
-                        ? legacyUi(`Applied "${template.name}" — created ${count} placeholder scene(s).`, `Applied "${template.name}" — created ${count} placeholder scene(s).`)
-                        : legacyUi(`Applied "${template.name}" template.`, `Applied "${template.name}" template.`) );
+                        ? tr("tpl.5ce46a92c2", { p0: template.name, p1: count })
+                        : tr("tpl.088119fb13", { p0: template.name }) );
                 };
                 const existingActs = this.sceneManager.getDefinedActs();
                 const existingChapters = this.sceneManager.getDefinedChapters();
@@ -3817,13 +3817,13 @@ export class BoardView extends ItemView {
                 if (!template) return;
                 const templates = this.plugin.settings.customBeatSheets || (this.plugin.settings.customBeatSheets = []);
                 if (templates.some(item => item.name.toLowerCase() === template.name.toLowerCase())) {
-                    new Notice(legacyUi(`A beat sheet named "${template.name}" already exists.`, `A beat sheet named "${template.name}" already exists.`));
+                    new Notice(tr("tpl.5eb4cfac1e", { p0: template.name }));
                     return;
                 }
                 templates.push(template);
                 await this.plugin.saveSettings();
                 renderCustomBeatSheets();
-                new Notice(legacyUi(`Saved beat sheet "${template.name}".`, `Saved beat sheet "${template.name}".`));
+                new Notice(tr("tpl.f78139276c", { p0: template.name }));
             });
 
         // Close button
@@ -4364,7 +4364,7 @@ export class BoardView extends ItemView {
         }
 
         await this.app.vault.createBinary(targetPath, buffer);
-        new Notice(legacyUi(`Image imported: ${targetPath.split('/').pop()}`, `Image imported: ${targetPath.split('/').pop()}`));
+        new Notice(tr("tpl.07706b1d40", { p0: targetPath.split('/').pop() }));
         await this.createImageNoteAtPosition(targetPath, worldX, worldY);
     }
 

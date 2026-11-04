@@ -2190,7 +2190,7 @@ export class SceneCardsSettingTab extends PluginSettingTab {
         if (projName) {
             new Setting(colorBody)
                 .setName(legacyUi('Use project-specific colors', 'Use project-specific colors'))
-                .setDesc(legacyUi(`Save color settings into "${projName}" instead of using the global defaults.`, `Save color settings into "${projName}" instead of using the global defaults.`))
+                .setDesc(tr("tpl.f115dc984a", { p0: projName }))
                 .addToggle(toggle => toggle
                     .setValue(this.plugin.settings.useProjectColors)
                     .onChange(async (value) => {
@@ -2523,7 +2523,7 @@ export class SceneCardsSettingTab extends PluginSettingTab {
 
         new Setting(projectBody)
             .setName(legacyUi('Rename book', 'Rename book'))
-            .setDesc(activeProject ? legacyUi(`Current: "${activeProject.title}"`, `Current: "${activeProject.title}"`) : legacyUi('No active project', 'No active project'))
+            .setDesc(activeProject ? tr("tpl.414534df9e", { p0: activeProject.title }) : legacyUi('No active project', 'No active project'))
             .addButton(btn => btn
                 .setButtonText(legacyUi('Rename…', 'Rename…'))
                 .setDisabled(!activeProject)
@@ -2840,9 +2840,9 @@ export class SceneCardsSettingTab extends PluginSettingTab {
             nameEl.createSpan({ text: tag });
 
             if (isOverridden) {
-                s.setDesc(legacyUi(`Custom: ${customColor}`, `Custom: ${customColor}`));
+                s.setDesc(tr("tpl.1ed804b55d", { p0: customColor }));
             } else if (!isCustom) {
-                s.setDesc(legacyUi(`Scheme: ${schemeColor}`, `Scheme: ${schemeColor}`));
+                s.setDesc(tr("tpl.aeeb734f89", { p0: schemeColor }));
             } else {
                 s.setDesc(legacyUi('No color assigned', 'No color assigned'));
             }
@@ -2852,7 +2852,7 @@ export class SceneCardsSettingTab extends PluginSettingTab {
                 picker.setValue(customColor || effectiveColor);
                 picker.onChange(async (value) => {
                     this.plugin.settings.tagColors[tag] = value;
-                    s.setDesc(legacyUi(`Custom: ${value}`, `Custom: ${value}`));
+                    s.setDesc(tr("tpl.1ed804b55d", { p0: value }));
                     swatch.setCssStyles({ background: value });
                     await this.plugin.saveSettings();
                     this.plugin.refreshOpenViews();

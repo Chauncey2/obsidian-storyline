@@ -21,7 +21,7 @@ import { resolveTagColor, getPlotlineHSL, resolveStickyNoteColors, contrastTextC
 import { compareActChapter, getActDisplayLabel, getChapterDisplayLabel } from '../utils/actChapter';
 import { attachTooltip } from '../components/Tooltip';
 import type SceneCardsPlugin from '../main';
-import { legacyUi } from '../i18n';
+import { tr, legacyUi, trValue } from '../i18n';
 import { Scene, getStatusOrder, resolveStatusCfg } from '../models/Scene';
 import { openConfirmModal } from '../components/ConfirmModal';
 import { getVaultMarkdownFiles } from '../utils/vault';
@@ -404,7 +404,7 @@ export class PlotgridView extends ItemView {
             this.renderToolbar();
             this.renderGrid();
             plugin.viewSnapshotService.scheduleAutoSave();
-            new Notice(legacyUi(`Plot grid reset. Backup saved as ${backupPath.split('/').pop()}.`, `Plot grid reset. Backup saved as ${backupPath.split('/').pop()}.`));
+            new Notice(tr("tpl.abf31912d9", { p0: backupPath.split('/').pop() }));
         } catch (error) {
             if (!resetSaved && this.isCurrentProject(projectKey)) this.scheduleSave();
             const detail = error instanceof Error ? error.message : String(error);
@@ -452,7 +452,7 @@ export class PlotgridView extends ItemView {
                 } catch (error) {
                     if (this.isCurrentProject(projectKey)) this.scheduleSave();
                     const detail = error instanceof Error ? error.message : String(error);
-                    new Notice(legacyUi(`Could not restore plot grid backup. ${detail}`, `Could not restore plot grid backup. ${detail}`));
+                    new Notice(tr("tpl.0a68aad4fa", { p0: detail }));
                 }
             },
         });
@@ -1710,7 +1710,7 @@ export class PlotgridView extends ItemView {
                         const statusIcon = titleRow.createSpan({ cls: 'pg-mini-status-icon' });
                         obsidian.setIcon(statusIcon, statusCfg.icon);
                         statusIcon.title = statusCfg.label;
-                        titleRow.createSpan({ cls: 'pg-mini-title', text: scene.title || 'Untitled' });
+                        titleRow.createSpan({ cls: 'pg-mini-title', text: scene.title || legacyUi('Untitled', 'Untitled') });
 
                         // Meta row: description snippet
                         const metaRow = miniCard.createDiv('pg-mini-meta markdown-rendered');
@@ -1890,7 +1890,7 @@ export class PlotgridView extends ItemView {
                         const notePresets = resolveStickyNoteColors(this.plugin!.settings);
                         notePresets.forEach((preset) => {
                             menu.addItem(item => item
-                                .setTitle(legacyUi(`Color: ${preset.label}`, `Color: ${preset.label}`))
+                                .setTitle(tr("tpl.3ca6cdbc52", { p0: preset.label }))
                                 .setIcon('palette')
                                 .onClick(() => { void this.setNoteColor(note, preset.color, key); }));
                         });
@@ -1955,7 +1955,7 @@ export class PlotgridView extends ItemView {
                         // Status submenu
                         const statuses = getStatusOrder();
                         statuses.forEach(s => {
-                            menu.addItem((it) => it.setTitle(legacyUi(`Status: ${resolveStatusCfg(s).label}`, `Status: ${resolveStatusCfg(s).label}`))
+                            menu.addItem((it) => it.setTitle(tr("tpl.c1031b5e5a", { p0: resolveStatusCfg(s).label }))
                                 .setChecked(linkedScene.status === s)
                                 .onClick(async () => {
                                     await scMgr?.updateScene(linkedScene.filePath, { status: s });
@@ -1974,7 +1974,7 @@ export class PlotgridView extends ItemView {
                         menu.addItem((it) => it.setTitle(legacyUi('Delete scene', 'Delete scene')).setIcon('trash').onClick(async () => {
                             openConfirmModal(this.app, {
                                 title: legacyUi('Delete Scene', 'Delete Scene'),
-                                message: `Delete scene "${linkedScene.title || 'Untitled'}"?`,
+                                message: `Delete scene "${linkedScene.title || legacyUi('Untitled', 'Untitled')}"?`,
                                 confirmLabel: 'Delete',
                                 onConfirm: async () => {
                                     await this.deleteScene(linkedScene);
@@ -2757,7 +2757,7 @@ export class PlotgridView extends ItemView {
             const leaf = this.app.workspace.getLeaf('tab');
             await leaf.openFile(file, { state: { mode: 'source', source: false } });
         } else {
-            new Notice(legacyUi(`Could not find file: ${scene.filePath}`, `Could not find file: ${scene.filePath}`));
+            new Notice(tr("tpl.f84439c762", { p0: scene.filePath }));
         }
     }
 
@@ -3118,7 +3118,7 @@ export class PlotgridView extends ItemView {
                     for (const catId of sidebarCats) {
                         const catDef = codexMgr.getCategoryDef(catId);
                         if (catDef) {
-                            colSourceSelect.createEl('option', { text: catDef.label, value: `codex:${catId}` });
+                            colSourceSelect.createEl('option', { text: trValue('fieldLabel', catDef.label), value: `codex:${catId}` });
                         }
                     }
                 }
@@ -3374,7 +3374,7 @@ export class PlotgridView extends ItemView {
 
         this.scheduleSave();
         this.renderGrid();
-        new Notice(legacyUi(`Synced ${scenes.length} scenes → ${this.data.rows.length} rows, ${this.data.columns.length} columns`, `Synced ${scenes.length} scenes → ${this.data.rows.length} rows, ${this.data.columns.length} columns`));
+        new Notice(tr("tpl.cde7b89da2", { p0: scenes.length, p1: this.data.rows.length, p2: this.data.columns.length }));
     }
 
     /** Format a row label from a scene */
@@ -3382,7 +3382,7 @@ export class PlotgridView extends ItemView {
         const parts: string[] = [];
         if (scene.act) parts.push(`A${scene.act}`);
         if (scene.chapter) parts.push(`Ch${scene.chapter}`);
-        parts.push(scene.title || 'Untitled');
+        parts.push(scene.title || legacyUi('Untitled', 'Untitled'));
         return parts.join(' · ');
     }
 
@@ -3734,7 +3734,7 @@ export class PlotgridView extends ItemView {
             linkSection.createSpan({ cls: 'inspector-label', text: legacyUi('Linked Scene:', 'Linked Scene:') });
             const sceneLink = linkSection.createEl('a', {
                 cls: 'inspector-scene-link',
-                text: linkedScene.title || linkedScene.filePath.split('/').pop()?.replace('.md', '') || 'Untitled',
+                text: linkedScene.title || linkedScene.filePath.split('/').pop()?.replace('.md', '') || legacyUi('Untitled', 'Untitled'),
             });
             sceneLink.setCssStyles({
                 display: 'block',
@@ -3848,7 +3848,7 @@ export class PlotgridView extends ItemView {
             const scheme = this.plugin?.settings.colorScheme || 'mocha';
             const allTagsSorted = [...result.tags].sort();
             for (const tag of result.tags) {
-                const chip = tagList.createSpan({ cls: 'inspector-tag-chip', text: legacyUi(`#${tag}`, `#${tag}`) });
+                const chip = tagList.createSpan({ cls: 'inspector-tag-chip', text: tr("tpl.0b350d2d60", { p0: tag }) });
                 chip.setCssStyles({
                     padding: '2px 8px',
                     borderRadius: '10px',

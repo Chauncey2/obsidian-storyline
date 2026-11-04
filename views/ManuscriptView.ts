@@ -14,7 +14,7 @@ import SceneCardsPlugin from '../main';
 import { MANUSCRIPT_VIEW_TYPE } from '../constants';
 import { openStructureLabelModal } from '../components/StructureLabelModal';
 import { getChapterDisplayLabel } from '../utils/actChapter';
-import { legacyUi } from '../i18n';
+import { tr, legacyUi } from '../i18n';
 
 /**
  * Discussion #183 — module-level cursor/scroll snapshot.
@@ -556,7 +556,7 @@ export class ManuscriptView extends ItemView {
         const useChars = this.plugin.settings.countUnit === 'chars';
         const value = useChars ? totalChars : totalWords;
         const unitLabel = useChars ? 'chars' : (value === 1 ? 'word' : 'words');
-        this.footerEl.setText(legacyUi(`${scenes.length} scenes · ${value.toLocaleString()} ${unitLabel}`, `${scenes.length} scenes · ${value.toLocaleString()} ${unitLabel}`));
+        this.footerEl.setText(tr("tpl.765697a7cf", { p0: scenes.length, p1: value.toLocaleString(), p2: unitLabel }));
 
         // Eagerly mount the first few editors immediately (don't wait for IntersectionObserver)
         this._isMounting = true;
@@ -1125,7 +1125,7 @@ export class ManuscriptView extends ItemView {
         if (this.searchMatchTotal === 0) {
             el.setText(this.searchInput?.value ? legacyUi('No results', 'No results') : '');
         } else {
-            el.setText(legacyUi(`${this.searchMatchIndex + 1} of ${this.searchMatchTotal}`, `${this.searchMatchIndex + 1} of ${this.searchMatchTotal}`));
+            el.setText(tr("tpl.b578cd0cfa", { p0: this.searchMatchIndex + 1, p1: this.searchMatchTotal }));
         }
     }
 
@@ -1268,7 +1268,7 @@ export class ManuscriptView extends ItemView {
             }
         }
 
-        new Notice(legacyUi(`Replaced ${totalReplaced} occurrence${totalReplaced === 1 ? '' : 's'}`, `Replaced ${totalReplaced} occurrence${totalReplaced === 1 ? '' : 's'}`));
+        new Notice(tr("tpl.32c838ae5b", { p0: totalReplaced }));
         // Wait for file modify events to propagate, then re-run search.
         await new Promise(r => window.setTimeout(r, 300));
         this.runSearch();
@@ -1296,7 +1296,7 @@ export class ManuscriptView extends ItemView {
         const useChars = this.plugin.settings.countUnit === 'chars';
         const value = useChars ? totalChars : totalWords;
         const unitLabel = useChars ? 'chars' : (value === 1 ? 'word' : 'words');
-        this.footerEl.setText(legacyUi(`${scenes.length} scenes · ${value.toLocaleString()} ${unitLabel}`, `${scenes.length} scenes · ${value.toLocaleString()} ${unitLabel}`));
+        this.footerEl.setText(tr("tpl.765697a7cf", { p0: scenes.length, p1: value.toLocaleString(), p2: unitLabel }));
     }
 
     /** Apply focus-mode effects via CSS custom properties; static rules live in styles.css. */

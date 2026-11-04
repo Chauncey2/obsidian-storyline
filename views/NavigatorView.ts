@@ -10,7 +10,7 @@ import { SceneManager } from '../services/SceneManager';
 import { MANUSCRIPT_VIEW_TYPE, NAVIGATOR_VIEW_TYPE } from '../constants';
 import { Scene, getStatusOrder, resolveStatusCfg } from '../models/Scene';
 import { displayGroupKey } from '../utils/groupLabels';
-import { legacyUi } from '../i18n';
+import { tr, legacyUi, trValue } from '../i18n';
 
 /**
  * Sort modes available in the navigator.
@@ -167,7 +167,7 @@ export class NavigatorView extends ItemView {
         const chapterToggleIcon = this.chapterToggle.createSpan('sl-nav-chip-toggle-icon');
         chapterToggleIcon.textContent = '▸';
         const chapterToggleLabel = this.chapterToggle.createSpan('sl-nav-chip-toggle-label');
-        chapterToggleLabel.textContent = 'Chapters';
+        chapterToggleLabel.textContent = legacyUi('Chapters', 'Chapters');
         this.chapterToggle.addEventListener('click', () => {
             this.chaptersExpanded = !this.chaptersExpanded;
             chapterToggleIcon.textContent = this.chaptersExpanded ? '▾' : '▸';
@@ -308,7 +308,7 @@ export class NavigatorView extends ItemView {
         for (const chapter of chapters) {
             const row = this.chapterRow.createDiv('sl-nav-plotline-item');
             if (this.chapterFilter === chapter) row.addClass('is-active');
-            row.createSpan({ cls: 'sl-nav-plotline-name', text: legacyUi(`Chapter ${chapter}`, `Chapter ${chapter}`) });
+            row.createSpan({ cls: 'sl-nav-plotline-name', text: tr("tpl.f67d0dcd8d", { p0: chapter }) });
             const count = this.sceneManager.getAllScenes()
                 .filter(s => !s.corkboardNote && !s.inactive && String(s.chapter) === chapter).length;
             row.createSpan({ text: String(count), cls: 'sl-nav-plotline-count' });
@@ -482,7 +482,7 @@ export class NavigatorView extends ItemView {
         const dot = row.createSpan('sl-nav-status-dot');
         const statusCfg = resolveStatusCfg(scene.status || 'idea');
         dot.setCssStyles({ background: statusCfg.color });
-        dot.setAttribute('aria-label', statusCfg.label);
+        dot.setAttribute('aria-label', trValue('statusLabel', statusCfg.label));
 
         // Sequence number (if available)
         if (scene.sequence !== undefined) {
@@ -585,7 +585,7 @@ export class NavigatorView extends ItemView {
             for (const status of statuses) {
                 menu.addItem((item) => {
                     const cfg = resolveStatusCfg(status);
-                    item.setTitle(cfg.label);
+                    item.setTitle(trValue('statusLabel', cfg.label));
                     item.setIcon(cfg.icon);
                     if (scene.status === status) item.setChecked(true);
                     item.onClick(async () => {

@@ -213,7 +213,7 @@ export class StatsView extends ItemView {
         const ring = parent.createDiv('sl-stats-redesigned__ring');
         ring.style.setProperty('--ring-value', `${pct}%`);
         ring.style.setProperty('--ring-color', color);
-        ring.createSpan().createEl('strong', { text: legacyUi(`${Math.round(value)}%`, `${Math.round(value)}%`) });
+        ring.createSpan().createEl('strong', { text: tr("tpl.dbd55baf5e", { p0: Math.round(value) }) });
         ring.createEl('small', { text: label });
     }
 
@@ -375,7 +375,7 @@ export class StatsView extends ItemView {
             const wordPct = Math.round((stats.totalWords / totalTarget) * 100);
             const goalRow = section.createDiv('stats-sprint-goal sl-stats-redesigned__goal');
             goalRow.createSpan({
-                text: legacyUi(`${stats.totalWords.toLocaleString()} / ${totalTarget.toLocaleString()} words (${wordPct}%)`, `${stats.totalWords.toLocaleString()} / ${totalTarget.toLocaleString()} words (${wordPct}%)`),
+                text: tr("tpl.1bfbce990c", { p0: stats.totalWords.toLocaleString(), p1: totalTarget.toLocaleString(), p2: wordPct }),
             });
             const bar = goalRow.createDiv(
                 'stats-bar stats-bar-wide sl-stats-redesigned__track',
@@ -398,15 +398,15 @@ export class StatsView extends ItemView {
                 const deadlineRow = section.createDiv(
                     'stats-deadline-plan sl-stats-redesigned__deadline',
                 );
-                deadlineRow.createEl('strong', { text: legacyUi(`Deadline: ${deadlinePlan.deadline}`, `Deadline: ${deadlinePlan.deadline}`) });
+                deadlineRow.createEl('strong', { text: tr("tpl.b3bce1df63", { p0: deadlinePlan.deadline }) });
                 if (deadlinePlan.overdue) {
                     deadlineRow.createSpan({
                         cls: 'stats-deadline-overdue',
-                        text: legacyUi(`Overdue · ${deadlinePlan.remainingWords.toLocaleString()} words remaining`, `Overdue · ${deadlinePlan.remainingWords.toLocaleString()} words remaining`),
+                        text: tr("tpl.e8b3da8cd6", { p0: deadlinePlan.remainingWords.toLocaleString() }),
                     });
                 } else {
                     deadlineRow.createSpan({
-                        text: legacyUi(`${deadlinePlan.remainingWords.toLocaleString()} remaining · `, `${deadlinePlan.remainingWords.toLocaleString()} remaining · `)
+                        text: tr("tpl.beb6848c21", { p0: deadlinePlan.remainingWords.toLocaleString() })
                             + `${deadlinePlan.availableDays} writing days · `
                             + `${deadlinePlan.wordsPerDay.toLocaleString()} words/day`,
                     });
@@ -427,7 +427,7 @@ export class StatsView extends ItemView {
                     });
                     section.createDiv({
                         cls: 'stats-pace-projection sl-stats-redesigned__callout',
-                        text: legacyUi(`${remaining.toLocaleString()} words remaining · ~${daysLeft} days at `, `${remaining.toLocaleString()} words remaining · ~${daysLeft} days at `)
+                        text: tr("tpl.e57c0e261f", { p0: remaining.toLocaleString(), p1: daysLeft })
                             + `${avgDaily.toLocaleString()} words/day · est. ${dateStr}`,
                     });
                 }
@@ -641,13 +641,13 @@ export class StatsView extends ItemView {
         if (redesigned) {
             const head = goalRow.createDiv();
             head.createSpan({
-                text: legacyUi(`Today: ${todayWords.toLocaleString()} / ${dailyGoal.toLocaleString()} words`, `Today: ${todayWords.toLocaleString()} / ${dailyGoal.toLocaleString()} words`),
+                text: tr("tpl.068579fbff", { p0: todayWords.toLocaleString(), p1: dailyGoal.toLocaleString() }),
             });
-            head.createEl('b', { text: legacyUi(`${goalPct}%`, `${goalPct}%`) });
+            head.createEl('b', { text: tr("tpl.dbd55baf5e", { p0: goalPct }) });
             this.renderTrackBar(goalRow, goalPct,
                 goalPct >= 100 ? 'var(--sl-success)' : 'var(--sl-accent-hover)');
         } else {
-            goalRow.createSpan({ text: legacyUi(`Today: ${todayWords.toLocaleString()} / ${dailyGoal.toLocaleString()} words (${goalPct}%)`, `Today: ${todayWords.toLocaleString()} / ${dailyGoal.toLocaleString()} words (${goalPct}%)`) });
+            goalRow.createSpan({ text: tr("tpl.d03fe10859", { p0: todayWords.toLocaleString(), p1: dailyGoal.toLocaleString(), p2: goalPct }) });
             const goalBar = goalRow.createDiv('stats-bar stats-bar-wide');
             const goalFill = goalBar.createDiv('stats-bar-fill');
             goalFill.setCssStyles({
@@ -752,7 +752,7 @@ export class StatsView extends ItemView {
             for (const entry of recent) {
                 const mins = Math.round(entry.durationMs / 60_000);
                 list.createEl('li', {
-                    text: legacyUi(`${entry.date} — ${entry.words} words in ${mins} min (${entry.wpm} wpm)`, `${entry.date} — ${entry.words} words in ${mins} min (${entry.wpm} wpm)`),
+                    text: tr("tpl.b76cc247b1", { p0: entry.date, p1: entry.words, p2: mins, p3: entry.wpm }),
                 });
             }
         }
@@ -809,9 +809,9 @@ export class StatsView extends ItemView {
                     ? 'stats-change-summary sl-stats-redesigned__change-summary'
                     : 'stats-change-summary',
             );
-            changeSummary.createSpan({ cls: 'is-added', text: legacyUi(`+ ${summary.added.toLocaleString()} added`, `+ ${summary.added.toLocaleString()} added`) });
-            changeSummary.createSpan({ cls: 'is-deleted', text: legacyUi(`− ${summary.deleted.toLocaleString()} deleted`, `− ${summary.deleted.toLocaleString()} deleted`) });
-            changeSummary.createSpan({ text: legacyUi(`${(summary.added - summary.deleted).toLocaleString()} net`, `${(summary.added - summary.deleted).toLocaleString()} net`) });
+            changeSummary.createSpan({ cls: 'is-added', text: tr("tpl.d46de15b5c", { p0: summary.added.toLocaleString() }) });
+            changeSummary.createSpan({ cls: 'is-deleted', text: tr("tpl.387cfea900", { p0: summary.deleted.toLocaleString() }) });
+            changeSummary.createSpan({ text: tr("tpl.8562bc5465", { p0: (summary.added - summary.deleted).toLocaleString() }) });
         };
 
         ranges.forEach((days, i) => {
@@ -924,7 +924,7 @@ export class StatsView extends ItemView {
             const chapCol = twoCol.createDiv();
             chapCol.createEl('h5', {
                 cls: 'stats-subsection-title',
-                text: legacyUi(`Chapter ${this.getSceneCountNoun()} counts`, `Chapter ${this.getSceneCountNoun()} counts`),
+                text: tr("tpl.0dcc80c301", { p0: this.getSceneCountNoun() }),
             });
             if (chapEntries.length > 0) {
                 const maxCw = Math.max(...chapEntries.map(([, v]) => v.count), 1);
@@ -964,7 +964,7 @@ export class StatsView extends ItemView {
             const lic = li.createSpan({ cls: 'stats-status-entry' });
             const ico = lic.createSpan({ cls: 'stats-status-icon' });
             obsidian.setIcon(ico, cfg.icon);
-            lic.createSpan({ text: legacyUi(` ${cfg.label}: ${count} (${pct}%)`, ` ${cfg.label}: ${count} (${pct}%)`) });
+            lic.createSpan({ text: tr("tpl.b9b623edb1", { p0: cfg.label, p1: count, p2: pct }) });
             const bar = li.createDiv('stats-bar');
             const fill = bar.createDiv('stats-bar-fill');
             fill.setCssStyles({
@@ -975,7 +975,7 @@ export class StatsView extends ItemView {
 
         if (chapEntries.length > 1) {
             const chapSec = parent.createDiv('stats-subsection');
-            chapSec.createEl('h5', { cls: 'stats-subsection-title', text: legacyUi(`Chapter ${this.getSceneCountNoun()} counts`, `Chapter ${this.getSceneCountNoun()} counts`) });
+            chapSec.createEl('h5', { cls: 'stats-subsection-title', text: tr("tpl.0dcc80c301", { p0: this.getSceneCountNoun() }) });
             const maxCw = Math.max(...chapEntries.map(([, v]) => v.count), 1);
             const medianCw = this.median(chapEntries.map(([, v]) => v.count));
             const outlierThresh = medianCw * 1.5;
@@ -988,7 +988,7 @@ export class StatsView extends ItemView {
                 row.createSpan({ cls: 'pacing-avg-label', text: label });
                 row.createSpan({
                     cls: 'pacing-avg-value',
-                    text: legacyUi(`${data.count.toLocaleString()} ${this.getSceneCountLabel().toLowerCase()} (${data.scenes} scene${data.scenes !== 1 ? 's' : ''})`, `${data.count.toLocaleString()} ${this.getSceneCountLabel().toLowerCase()} (${data.scenes} scene${data.scenes !== 1 ? 's' : ''})`),
+                    text: tr("tpl.7b9585cf9b", { p0: data.count.toLocaleString(), p1: this.getSceneCountLabel().toLowerCase(), p2: data.scenes, p3: data.scenes !== 1 ? 's' : '' }),
                 });
                 const bar = row.createDiv('stats-bar');
                 const fill = bar.createDiv('stats-bar-fill');
@@ -1025,7 +1025,7 @@ export class StatsView extends ItemView {
                     backgroundColor: this.segmentColor(index),
                 });
                 seg.setAttribute('title', `${act}: ${count} scenes (${pct}%)`);
-                seg.setText(legacyUi(`${act} · ${pct}%`, `${act} · ${pct}%`));
+                seg.setText(tr("tpl.c6ed4e36d5", { p0: act, p1: pct }));
             });
             return;
         }
@@ -1035,11 +1035,11 @@ export class StatsView extends ItemView {
         for (const [act, count] of actEntries) {
             const pct = stats.totalScenes > 0 ? Math.round((count / stats.totalScenes) * 100) : 0;
             const row = actSec.createDiv('stats-row');
-            row.createSpan({ text: legacyUi(`${act}: ${count} scenes`, `${act}: ${count} scenes`) });
+            row.createSpan({ text: tr("tpl.5bde60ea0c", { p0: act, p1: count }) });
             const bar = row.createDiv('stats-bar');
             const fill = bar.createDiv('stats-bar-fill');
             fill.setCssStyles({ width: `${pct}%` });
-            row.createSpan({ cls: 'stats-percent', text: legacyUi(`${pct}%`, `${pct}%`) });
+            row.createSpan({ cls: 'stats-percent', text: tr("tpl.dbd55baf5e", { p0: pct }) });
         }
     }
 
@@ -1126,7 +1126,7 @@ export class StatsView extends ItemView {
                         this.renderRing(row, name, (count / maxC) * 100);
                         const meta = row.createDiv();
                         meta.createEl('b', { text: name });
-                        meta.createSpan({ text: legacyUi(`${count} scene${count !== 1 ? 's' : ''}`, `${count} scene${count !== 1 ? 's' : ''}`) });
+                        meta.createSpan({ text: tr("tpl.3b5a93b353", { p0: count, p1: count !== 1 ? 's' : '' }) });
                     }
                 };
                 const LIMIT = 15;
@@ -1134,7 +1134,7 @@ export class StatsView extends ItemView {
                 if (charEntries.length > LIMIT) {
                     const btn = charCol.createEl('button', {
                         cls: 'stats-show-more-btn',
-                        text: legacyUi(`Show ${charEntries.length - LIMIT} more…`, `Show ${charEntries.length - LIMIT} more…`),
+                        text: tr("tpl.5eacbf5a71", { p0: charEntries.length - LIMIT }),
                     });
                     btn.addEventListener('click', () => {
                         btn.remove();
@@ -1172,7 +1172,7 @@ export class StatsView extends ItemView {
             for (const [pov, count] of povEntries) {
                 const pct = stats.totalScenes > 0 ? Math.round((count / stats.totalScenes) * 100) : 0;
                 const row = sec.createDiv('stats-row');
-                row.createSpan({ text: legacyUi(`${pov}: ${count} scenes (${pct}%)`, `${pov}: ${count} scenes (${pct}%)`) });
+                row.createSpan({ text: tr("tpl.3edea943eb", { p0: pov, p1: count, p2: pct }) });
                 const bar = row.createDiv('stats-bar');
                 bar.createDiv('stats-bar-fill').setCssStyles({ width: `${(count / maxPov) * 100}%` });
             }
@@ -1186,7 +1186,7 @@ export class StatsView extends ItemView {
             const renderRows = (entries: [string, number][], container: HTMLElement) => {
                 for (const [name, count] of entries) {
                     const row = container.createDiv('stats-row');
-                    row.createSpan({ text: legacyUi(`${name}: ${count} scene${count !== 1 ? 's' : ''}`, `${name}: ${count} scene${count !== 1 ? 's' : ''}`) });
+                    row.createSpan({ text: tr("tpl.b0c34f864c", { p0: name, p1: count, p2: count !== 1 ? 's' : '' }) });
                     const bar = row.createDiv('stats-bar');
                     bar.createDiv('stats-bar-fill').setCssStyles({ width: `${(count / maxC) * 100}%` });
                 }
@@ -1195,7 +1195,7 @@ export class StatsView extends ItemView {
             if (charEntries.length > LIMIT) {
                 const btn = sec.createEl('button', {
                     cls: 'stats-show-more-btn',
-                    text: legacyUi(`Show ${charEntries.length - LIMIT} more…`, `Show ${charEntries.length - LIMIT} more…`),
+                    text: tr("tpl.5eacbf5a71", { p0: charEntries.length - LIMIT }),
                 });
                 btn.addEventListener('click', () => {
                     btn.remove();
@@ -1211,7 +1211,7 @@ export class StatsView extends ItemView {
             const maxL = Math.max(...locEntries.map(([, c]) => c), 1);
             for (const [loc, count] of locEntries.slice(0, 15)) {
                 const row = sec.createDiv('stats-row');
-                row.createSpan({ text: legacyUi(`${loc}: ${count} scene${count !== 1 ? 's' : ''}`, `${loc}: ${count} scene${count !== 1 ? 's' : ''}`) });
+                row.createSpan({ text: tr("tpl.b0c34f864c", { p0: loc, p1: count, p2: count !== 1 ? 's' : '' }) });
                 const bar = row.createDiv('stats-bar');
                 bar.createDiv('stats-bar-fill').setCssStyles({ width: `${(count / maxL) * 100}%` });
             }
@@ -1289,7 +1289,7 @@ export class StatsView extends ItemView {
         const headerRow = thead.createEl('tr');
         headerRow.createEl('th', { text: legacyUi('', '') }); // empty corner
         for (const ch of chapters) {
-            headerRow.createEl('th', { text: legacyUi(`Ch ${ch}`, `Ch ${ch}`), cls: 'stats-heatmap-ch-header' });
+            headerRow.createEl('th', { text: tr("tpl.67f6fb574b", { p0: ch }), cls: 'stats-heatmap-ch-header' });
         }
 
         // Data rows
@@ -1380,7 +1380,7 @@ export class StatsView extends ItemView {
 
         // ── Visual map ──
         const mapSec = parent.createDiv('stats-subsection');
-        mapSec.createEl('h5', { cls: 'stats-subsection-title', text: legacyUi(`Setup → Payoff Chains (${links.length} link${links.length !== 1 ? 's' : ''})`, `Setup → Payoff Chains (${links.length} link${links.length !== 1 ? 's' : ''})`) });
+        mapSec.createEl('h5', { cls: 'stats-subsection-title', text: tr("tpl.64eea83530", { p0: links.length, p1: links.length !== 1 ? 's' : '' }) });
         mapSec.createEl('p', { cls: 'stats-hint', text: legacyUi('Each row shows a setup scene and where it pays off.', 'Each row shows a setup scene and where it pays off.') });
 
         // Group by "from" scene to show chains
@@ -1407,7 +1407,7 @@ export class StatsView extends ItemView {
             const fromEl = row.createDiv('stats-sp-from');
             const seqLabel = chain.from.sequence !== undefined ? `#${chain.from.sequence} ` : '';
             const fromLink = fromEl.createEl('a', {
-                text: legacyUi(`${seqLabel}${chain.from.title}`, `${seqLabel}${chain.from.title}`),
+                text: tr("tpl.bde3f1f2b2", { p0: seqLabel, p1: chain.from.title }),
                 cls: 'stats-scene-link',
             });
             fromLink.addEventListener('click', () => {
@@ -1422,7 +1422,7 @@ export class StatsView extends ItemView {
             for (const target of chain.targets.sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0))) {
                 const tSeq = target.sequence !== undefined ? `#${target.sequence} ` : '';
                 const toLink = toEl.createEl('a', {
-                    text: legacyUi(`${tSeq}${target.title}`, `${tSeq}${target.title}`),
+                    text: tr("tpl.bde3f1f2b2", { p0: tSeq, p1: target.title }),
                     cls: 'stats-scene-link stats-sp-target',
                 });
                 toLink.addEventListener('click', () => {
@@ -1442,7 +1442,7 @@ export class StatsView extends ItemView {
             const warnSec = mapSec.createDiv('stats-subsection');
             warnSec.createEl('h5', {
                 cls: 'stats-subsection-title stats-overused-title',
-                text: legacyUi(`Broken Links (${orphanSetups.length})`, `Broken Links (${orphanSetups.length})`),
+                text: tr("tpl.59fa238dc3", { p0: orphanSetups.length }),
             });
             const list = warnSec.createEl('ul', { cls: 'stats-list' });
             for (const scene of orphanSetups) {
@@ -1511,7 +1511,7 @@ export class StatsView extends ItemView {
                 const pct = (avg / maxAvg) * 100;
                 const row = avgTbl.createDiv('pacing-avg-row');
                 row.createSpan({ cls: 'pacing-avg-label', text: act });
-                row.createSpan({ cls: 'pacing-avg-value', text: legacyUi(`${avg.toLocaleString()} avg ${this.getSceneCountLabel().toLowerCase()} (${data.count} scene${data.count !== 1 ? 's' : ''})`, `${avg.toLocaleString()} avg ${this.getSceneCountLabel().toLowerCase()} (${data.count} scene${data.count !== 1 ? 's' : ''})`) });
+                row.createSpan({ cls: 'pacing-avg-value', text: tr("tpl.6b3df760f7", { p0: avg.toLocaleString(), p1: this.getSceneCountLabel().toLowerCase(), p2: data.count, p3: data.count !== 1 ? 's' : '' }) });
                 const bar = row.createDiv('stats-bar');
                 bar.createDiv('stats-bar-fill').setCssStyles({ width: `${pct}%`, background: 'var(--sl-info,#2196F3)' });
             }
@@ -1523,7 +1523,7 @@ export class StatsView extends ItemView {
 
         // ── Scene-length distribution histogram ──
         const distSec = chartHost.createDiv('stats-subsection');
-        distSec.createEl('h5', { cls: 'stats-subsection-title', text: legacyUi(`${this.getSceneCountNoun()} count distribution`, `${this.getSceneCountNoun()} count distribution`) });
+        distSec.createEl('h5', { cls: 'stats-subsection-title', text: tr("tpl.94ce9fa080", { p0: this.getSceneCountNoun() }) });
 
         const wcs = allScenes.map(s => this.getSceneCount(s));
         const maxWc = Math.max(...wcs, 1);
@@ -1574,10 +1574,10 @@ export class StatsView extends ItemView {
         });
         if (outliers.length > 0) {
             const oSec = parent.createDiv('stats-subsection');
-            oSec.createEl('h5', { cls: 'stats-subsection-title', text: legacyUi(`Scene Length Outliers (${outliers.length})`, `Scene Length Outliers (${outliers.length})`) });
+            oSec.createEl('h5', { cls: 'stats-subsection-title', text: tr("tpl.467a73cc99", { p0: outliers.length }) });
             oSec.createEl('p', {
                 cls: 'stats-hint',
-                text: legacyUi(`Median: ${medianWc.toLocaleString()} ${this.getSceneCountLabel().toLowerCase()} · Flagged outside ${Math.round(loThresh)}–${Math.round(hiThresh)} range`, `Median: ${medianWc.toLocaleString()} ${this.getSceneCountLabel().toLowerCase()} · Flagged outside ${Math.round(loThresh)}–${Math.round(hiThresh)} range`),
+                text: tr("tpl.6a9f7a2b1b", { p0: medianWc.toLocaleString(), p1: this.getSceneCountLabel().toLowerCase(), p2: Math.round(loThresh), p3: Math.round(hiThresh) }),
             });
             const list = oSec.createEl('ul', {
                 cls: redesigned
@@ -1586,11 +1586,11 @@ export class StatsView extends ItemView {
             });
             for (const scene of outliers.sort((a, b) => this.getSceneCount(b) - this.getSceneCount(a))) {
                 const li = list.createEl('li', { cls: 'stats-outlier-item' });
-                const link = li.createEl('a', { text: scene.title || 'Untitled', cls: 'stats-scene-link' });
+                const link = li.createEl('a', { text: scene.title || legacyUi('Untitled', 'Untitled'), cls: 'stats-scene-link' });
                 link.addEventListener('click', () => {
                     this.app.workspace.openLinkText(scene.filePath, '', true);
                 });
-                li.createSpan({ text: legacyUi(` — ${this.getSceneCount(scene).toLocaleString()} ${this.getSceneCountLabel().toLowerCase()}`, ` — ${this.getSceneCount(scene).toLocaleString()} ${this.getSceneCountLabel().toLowerCase()}`) });
+                li.createSpan({ text: tr("tpl.43c7a1e614", { p0: this.getSceneCount(scene).toLocaleString(), p1: this.getSceneCountLabel().toLowerCase() }) });
             }
         }
 
@@ -1670,17 +1670,17 @@ export class StatsView extends ItemView {
                     width: `${pct}%`,
                     backgroundColor: 'var(--sl-accent)',
                 });
-                row.createEl('b', { text: legacyUi(`${pct}%`, `${pct}%`) });
+                row.createEl('b', { text: tr("tpl.dbd55baf5e", { p0: pct }) });
             }
             return;
         }
 
-        sec.createEl('p', { text: legacyUi(`Overall: ${overallPct}% dialogue, ${100 - overallPct}% narrative`, `Overall: ${overallPct}% dialogue, ${100 - overallPct}% narrative`) });
+        sec.createEl('p', { text: tr("tpl.bd6bf2debc", { p0: overallPct, p1: 100 - overallPct }) });
 
         for (const [act, data] of actRows) {
             const pct = data.total > 0 ? Math.round((data.dialogue / data.total) * 100) : 0;
             const row = sec.createDiv('stats-row');
-            row.createSpan({ text: legacyUi(`${act}: ${pct}% dialogue`, `${act}: ${pct}% dialogue`) });
+            row.createSpan({ text: tr("tpl.1eede2f987", { p0: act, p1: pct }) });
             const bar = row.createDiv('stats-bar stats-stacked-bar');
             const df = bar.createDiv('stats-bar-fill stats-dialogue-fill');
             df.setCssStyles({ width: `${pct}%` });
@@ -1698,7 +1698,7 @@ export class StatsView extends ItemView {
                 const val = scene.intensity || 0;
                 const bar = curve.createDiv();
                 bar.setCssStyles({ height: `${Math.max(4, (Math.abs(val) / 10) * 100)}%` });
-                bar.setAttribute('title', `${scene.title || 'Untitled'}: ${val}/10`);
+                bar.setAttribute('title', `${scene.title || legacyUi('Untitled', 'Untitled')}: ${val}/10`);
             }
             const axis = sec.createDiv('sl-stats-redesigned__curve-axis');
             axis.createSpan({ text: legacyUi('Start', 'Start') });
@@ -1711,7 +1711,7 @@ export class StatsView extends ItemView {
             const val = scene.intensity || 0;
             const bar = col.createDiv('tension-bar');
             bar.setCssStyles({ height: `${(val / 10) * 100}%` });
-            bar.setAttribute('title', `${scene.title || 'Untitled'}: ${val}/10`);
+            bar.setAttribute('title', `${scene.title || legacyUi('Untitled', 'Untitled')}: ${val}/10`);
             col.createDiv({ cls: 'tension-label', text: String(val) });
         }
     }
@@ -1804,7 +1804,7 @@ export class StatsView extends ItemView {
             for (const [word, count] of top20) {
                 const r = wordListEl.createDiv('stats-row stats-word-freq-row');
                 r.createSpan({ cls: 'stats-word-freq-word', text: word });
-                r.createSpan({ cls: 'stats-word-freq-count', text: legacyUi(`${count.toLocaleString()} (${((count / total) * 100).toFixed(2)}%)`, `${count.toLocaleString()} (${((count / total) * 100).toFixed(2)}%)`) });
+                r.createSpan({ cls: 'stats-word-freq-count', text: tr("tpl.b85f8e278b", { p0: count.toLocaleString(), p1: ((count / total) * 100).toFixed(2) }) });
                 const bar = r.createDiv('stats-bar');
                 bar.createDiv('stats-bar-fill').setCssStyles({ width: `${(count / maxF) * 100}%` });
             }
@@ -1822,13 +1822,13 @@ export class StatsView extends ItemView {
         const overused = wordFreq.filter(([, c]) => (c / totalWc) > 0.005);
         if (overused.length > 0) {
             const oSec = parent.createDiv('stats-subsection');
-            oSec.createEl('h5', { cls: 'stats-subsection-title stats-overused-title', text: legacyUi(`Overused Words (${overused.length})`, `Overused Words (${overused.length})`) });
+            oSec.createEl('h5', { cls: 'stats-subsection-title stats-overused-title', text: tr("tpl.fa9784e504", { p0: overused.length }) });
             oSec.createEl('p', { cls: 'stats-hint', text: legacyUi('Words appearing in more than 0.5% of total text (excluding common words).', 'Words appearing in more than 0.5% of total text (excluding common words).') });
             const tags = oSec.createDiv('stats-overused-tags');
             for (const [word, count] of overused) {
                 tags.createSpan({
                     cls: 'stats-overused-tag',
-                    text: legacyUi(`${word} (${((count / totalWc) * 100).toFixed(1)}%)`, `${word} (${((count / totalWc) * 100).toFixed(1)}%)`),
+                    text: tr("tpl.b85f8e278b", { p0: word, p1: ((count / totalWc) * 100).toFixed(1) }),
                 });
             }
         }
@@ -2023,7 +2023,7 @@ export class StatsView extends ItemView {
 
             if (sceneEchoes.length > 0) {
                 echoes.push({
-                    sceneTitle: scene.title || 'Untitled',
+                    sceneTitle: scene.title || legacyUi('Untitled', 'Untitled'),
                     filePath: scene.filePath,
                     echoes: sceneEchoes.slice(0, 10),
                 });
@@ -2043,7 +2043,7 @@ export class StatsView extends ItemView {
 
             if (favourites.length > 0 || sceneEchoes.length > 0) {
                 perScene.push({
-                    sceneTitle: scene.title || 'Untitled',
+                    sceneTitle: scene.title || legacyUi('Untitled', 'Untitled'),
                     filePath: scene.filePath,
                     favourites: favourites.sort((a, b) => (b.sceneRate / b.globalRate) - (a.sceneRate / a.globalRate)).slice(0, 8),
                     echoCount: sceneEchoes.length,
@@ -2079,7 +2079,7 @@ export class StatsView extends ItemView {
 
         // Proximity echoes per scene
         const echoSec = parent.createDiv('stats-subsection');
-        echoSec.createEl('h5', { cls: 'stats-subsection-title', text: legacyUi(`Proximity Echoes (${echoes.length} scene${echoes.length !== 1 ? 's' : ''})`, `Proximity Echoes (${echoes.length} scene${echoes.length !== 1 ? 's' : ''})`) });
+        echoSec.createEl('h5', { cls: 'stats-subsection-title', text: tr("tpl.4de41e0732", { p0: echoes.length, p1: echoes.length !== 1 ? 's' : '' }) });
         echoSec.createEl('p', { cls: 'stats-hint', text: legacyUi('Words repeated within 3 sentences of each other — often unintentional.', 'Words repeated within 3 sentences of each other — often unintentional.') });
 
         // Show all scenes in a scrollable container (was limited to 10).
@@ -2094,8 +2094,8 @@ export class StatsView extends ItemView {
             for (const e of cluster.echoes) {
                 tags.createSpan({
                     cls: 'stats-echo-tag',
-                    text: legacyUi(`${e.word} ×${e.proximityHits}`, `${e.word} ×${e.proximityHits}`),
-                    title: legacyUi(`"${e.word}" appears close together ${e.proximityHits} times (${e.total} total in scene)`, `"${e.word}" appears close together ${e.proximityHits} times (${e.total} total in scene)`),
+                    text: tr("tpl.1507164ac8", { p0: e.word, p1: e.proximityHits }),
+                    title: tr("tpl.9f4d6405a4", { p0: e.word, p1: e.proximityHits, p2: e.total }),
                 });
             }
         }
@@ -2120,8 +2120,8 @@ export class StatsView extends ItemView {
                     const ratio = (f.sceneRate / f.globalRate).toFixed(1);
                     tags.createSpan({
                         cls: 'stats-overused-tag',
-                        text: legacyUi(`${f.word} (${ratio}×)`, `${f.word} (${ratio}×)`),
-                        title: legacyUi(`"${f.word}" appears ${f.count} times — ${ratio}× the manuscript average`, `"${f.word}" appears ${f.count} times — ${ratio}× the manuscript average`),
+                        text: tr("tpl.6420af3103", { p0: f.word, p1: ratio }),
+                        title: tr("tpl.34640a125c", { p0: f.word, p1: f.count, p2: ratio }),
                     });
                 }
             }
@@ -2163,7 +2163,7 @@ export class StatsView extends ItemView {
             }
 
             const actLabel = scene.act !== undefined ? ` (${getActDisplayLabel(scene.act)})` : '';
-            bar.setAttribute('title', `${scene.title || 'Untitled'}${actLabel}\n${wc.toLocaleString()} ${this.getSceneCountLabel().toLowerCase()}${hasConflict ? '\n✓ Has conflict' : '\n✗ No conflict'}`);
+            bar.setAttribute('title', `${scene.title || legacyUi('Untitled', 'Untitled')}${actLabel}\n${wc.toLocaleString()} ${this.getSceneCountLabel().toLowerCase()}${hasConflict ? '\n✓ Has conflict' : '\n✗ No conflict'}`);
         }
 
         // Legend
@@ -2198,16 +2198,16 @@ export class StatsView extends ItemView {
             const flagSec = sec.createDiv('stats-subsection');
             flagSec.createEl('p', {
                 cls: 'stats-hint stats-overused-title',
-                text: legacyUi(`${longNoConflict.length} long scene${longNoConflict.length !== 1 ? 's' : ''} without conflict — potential pacing issues:`, `${longNoConflict.length} long scene${longNoConflict.length !== 1 ? 's' : ''} without conflict — potential pacing issues:`),
+                text: tr("tpl.a1fae41ba0", { p0: longNoConflict.length, p1: longNoConflict.length !== 1 ? 's' : '' }),
             });
             const list = flagSec.createEl('ul', { cls: 'stats-list' });
             for (const scene of longNoConflict.slice(0, 8)) {
                 const li = list.createEl('li');
-                const link = li.createEl('a', { text: scene.title || 'Untitled', cls: 'stats-scene-link' });
+                const link = li.createEl('a', { text: scene.title || legacyUi('Untitled', 'Untitled'), cls: 'stats-scene-link' });
                 link.addEventListener('click', () => {
                     this.app.workspace.openLinkText(scene.filePath, '', true);
                 });
-                li.createSpan({ text: legacyUi(` — ${this.getSceneCount(scene).toLocaleString()} ${this.getSceneCountLabel().toLowerCase()}, no conflict`, ` — ${this.getSceneCount(scene).toLocaleString()} ${this.getSceneCountLabel().toLowerCase()}, no conflict`) });
+                li.createSpan({ text: tr("tpl.dc76ab01cf", { p0: this.getSceneCount(scene).toLocaleString(), p1: this.getSceneCountLabel().toLowerCase() }) });
             }
         }
     }
@@ -2240,9 +2240,9 @@ export class StatsView extends ItemView {
                         ? 'stats-warning-summary sl-stats-redesigned__warning-summary'
                         : 'stats-warning-summary',
                 );
-                if (errs > 0) summary.createSpan({ cls: 'stats-severity-error', text: legacyUi(`${errs} error${errs > 1 ? 's' : ''}`, `${errs} error${errs > 1 ? 's' : ''}`) });
-                if (warns > 0) summary.createSpan({ cls: 'stats-severity-warning', text: legacyUi(`${warns} warning${warns > 1 ? 's' : ''}`, `${warns} warning${warns > 1 ? 's' : ''}`) });
-                if (infos > 0) summary.createSpan({ cls: 'stats-severity-info', text: legacyUi(`${infos} info`, `${infos} info`) });
+                if (errs > 0) summary.createSpan({ cls: 'stats-severity-error', text: tr("tpl.6056590f20", { p0: errs, p1: errs > 1 ? 's' : '' }) });
+                if (warns > 0) summary.createSpan({ cls: 'stats-severity-warning', text: tr("tpl.06ea1dabf1", { p0: warns, p1: warns > 1 ? 's' : '' }) });
+                if (infos > 0) summary.createSpan({ cls: 'stats-severity-info', text: tr("tpl.24be85911b", { p0: infos }) });
 
                 for (const [cat, cw] of byCategory) {
                     const catSec = parent.createDiv('stats-warning-category');
@@ -2261,7 +2261,7 @@ export class StatsView extends ItemView {
                             case 'warning': obsidian.setIcon(ic, 'alert-triangle'); break;
                             case 'info': obsidian.setIcon(ic, 'info'); break;
                         }
-                        li.createSpan({ text: legacyUi(` ${w.message}`, ` ${w.message}`) });
+                        li.createSpan({ text: tr("tpl.07d23d27a7", { p0: w.message }) });
                     }
                 }
             }
@@ -2356,9 +2356,9 @@ export class StatsView extends ItemView {
         for (const milestone of recent) {
             const item = list.createEl('li');
             item.createEl('strong', { text: milestone.scene.title });
-            item.createSpan({ text: legacyUi(` · ${new Date(milestone.timestamp).toLocaleDateString()} · ${milestone.label}`, ` · ${new Date(milestone.timestamp).toLocaleDateString()} · ${milestone.label}`) });
+            item.createSpan({ text: tr("tpl.c77e99ded0", { p0: new Date(milestone.timestamp).toLocaleDateString(), p1: milestone.label }) });
             if (milestone.wordcount !== undefined) {
-                item.createSpan({ text: legacyUi(` · ${milestone.wordcount.toLocaleString()} words`, ` · ${milestone.wordcount.toLocaleString()} words`) });
+                item.createSpan({ text: tr("tpl.dbda6eb7da", { p0: milestone.wordcount.toLocaleString() }) });
             }
         }
     }
@@ -2432,14 +2432,14 @@ export class StatsView extends ItemView {
             row.createSpan({ cls: 'stats-folder-label', text: folder });
             const bar = row.createDiv('stats-bar stats-bar-wide');
             bar.createDiv('stats-bar-fill').setCssStyles({ width: `${value.words / maxWords * 100}%` });
-            row.createSpan({ text: legacyUi(`${value.words.toLocaleString()} words · ${value.documents} documents`, `${value.words.toLocaleString()} words · ${value.documents} documents`) });
+            row.createSpan({ text: tr("tpl.c11a9533e9", { p0: value.words.toLocaleString(), p1: value.documents }) });
         }
     }
 
     private renderProjectInfo(parent: HTMLElement): void {
         const project = this.sceneManager.activeProject;
         const rows: Array<[string, string]> = [
-            ['Project', project?.title || 'Untitled'],
+            ['Project', project?.title || legacyUi('Untitled', 'Untitled')],
             ['Statuses', getStatusOrder().join(', ')],
             ['Custom metadata fields', String(this.plugin.fieldTemplates.getAll().length)],
             ['StoryLine version', this.plugin.manifest.version],
@@ -2556,7 +2556,7 @@ export class StatsView extends ItemView {
         wrap.appendChild(svg);
         wrap.createDiv({
             cls: 'stats-ring-sub',
-            text: legacyUi(`${current.toLocaleString()} / ${goal.toLocaleString()}`, `${current.toLocaleString()} / ${goal.toLocaleString()}`),
+            text: tr("tpl.b68fe8d6b0", { p0: current.toLocaleString(), p1: goal.toLocaleString() }),
         });
     }
 

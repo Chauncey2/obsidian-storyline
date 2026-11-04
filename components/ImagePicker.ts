@@ -1,4 +1,4 @@
-import { legacyUi } from '../i18n';
+import { tr, legacyUi } from '../i18n';
 /* eslint-disable @typescript-eslint/no-misused-promises, @typescript-eslint/no-unused-vars -- Obsidian's API surface and several untyped third-party libraries force dynamic dispatch; floating promises are intentional in DOM/event handlers; matching enable at end of file */
 /**
  * ImagePicker — shared image selection component.
@@ -160,11 +160,11 @@ function importImageFromComputer(app: App, sceneFolder: string): Promise<string 
                 // Write to vault
                 await app.vault.createBinary(targetPath, buffer);
 
-                new Notice(legacyUi(`Image imported: ${targetPath.split('/').pop()}`, `Image imported: ${targetPath.split('/').pop()}`));
+                new Notice(tr("tpl.07706b1d40", { p0: targetPath.split('/').pop() }));
                 
                 complete(targetPath);
             } catch (err) {
-                new Notice(legacyUi(`❌ Failed to import image: ${String(err)}`, `❌ Failed to import image: ${String(err)}`));
+                new Notice(tr("tpl.651f3a7d2f", { p0: String(err) }));
                 complete(undefined);
             }
         };

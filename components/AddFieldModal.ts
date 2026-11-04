@@ -88,7 +88,7 @@ export class AddFieldModal extends Modal {
         const sheetLabel = this.customSectionNames ? 'entry' : 'character sheet';
         contentEl.createEl('p', {
             cls: 'storyline-add-field-desc',
-            text: legacyUi(`This field will appear on every ${sheetLabel} in the chosen section.`, `This field will appear on every ${sheetLabel} in the chosen section.`),
+            text: tr("tpl.1ffeb6f9cf", { p0: sheetLabel }),
         });
 
         // ── Label ──
@@ -114,7 +114,7 @@ export class AddFieldModal extends Modal {
         const sectionNames = this.customSectionNames || CHARACTER_CATEGORIES.map(c => c.title);
         new Setting(contentEl)
             .setName(tr('common.section'))
-            .setDesc(legacyUi(`Where this field appears on the ${sheetLabel}`, `Where this field appears on the ${sheetLabel}`))
+            .setDesc(tr("tpl.ad454a00bf", { p0: sheetLabel }))
             .addDropdown(dd => {
                 for (const name of sectionNames) {
                     dd.addOption(name, name);
@@ -285,7 +285,7 @@ export class AddFieldModal extends Modal {
                     dd.addOption('__end__', tr('common.atEnd'));
                     dd.addOption('__top__', tr('common.atTop'));
                     for (const s of this.siblings) {
-                        dd.addOption(s.id, legacyUi(`After: ${s.label}`, `After: ${s.label}`));
+                        dd.addOption(s.id, tr("tpl.78fa88842d", { p0: s.label }));
                     }
                     dd.setValue('__end__');
                     dd.onChange(v => {
@@ -344,7 +344,7 @@ export class AddFieldModal extends Modal {
                     return;
                 }
                 if (isReservedTopLevelKey(tlk)) {
-                    new Notice(legacyUi(`"${tlk}" is reserved by StoryLine. Choose a different key.`, `"${tlk}" is reserved by StoryLine. Choose a different key.`));
+                    new Notice(tr("tpl.7be27c6a8b", { p0: tlk }));
                     return;
                 }
             }

@@ -1,16 +1,16 @@
 /* eslint-disable @typescript-eslint/no-misused-promises, @typescript-eslint/no-unnecessary-type-assertion, no-useless-escape -- Obsidian's API surface and several untyped third-party libraries force dynamic dispatch; floating promises are intentional in DOM/event handlers; matching enable at end of file */
 import { StoryLineProject } from '../models/StoryLineProject';
 import { SceneManager } from './SceneManager';
-import { compareActChapter, getActDisplayLabel, getChapterDisplayLabel } from '../utils/actChapter';
+import { compareActChapter, formatActLabelWithSubtitle, formatChapterLabel } from '../utils/actChapter';
 import { CharacterManager } from './CharacterManager';
 import { LocationManager } from './LocationManager';
 import { SLMarkdownToDocxConverter, SLDocxSettings, SLObsidianFontSettings } from './DocxConverter';
 import { SLPdfSettings } from './PdfConverter';
 import { App, Notice, TFile } from 'obsidian';
-import { Scene, resolveStatusCfg } from '../models/Scene';
+import { Scene, TIMELINE_MODE_LABELS, resolveStatusCfg, type TimelineMode } from '../models/Scene';
 import { getRoleDisplay, relationDisplayLabel } from '../models/Character';
 import { StoryLocation } from '../models/Location';
-import { tr } from '../i18n';
+import { getContentLocale, tr, trContent, trContentValue } from '../i18n';
 
 export type ExportFormat = 'md' | 'json' | 'html' | 'csv' | 'docx' | 'pdf';
 export type ExportScope = 'manuscript' | 'outline';
@@ -174,13 +174,40 @@ export class ExportService {
     }
 
     private getExportLabel(scope: ExportScope): string {
-        const base = scope === 'manuscript' ? 'Manuscript' : 'Outline';
+        const locale = this.contentLocale();
+        const base = trContent(locale, scope === 'manuscript' ? 'export.scope.manuscript' : 'export.scope.outline');
         if (!this.exportRange) return base;
         const rangeText = this.exportRange.sequenceRanges
             .map(range => range.start === range.end ? String(range.start) : `${range.start}-${range.end}`)
             .join(',');
-        const rangeLabel = this.exportRange.field === 'sequence' ? 'Scenes' : 'Chapters';
+        const rangeLabel = trContent(locale, this.exportRange.field === 'sequence' ? 'export.range.scenes' : 'export.range.chapters');
         return `${base} - ${rangeLabel} ${rangeText}`;
+    }
+
+    private contentLocale() {
+        return getContentLocale(this.sceneManager.getEffectiveLocale());
+    }
+
+    private csv(key: 'csv.sequence' | 'csv.chronologicalOrder' | 'csv.title' | 'csv.act' | 'csv.chapter' | 'csv.status' | 'csv.pov' | 'csv.location' | 'csv.characters' | 'csv.emotion' | 'csv.intensity' | 'csv.wordCount' | 'csv.targetWords' | 'csv.conflict' | 'csv.tags' | 'csv.storyDate' | 'csv.storyTime' | 'csv.setupScenes' | 'csv.payoffScenes' | 'csv.timelineMode' | 'csv.timelineStrand' | 'csv.notes' | 'csv.body' | 'csv.charactersSheet' | 'csv.locationsSheet' | 'csv.name' | 'csv.role' | 'csv.age' | 'csv.occupation' | 'csv.personality' | 'csv.backstory' | 'csv.startingPoint' | 'csv.goal' | 'csv.expectedChange' | 'csv.internalMotivation' | 'csv.externalMotivation' | 'csv.allies' | 'csv.enemies' | 'csv.type' | 'csv.description' | 'csv.significance' | 'csv.place'): string {
+        return trContent(this.contentLocale(), key);
+    }
+
+    private csvRoles(value: string): string {
+        const locale = this.contentLocale();
+        const parts = value.split(',').map(part => part.trim()).filter(Boolean);
+        const translated = parts.map(part => trContentValue(locale, 'characterRole', part));
+        return translated.join(locale === 'zh-CN' ? '、' : ', ');
+    }
+
+    private csvTimeline(mode: string): string {
+        if (!mode) return '';
+        const label = mode in TIMELINE_MODE_LABELS ? TIMELINE_MODE_LABELS[mode as TimelineMode] : mode;
+        return trContentValue(this.contentLocale(), 'timelineMode', label);
+    }
+
+    private exportField(labelKey: 'export.label.role' | 'export.label.age' | 'export.label.occupation' | 'export.label.personality' | 'export.label.backstory' | 'export.label.startingPoint' | 'export.label.goal' | 'export.label.expectedChange' | 'export.label.internalMotivation' | 'export.label.externalMotivation' | 'export.label.geography' | 'export.label.culture' | 'export.label.politics' | 'export.label.magicTechnology' | 'export.label.history' | 'export.label.atmosphere' | 'export.label.significance' | 'export.label.inhabitants' | 'export.label.inside', value: string): string {
+        const locale = this.contentLocale();
+        return trContent(locale, 'export.field', { label: trContent(locale, labelKey), value });
     }
 
     private timestamp(): string {
@@ -223,8 +250,8 @@ export class ExportService {
             if (scene.act !== undefined && scene.act !== currentAct) {
                 currentAct = scene.act;
                 const actLabel = this.sceneManager.getActLabel(Number(currentAct));
-                const actDisplay = getActDisplayLabel(currentAct);
-                lines.push(actLabel ? `## ${actDisplay}: ${actLabel}` : `## ${actDisplay}`);
+                const locale = this.contentLocale();
+                lines.push(`## ${formatActLabelWithSubtitle(currentAct, locale, actLabel)}`);
                 lines.push('');
                 currentChapter = undefined; // reset chapter on act change
             }
@@ -233,7 +260,7 @@ export class ExportService {
             if (scene.chapter !== undefined && scene.chapter !== currentChapter) {
                 currentChapter = scene.chapter;
                 const chapLabel = this.sceneManager.getChapterLabel(Number(currentChapter));
-                lines.push(`### ${getChapterDisplayLabel(currentChapter, chapLabel)}`);
+                lines.push(`### ${formatChapterLabel(currentChapter, this.contentLocale(), chapLabel)}`);
                 lines.push('');
             }
 
@@ -243,7 +270,7 @@ export class ExportService {
                 lines.push(`#### ${sceneNumber}`);
                 lines.push('');
             } else if (includeTitles) {
-                lines.push(`#### ${scene.title || 'Untitled Scene'}`);
+                lines.push(`#### ${scene.title || trContent(this.contentLocale(), 'scene.untitledScene')}`);
                 lines.push('');
             }
 
@@ -252,7 +279,7 @@ export class ExportService {
                 lines.push(this.stripWikiLinks(scene.body.trim()));
                 lines.push('');
             } else {
-                lines.push('*No content yet.*');
+                lines.push(trContent(this.contentLocale(), 'export.noContent'));
                 lines.push('');
             }
 
@@ -276,25 +303,26 @@ export class ExportService {
             statusCounts[st] = (statusCounts[st] || 0) + 1;
         }
 
-        lines.push(`**Scenes:** ${scenes.length}  `);
-        lines.push(`**Total words:** ${totalWords.toLocaleString()}  `);
+        const locale = this.contentLocale();
+        lines.push(trContent(locale, 'export.scenes', { count: scenes.length }));
+        lines.push(trContent(locale, 'export.totalWords', { count: totalWords.toLocaleString() }));
         const statusLine = Object.entries(statusCounts)
-            .map(([s, c]) => `${resolveStatusCfg(s).label}: ${c}`)
+            .map(([s, c]) => `${trContentValue(locale, 'statusLabel', resolveStatusCfg(s).label)}: ${c}`)
             .join(' | ');
-        lines.push(`**Status:** ${statusLine}`);
+        lines.push(trContent(locale, 'export.status', { line: statusLine }));
         lines.push('');
 
         // Scene table
-        lines.push('| # | Title | Act | Ch | Chrono | Status | POV | Location | Words | Emotion | Intensity | Conflict | Tags | Timeline Mode | Strand | Notes |');
+        lines.push(trContent(locale, 'export.outlineTableHead'));
         lines.push('|---|-------|-----|----|--------|--------|-----|----------|-------|---------|-----------|----------|------|---------------|--------|-------|');
 
         for (const scene of scenes) {
             const seq = scene.sequence ?? '';
-            const title = scene.title || 'Untitled';
+            const title = scene.title || trContent(locale, 'scene.untitled');
             const act = scene.act ?? '';
             const ch = scene.chapter ?? '';
             const chrono = scene.chronologicalOrder ?? '';
-            const status = resolveStatusCfg(scene.status || 'idea').label;
+            const status = trContentValue(locale, 'statusLabel', resolveStatusCfg(scene.status || 'idea').label);
             const pov = scene.pov || '';
             const location = (scene.location || '').replace(/\|/g, '/');
             const words = scene.wordcount ?? '';
@@ -317,23 +345,23 @@ export class ExportService {
             if (s.characters) s.characters.forEach(c => allChars.add(c));
         }
         if (allChars.size > 0) {
-            lines.push('## Characters');
+            lines.push(trContent(locale, 'export.charactersHeading'));
             lines.push('');
             const characters = this.characterManager.getAllCharacters();
             if (characters.length > 0) {
                 for (const char of characters) {
                     lines.push(`### ${char.name}`);
                     lines.push('');
-                    if (char.role) lines.push(`**Role:** ${getRoleDisplay(char.role)}  `);
-                    if (char.age) lines.push(`**Age:** ${char.age}  `);
-                    if (char.occupation) lines.push(`**Occupation:** ${char.occupation}  `);
-                    if (char.personality) lines.push(`**Personality:** ${char.personality}  `);
-                    if (char.formativeMemories) lines.push(`**Backstory:** ${char.formativeMemories}  `);
-                    if (char.startingPoint) lines.push(`**Starting point:** ${char.startingPoint}  `);
-                    if (char.goal) lines.push(`**Goal:** ${char.goal}  `);
-                    if (char.expectedChange) lines.push(`**Expected change:** ${char.expectedChange}  `);
-                    if (char.internalMotivation) lines.push(`**Internal motivation:** ${char.internalMotivation}  `);
-                    if (char.externalMotivation) lines.push(`**External motivation:** ${char.externalMotivation}  `);
+                    if (char.role) lines.push(this.exportField('export.label.role', getRoleDisplay(char.role).split(',').map(role => trContentValue(locale, 'characterRole', role.trim())).join('、')));
+                    if (char.age) lines.push(this.exportField('export.label.age', char.age));
+                    if (char.occupation) lines.push(this.exportField('export.label.occupation', char.occupation));
+                    if (char.personality) lines.push(this.exportField('export.label.personality', char.personality));
+                    if (char.formativeMemories) lines.push(this.exportField('export.label.backstory', char.formativeMemories));
+                    if (char.startingPoint) lines.push(this.exportField('export.label.startingPoint', char.startingPoint));
+                    if (char.goal) lines.push(this.exportField('export.label.goal', char.goal));
+                    if (char.expectedChange) lines.push(this.exportField('export.label.expectedChange', char.expectedChange));
+                    if (char.internalMotivation) lines.push(this.exportField('export.label.internalMotivation', char.internalMotivation));
+                    if (char.externalMotivation) lines.push(this.exportField('export.label.externalMotivation', char.externalMotivation));
                     if (Array.isArray(char.relations) && char.relations.length > 0) {
                         for (const relation of char.relations) {
                             lines.push(`**${relationDisplayLabel(relation)}:** ${relation.target}  `);
@@ -351,17 +379,17 @@ export class ExportService {
         const worlds = this.locationManager.getAllWorlds();
         const locations = this.locationManager.getAllLocations();
         if (worlds.length > 0 || locations.length > 0) {
-            lines.push('## Worlds & Locations');
+            lines.push(trContent(locale, 'export.worldsHeading'));
             lines.push('');
             for (const world of worlds) {
                 lines.push(`### 🌍 ${world.name}`);
                 lines.push('');
                 if (world.description) lines.push(`${world.description}  `);
-                if (world.geography) lines.push(`**Geography:** ${world.geography}  `);
-                if (world.culture) lines.push(`**Culture:** ${world.culture}  `);
-                if (world.politics) lines.push(`**Politics:** ${world.politics}  `);
-                if (world.magicTechnology) lines.push(`**Magic/Technology:** ${world.magicTechnology}  `);
-                if (world.history) lines.push(`**History:** ${world.history}  `);
+                if (world.geography) lines.push(this.exportField('export.label.geography', world.geography));
+                if (world.culture) lines.push(this.exportField('export.label.culture', world.culture));
+                if (world.politics) lines.push(this.exportField('export.label.politics', world.politics));
+                if (world.magicTechnology) lines.push(this.exportField('export.label.magicTechnology', world.magicTechnology));
+                if (world.history) lines.push(this.exportField('export.label.history', world.history));
                 lines.push('');
                 // Locations under this world
                 const worldLocs = this.locationManager.getLocationsForWorld(world.name);
@@ -382,7 +410,7 @@ export class ExportService {
             if (s.tags) s.tags.forEach(t => allTags.add(t));
         }
         if (allTags.size > 0) {
-            lines.push('## Plotlines / Tags');
+            lines.push(trContent(locale, 'export.plotlinesHeading'));
             lines.push('');
             lines.push(Array.from(allTags).sort().join(', '));
             lines.push('');
@@ -394,11 +422,11 @@ export class ExportService {
         lines.push(`${heading} \ud83d\udccd ${loc.name}${typeLabel}`);
         lines.push('');
         if (loc.description) lines.push(`${loc.description}  `);
-        if (loc.atmosphere) lines.push(`**Atmosphere:** ${loc.atmosphere}  `);
-        if (loc.significance) lines.push(`**Significance:** ${loc.significance}  `);
+        if (loc.atmosphere) lines.push(this.exportField('export.label.atmosphere', loc.atmosphere));
+        if (loc.significance) lines.push(this.exportField('export.label.significance', loc.significance));
         const inhabitants = Array.isArray(loc.inhabitants) ? loc.inhabitants.join(', ') : loc.inhabitants;
-        if (inhabitants) lines.push(`**Inhabitants:** ${inhabitants}  `);
-        if (loc.parent) lines.push(`**Inside:** ${loc.parent}  `);
+        if (inhabitants) lines.push(this.exportField('export.label.inhabitants', inhabitants));
+        if (loc.parent) lines.push(this.exportField('export.label.inside', loc.parent));
         lines.push('');
     }
 
@@ -554,7 +582,7 @@ export class ExportService {
             : this.buildOutlineHtml(scenes);
 
         return `<!DOCTYPE html>
-<html lang="en">
+<html lang="${this.contentLocale() === 'zh-CN' ? 'zh-CN' : 'en'}">
 <head>
 <meta charset="UTF-8">
 <title>${title}</title>
@@ -612,8 +640,7 @@ ${body}
             if (scene.act !== undefined && scene.act !== currentAct) {
                 currentAct = scene.act;
                 const actLabel = this.sceneManager.getActLabel(Number(currentAct));
-                const actDisplay = getActDisplayLabel(currentAct);
-                const actText = actLabel ? `${actDisplay}: ${actLabel}` : actDisplay;
+                const actText = formatActLabelWithSubtitle(currentAct, this.contentLocale(), actLabel);
                 parts.push(`<h2>${this.escHtml(actText)}</h2>`);
                 currentChapter = undefined;
             }
@@ -621,7 +648,7 @@ ${body}
             if (scene.chapter !== undefined && scene.chapter !== currentChapter) {
                 currentChapter = scene.chapter;
                 const chapLabel = this.sceneManager.getChapterLabel(Number(currentChapter));
-                const chapText = getChapterDisplayLabel(currentChapter, chapLabel);
+                const chapText = formatChapterLabel(currentChapter, this.contentLocale(), chapLabel);
                 parts.push(`<h3>${this.escHtml(chapText)}</h3>`);
             }
 
@@ -630,7 +657,7 @@ ${body}
             if (numberScenes) {
                 parts.push(`<h4>${sceneNumber}</h4>`);
             } else if (includeTitles) {
-                parts.push(`<h4>${this.escHtml(scene.title || 'Untitled Scene')}</h4>`);
+                parts.push(`<h4>${this.escHtml(scene.title || trContent(this.contentLocale(), 'scene.untitledScene'))}</h4>`);
             }
 
             if (scene.body && scene.body.trim()) {
@@ -638,7 +665,7 @@ ${body}
                 const cleanBody = this.stripObsidianTags(this.stripWikiLinks(scene.body.trim()));
                 parts.push(...this.mdBlocksToHtml(cleanBody));
             } else {
-                parts.push('<p class="no-content">No content yet.</p>');
+                parts.push(`<p class="no-content">${this.escHtml(trContent(this.contentLocale(), 'export.noContent').replace(/^\*|\*$/g, ''))}</p>`);
             }
 
             parts.push('</div>');
@@ -662,16 +689,16 @@ ${body}
         parts.push('</div>');
 
         parts.push('<table>');
-        parts.push('<tr><th>#</th><th>Chrono</th><th>Title</th><th>Act</th><th>Ch</th><th>Status</th><th>POV</th><th>Location</th><th>Words</th><th>Emotion</th><th>Mode</th><th>Conflict</th></tr>');
+        parts.push(trContent(this.contentLocale(), 'export.htmlTableHead'));
 
         for (const scene of scenes) {
             parts.push('<tr>');
             parts.push(`<td>${scene.sequence ?? ''}</td>`);
             parts.push(`<td>${scene.chronologicalOrder ?? ''}</td>`);
-            parts.push(`<td>${this.escHtml(scene.title || 'Untitled')}</td>`);
+            parts.push(`<td>${this.escHtml(scene.title || trContent(this.contentLocale(), 'scene.untitled'))}</td>`);
             parts.push(`<td>${scene.act ?? ''}</td>`);
             parts.push(`<td>${scene.chapter ?? ''}</td>`);
-            parts.push(`<td>${this.escHtml(resolveStatusCfg(scene.status || 'idea').label)}</td>`);
+            parts.push(`<td>${this.escHtml(trContentValue(this.contentLocale(), 'statusLabel', resolveStatusCfg(scene.status || 'idea').label))}</td>`);
             parts.push(`<td>${this.escHtml(scene.pov || '')}</td>`);
             parts.push(`<td>${this.escHtml(scene.location || '')}</td>`);
             parts.push(`<td>${scene.wordcount ?? ''}</td>`);
@@ -694,25 +721,25 @@ ${body}
     ): Promise<string> {
         const rows: string[][] = [];
 
+        const locale = this.contentLocale();
         if (scope === 'outline') {
-            // Header row
             rows.push([
-                'Sequence', 'Chronological Order', 'Title', 'Act', 'Chapter', 'Status',
-                'POV', 'Location', 'Characters', 'Emotion', 'Intensity',
-                'Word Count', 'Target Words', 'Conflict',
-                'Tags', 'Story Date', 'Story Time',
-                'Setup Scenes', 'Payoff Scenes',
-                'Timeline Mode', 'Timeline Strand', 'Notes',
+                this.csv('csv.sequence'), this.csv('csv.chronologicalOrder'), this.csv('csv.title'), this.csv('csv.act'), this.csv('csv.chapter'), this.csv('csv.status'),
+                this.csv('csv.pov'), this.csv('csv.location'), this.csv('csv.characters'), this.csv('csv.emotion'), this.csv('csv.intensity'),
+                this.csv('csv.wordCount'), this.csv('csv.targetWords'), this.csv('csv.conflict'),
+                this.csv('csv.tags'), this.csv('csv.storyDate'), this.csv('csv.storyTime'),
+                this.csv('csv.setupScenes'), this.csv('csv.payoffScenes'),
+                this.csv('csv.timelineMode'), this.csv('csv.timelineStrand'), this.csv('csv.notes'),
             ]);
 
             for (const scene of scenes) {
                 rows.push([
                     String(scene.sequence ?? ''),
                     String(scene.chronologicalOrder ?? ''),
-                    scene.title || 'Untitled',
+                    scene.title || trContent(locale, 'scene.untitled'),
                     String(scene.act ?? ''),
                     String(scene.chapter ?? ''),
-                    resolveStatusCfg(scene.status || 'idea').label,
+                    trContentValue(locale, 'statusLabel', resolveStatusCfg(scene.status || 'idea').label),
                     scene.pov || '',
                     scene.location || '',
                     (scene.characters || []).join('; '),
@@ -726,7 +753,7 @@ ${body}
                     scene.storyTime || '',
                     (scene.setup_scenes || []).join('; '),
                     (scene.payoff_scenes || []).join('; '),
-                    scene.timeline_mode || '',
+                    this.csvTimeline(scene.timeline_mode || ''),
                     scene.timeline_strand || '',
                     scene.notes || '',
                 ]);
@@ -736,15 +763,15 @@ ${body}
             const characters = this.characterManager.getAllCharacters();
             if (characters.length > 0) {
                 rows.push([]);  // blank separator
-                rows.push(['--- Characters ---']);
+                rows.push([this.csv('csv.charactersSheet')]);
                 rows.push([
-                    'Name', 'Role', 'Age', 'Occupation', 'Personality',
-                    'Backstory', 'Starting Point', 'Goal', 'Expected Change',
-                    'Internal Motivation', 'External Motivation', 'Allies', 'Enemies',
+                    this.csv('csv.name'), this.csv('csv.role'), this.csv('csv.age'), this.csv('csv.occupation'), this.csv('csv.personality'),
+                    this.csv('csv.backstory'), this.csv('csv.startingPoint'), this.csv('csv.goal'), this.csv('csv.expectedChange'),
+                    this.csv('csv.internalMotivation'), this.csv('csv.externalMotivation'), this.csv('csv.allies'), this.csv('csv.enemies'),
                 ]);
                 for (const c of characters) {
                     rows.push([
-                        c.name, getRoleDisplay(c.role), String(c.age ?? ''), c.occupation || '',
+                        c.name, this.csvRoles(getRoleDisplay(c.role)), String(c.age ?? ''), c.occupation || '',
                         c.personality || '', c.formativeMemories || '', c.startingPoint || '',
                         c.goal || '', c.expectedChange || '',
                         c.internalMotivation || '', c.externalMotivation || '',
@@ -758,22 +785,25 @@ ${body}
             const locations = this.locationManager.getAllLocations();
             if (locations.length > 0) {
                 rows.push([]);
-                rows.push(['--- Locations ---']);
-                rows.push(['Name', 'Type', 'Description', 'Significance']);
+                rows.push([this.csv('csv.locationsSheet')]);
+                rows.push([this.csv('csv.name'), this.csv('csv.type'), this.csv('csv.description'), this.csv('csv.significance')]);
                 for (const loc of locations) {
+                    const place = loc.locationType
+                        ? trContentValue(locale, 'locationType', loc.locationType)
+                        : this.csv('csv.place');
                     rows.push([
-                        loc.name, loc.type || '', loc.description || '', loc.significance || '',
+                        loc.name, place, loc.description || '', loc.significance || '',
                     ]);
                 }
             }
         } else {
             // Manuscript scope: title + full body text per row
-            rows.push(['Sequence', 'Chronological Order', 'Title', 'Act', 'Chapter', 'Body']);
+            rows.push([this.csv('csv.sequence'), this.csv('csv.chronologicalOrder'), this.csv('csv.title'), this.csv('csv.act'), this.csv('csv.chapter'), this.csv('csv.body')]);
             for (const scene of scenes) {
                 rows.push([
                     String(scene.sequence ?? ''),
                     String(scene.chronologicalOrder ?? ''),
-                    scene.title || 'Untitled',
+                    scene.title || trContent(this.contentLocale(), 'scene.untitled'),
                     String(scene.act ?? ''),
                     String(scene.chapter ?? ''),
                     this.stripWikiLinks(scene.body || ''),
@@ -1370,7 +1400,7 @@ ${body}
         const h6Size = Math.max(Math.round(fontSize * 0.9), 8);
 
         return `<!DOCTYPE html>
-<html lang="en">
+<html lang="${this.contentLocale() === 'zh-CN' ? 'zh-CN' : 'en'}">
 <head>
 <meta charset="UTF-8">
 <title>${title}</title>

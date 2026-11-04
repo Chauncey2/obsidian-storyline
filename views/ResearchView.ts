@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-floating-promises, @typescript-eslint/no-misused-promises -- Obsidian's API surface and several untyped third-party libraries force dynamic dispatch; floating promises are intentional in DOM/event handlers; matching enable at end of file */
 import { ItemView, WorkspaceLeaf, TFile, Notice, Modal, Setting, FuzzySuggestModal } from 'obsidian';
-import { tr, legacyUi } from '../i18n';
+import { tr, legacyUi, trValue } from '../i18n';
 import * as obsidian from 'obsidian';
 import type SceneCardsPlugin from '../main';
 import { ResearchManager } from '../services/ResearchManager';
@@ -95,7 +95,7 @@ export class ResearchView extends ItemView {
         const openQ = this.manager.getOpenQuestionCount();
         if (openQ > 0) {
             const badge = header.createSpan({ cls: 'sl-research-question-badge' });
-            badge.setText(legacyUi(`${openQ}`, `${openQ}`));
+            badge.setText(tr("tpl.3cc5fd18eb", { p0: openQ }));
             badge.title = `${openQ} open question${openQ > 1 ? 's' : ''}`;
         }
 
@@ -145,7 +145,7 @@ export class ResearchView extends ItemView {
             for (const tag of allTags) {
                 const chip = tagRow.createSpan({
                     cls: `sl-research-tag-chip ${this.activeTag === tag ? 'is-active' : ''}`,
-                    text: legacyUi(`#${tag}`, `#${tag}`),
+                    text: tr("tpl.0b350d2d60", { p0: tag }),
                 });
                 chip.addEventListener('click', () => {
                     this.activeTag = this.activeTag === tag ? null : tag;
@@ -160,7 +160,7 @@ export class ResearchView extends ItemView {
         const typeRow = container.createDiv('sl-research-type-row');
         const types: (ResearchType | null)[] = [null, 'note', 'webclip', 'image', 'question'];
         for (const t of types) {
-            const label = t ? RESEARCH_TYPE_CONFIG[t].label : 'All';
+            const label = t ? trValue('fieldLabel', RESEARCH_TYPE_CONFIG[t].label) : trValue('fieldLabel', 'All');
             const icon = t ? RESEARCH_TYPE_CONFIG[t].icon : 'layers';
             const btn = typeRow.createDiv({
                 cls: `sl-research-type-btn ${this.activeType === t ? 'is-active' : ''}`,
@@ -255,7 +255,7 @@ export class ResearchView extends ItemView {
             obsidian.setIcon(icon, 'folder');
             summary.createSpan({ text: folderName });
             const count = grouped.get(folderName)!.length;
-            summary.createSpan({ cls: 'sl-research-folder-count', text: legacyUi(`${count}`, `${count}`) });
+            summary.createSpan({ cls: 'sl-research-folder-count', text: tr("tpl.3cc5fd18eb", { p0: count }) });
             for (const post of grouped.get(folderName)!) {
                 this.renderPostCard(section, post);
             }
@@ -298,7 +298,7 @@ export class ResearchView extends ItemView {
         if (post.tags.length > 0) {
             const tags = card.createDiv('sl-research-card-tags');
             for (const tag of post.tags) {
-                tags.createSpan({ cls: 'sl-research-mini-tag', text: legacyUi(`#${tag}`, `#${tag}`) });
+                tags.createSpan({ cls: 'sl-research-mini-tag', text: tr("tpl.0b350d2d60", { p0: tag }) });
             }
         }
 
@@ -474,7 +474,7 @@ export class ResearchView extends ItemView {
         const picker = new VaultNotePickerModal(this.app, candidates, async (file) => {
             await this.manager.linkNote(file.path);
             this.refresh();
-            new Notice(legacyUi(`Linked "${file.basename}" to Research`, `Linked "${file.basename}" to Research`));
+            new Notice(tr("tpl.ad73e1192b", { p0: file.basename }));
         });
         picker.open();
     }
@@ -613,7 +613,7 @@ export class ResearchView extends ItemView {
                 cls: `sl-research-type-pick-btn ${researchType === t ? 'is-active' : ''}`,
             });
             obsidian.setIcon(btn, RESEARCH_TYPE_CONFIG[t].icon);
-            attachTooltip(btn, RESEARCH_TYPE_CONFIG[t].label);
+            attachTooltip(btn, trValue('fieldLabel', RESEARCH_TYPE_CONFIG[t].label));
             typeButtons.push(btn);
             btn.addEventListener('click', () => {
                 researchType = t;
@@ -647,7 +647,7 @@ export class ResearchView extends ItemView {
             await this.manager.createPost(title.trim(), researchType, finalBody, tagList, sourceUrl || undefined);
             modal.close();
             this.refresh();
-            new Notice(legacyUi(`Research post "${title.trim()}" created`, `Research post "${title.trim()}" created`));
+            new Notice(tr("tpl.33d44b6bed", { p0: title.trim() }));
         });
         const cancelBtn = btnRow.createEl('button', { text: legacyUi('Cancel', 'Cancel') });
         cancelBtn.addEventListener('click', () => modal.close());

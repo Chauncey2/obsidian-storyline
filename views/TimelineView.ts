@@ -209,7 +209,7 @@ export class TimelineView extends ItemView {
 
         controls.createSpan({
             cls: 'story-line-zoom-level',
-            text: legacyUi(`${Math.round(this.zoomLevel * 100)}%`, `${Math.round(this.zoomLevel * 100)}%`)
+            text: tr("tpl.dbd55baf5e", { p0: Math.round(this.zoomLevel * 100) })
         });
 
         const zoomIn = controls.createEl('button', {
@@ -529,7 +529,7 @@ export class TimelineView extends ItemView {
                 const divider = track.createDiv('timeline-chapter-divider');
                 divider.createSpan({ cls: 'timeline-chapter-label', text: item.label });
                 if (item.chapterLabel) {
-                    divider.createSpan({ cls: 'timeline-chapter-subtitle', text: legacyUi(`· ${item.chapterLabel}`, `· ${item.chapterLabel}`) });
+                    divider.createSpan({ cls: 'timeline-chapter-subtitle', text: tr("tpl.dee9531ab6", { p0: item.chapterLabel }) });
                 }
                 if (item.chapterNum !== undefined) {
                     divider.addEventListener('contextmenu', event => {
@@ -570,7 +570,7 @@ export class TimelineView extends ItemView {
                 const emptyEntry = track.createDiv('timeline-entry timeline-entry-empty');
                 const emptyCard = emptyEntry.createDiv('timeline-entry-card');
                 const card = emptyCard.createDiv('timeline-card timeline-card-empty');
-                card.createDiv({ cls: 'timeline-card-title', text: legacyUi(`No scenes in ${item.actLabel}`, `No scenes in ${item.actLabel}`) });
+                card.createDiv({ cls: 'timeline-card-title', text: tr("tpl.d0066fdf8c", { p0: item.actLabel }) });
                 card.createEl('p', { cls: 'timeline-card-hint', text: legacyUi('Click + to add a scene', 'Click + to add a scene') });
                 card.addEventListener('click', () => this.openQuickAdd(actForClosure));
             }
@@ -714,10 +714,10 @@ export class TimelineView extends ItemView {
             // Sequence axis cell
             const seqCell = grid.createDiv('swimlane-seq-cell');
             seqCell.classList.add('timeline-seq-clickable');
-            seqCell.createSpan({ cls: 'timeline-seq-badge', text: legacyUi(`${act}-${seq}`, `${act}-${seq}`) });
+            seqCell.createSpan({ cls: 'timeline-seq-badge', text: tr("tpl.95869cf247", { p0: act, p1: seq }) });
             // Show chronological order badge when it differs from reading order
             if (chronoSeq !== null && scene.chronologicalOrder !== scene.sequence) {
-                const chronoBadge = seqCell.createSpan({ cls: 'timeline-chrono-badge', text: legacyUi(`C${chronoSeq}`, `C${chronoSeq}`) });
+                const chronoBadge = seqCell.createSpan({ cls: 'timeline-chrono-badge', text: tr("tpl.226c299471", { p0: chronoSeq }) });
                 chronoBadge.setAttribute('title', `Chronological order: ${chronoSeq}`);
             }
             if (scene.storyDate) {
@@ -799,7 +799,7 @@ export class TimelineView extends ItemView {
         }
         card.dataset.path = scene.filePath;
 
-        card.createDiv({ cls: 'timeline-card-title', text: scene.title || 'Untitled' });
+        card.createDiv({ cls: 'timeline-card-title', text: scene.title || legacyUi('Untitled', 'Untitled') });
 
         // Timeline mode badge (for non-linear scenes)
         const slMode = scene.timeline_mode || 'linear';
@@ -807,16 +807,16 @@ export class TimelineView extends ItemView {
             const modeBadge = card.createDiv({ cls: `timeline-mode-badge timeline-mode-${slMode}` });
             const modeIcon = modeBadge.createSpan();
             obsidian.setIcon(modeIcon, TIMELINE_MODE_ICONS[slMode] || 'clock');
-            modeBadge.createSpan({ text: legacyUi(` ${TIMELINE_MODE_LABELS[slMode]}`, ` ${TIMELINE_MODE_LABELS[slMode]}`) });
+            modeBadge.createSpan({ text: tr("tpl.07d23d27a7", { p0: TIMELINE_MODE_LABELS[slMode] }) });
             if (scene.timeline_strand) {
-                modeBadge.createSpan({ cls: 'timeline-strand-label', text: legacyUi(` · ${scene.timeline_strand}`, ` · ${scene.timeline_strand}`) });
+                modeBadge.createSpan({ cls: 'timeline-strand-label', text: tr("tpl.192a458639", { p0: scene.timeline_strand }) });
             }
         }
 
         const meta = card.createDiv('timeline-card-meta');
         // Show the field that is NOT the grouping field (avoid redundancy)
         if (this.swimlaneGroupBy !== 'pov' && scene.pov) {
-            meta.createSpan({ cls: 'timeline-card-pov', text: legacyUi(`POV: ${scene.pov}`, `POV: ${scene.pov}`) });
+            meta.createSpan({ cls: 'timeline-card-pov', text: tr("tpl.4601b02483", { p0: scene.pov }) });
         }
         if (this.swimlaneGroupBy !== 'character' && scene.characters?.length) {
             meta.createSpan({ cls: 'timeline-card-pov', text: scene.characters.join(', ') });
@@ -939,11 +939,11 @@ export class TimelineView extends ItemView {
         const seq = scene.sequence !== undefined ? String(scene.sequence).padStart(2, '0') : '??';
         const chronoSeq = scene.chronologicalOrder !== undefined ? String(scene.chronologicalOrder).padStart(2, '0') : null;
 
-        seqCol.createSpan({ cls: 'timeline-seq-badge', text: legacyUi(`${act}-${seq}`, `${act}-${seq}`) });
+        seqCol.createSpan({ cls: 'timeline-seq-badge', text: tr("tpl.95869cf247", { p0: act, p1: seq }) });
 
         // Show chronological order badge when it differs from reading order
         if (chronoSeq !== null && scene.chronologicalOrder !== scene.sequence) {
-            const chronoBadge = seqCol.createSpan({ cls: 'timeline-chrono-badge', text: legacyUi(`C${chronoSeq}`, `C${chronoSeq}`) });
+            const chronoBadge = seqCol.createSpan({ cls: 'timeline-chrono-badge', text: tr("tpl.226c299471", { p0: chronoSeq }) });
             chronoBadge.setAttribute('title', `Chronological order: ${chronoSeq}`);
         }
 
@@ -975,7 +975,7 @@ export class TimelineView extends ItemView {
             card.style.setProperty('--sl-scene-bg', scene.color);
         }
 
-        card.createDiv({ cls: 'timeline-card-title', text: scene.title || 'Untitled' });
+        card.createDiv({ cls: 'timeline-card-title', text: scene.title || legacyUi('Untitled', 'Untitled') });
 
         // Timeline mode badge (for non-linear scenes)
         const tlMode = scene.timeline_mode || 'linear';
@@ -983,15 +983,15 @@ export class TimelineView extends ItemView {
             const modeBadge = card.createDiv({ cls: `timeline-mode-badge timeline-mode-${tlMode}` });
             const modeIcon = modeBadge.createSpan();
             obsidian.setIcon(modeIcon, TIMELINE_MODE_ICONS[tlMode] || 'clock');
-            modeBadge.createSpan({ text: legacyUi(` ${TIMELINE_MODE_LABELS[tlMode]}`, ` ${TIMELINE_MODE_LABELS[tlMode]}`) });
+            modeBadge.createSpan({ text: tr("tpl.07d23d27a7", { p0: TIMELINE_MODE_LABELS[tlMode] }) });
             if (scene.timeline_strand) {
-                modeBadge.createSpan({ cls: 'timeline-strand-label', text: legacyUi(` · ${scene.timeline_strand}`, ` · ${scene.timeline_strand}`) });
+                modeBadge.createSpan({ cls: 'timeline-strand-label', text: tr("tpl.192a458639", { p0: scene.timeline_strand }) });
             }
         }
 
         const meta = card.createDiv('timeline-card-meta');
         if (scene.pov) {
-            meta.createSpan({ cls: 'timeline-card-pov', text: legacyUi(`POV: ${scene.pov}`, `POV: ${scene.pov}`) });
+            meta.createSpan({ cls: 'timeline-card-pov', text: tr("tpl.4601b02483", { p0: scene.pov }) });
         }
         const sceneLocations = parseSceneLocations(scene.location);
         if (sceneLocations.length > 0) {
@@ -1204,7 +1204,7 @@ export class TimelineView extends ItemView {
         // if it isn't already, so the action always has a sensible anchor.
         if (this.selectedScenes.size > 1) {
             menu.addItem(item => {
-                item.setTitle(legacyUi(`Shift dates (${this.selectedScenes.size} scenes)…`, `Shift dates (${this.selectedScenes.size} scenes)…`))
+                item.setTitle(tr("tpl.932aa2a755", { p0: this.selectedScenes.size }))
                     .setIcon('calendar-range')
                     .onClick(() => this.openShiftDatesModal());
             });
@@ -1234,7 +1234,7 @@ export class TimelineView extends ItemView {
         const statuses = getStatusOrder();
         statuses.forEach(status => {
             menu.addItem(item => {
-                item.setTitle(legacyUi(`Status: ${resolveStatusCfg(status).label}`, `Status: ${resolveStatusCfg(status).label}`))
+                item.setTitle(tr("tpl.c1031b5e5a", { p0: resolveStatusCfg(status).label }))
                     .setChecked(scene.status === status)
                     .onClick(async () => {
                         await this.sceneManager.updateScene(scene.filePath, { status });
@@ -1251,7 +1251,7 @@ export class TimelineView extends ItemView {
                 .onClick(async () => {
                     openConfirmModal(this.app, {
                         title: legacyUi('Delete Scene', 'Delete Scene'),
-                        message: `Delete scene "${scene.title || 'Untitled'}"?`,
+                        message: `Delete scene "${scene.title || legacyUi('Untitled', 'Untitled')}"?`,
                         confirmLabel: 'Delete',
                         onConfirm: () => this.deleteScene(scene),
                     });
@@ -1341,7 +1341,7 @@ export class TimelineView extends ItemView {
             const beatList = row.createDiv('beat-sheet-beats-preview');
             for (const beat of template.beats) {
                 const beatItem = beatList.createDiv('beat-sheet-beat-item');
-                beatItem.createSpan({ cls: 'beat-sheet-beat-act', text: legacyUi(`A${beat.act}`, `A${beat.act}`) });
+                beatItem.createSpan({ cls: 'beat-sheet-beat-act', text: tr("tpl.c9c4f902e2", { p0: beat.act }) });
                 beatItem.createSpan({ cls: 'beat-sheet-beat-label', text: beat.label });
                 beatItem.createSpan({ cls: 'beat-sheet-beat-desc', text: beat.description });
             }
@@ -1367,7 +1367,7 @@ export class TimelineView extends ItemView {
                 await this.sceneManager.applyBeatSheet(template);
                 renderActsList();
                 renderChaptersList();
-                new Notice(legacyUi(legacyUi(`Applied "${template.name}" template`, `Applied "${template.name}" template`) , legacyUi(`Applied "${template.name}" template`, `Applied "${template.name}" template`) ));
+                new Notice(legacyUi(tr("tpl.77b5d451e4", { p0: template.name }) , tr("tpl.77b5d451e4", { p0: template.name }) ));
             });
         }
 
@@ -1405,7 +1405,7 @@ export class TimelineView extends ItemView {
                 const actDisplay = getActDisplayLabel(act);
                 const labelText = cleanLabel ? `${actDisplay} — ${cleanLabel}` : actDisplay;
                 row.createSpan({ cls: 'structure-label', text: labelText });
-                row.createSpan({ cls: 'structure-count', text: legacyUi(`${count} scene${count !== 1 ? 's' : ''}`, `${count} scene${count !== 1 ? 's' : ''}`) });
+                row.createSpan({ cls: 'structure-count', text: tr("tpl.3b5a93b353", { p0: count, p1: count !== 1 ? 's' : '' }) });
 
                 // Edit label button
                 const editBtn = row.createEl('button', {
@@ -1496,7 +1496,7 @@ export class TimelineView extends ItemView {
                     await this.sceneManager.addActs(nums);
                     input.value = '';
                     renderActsList();
-                    new Notice(legacyUi(`Added ${nums.length} act(s)`, `Added ${nums.length} act(s)`));
+                    new Notice(tr("tpl.7d81f499f9", { p0: nums.length }));
                 });
             });
 
@@ -1534,7 +1534,7 @@ export class TimelineView extends ItemView {
                 const row = wrapper.createDiv('structure-row');
                 const labelText = label ? `Chapter ${ch} — ${label}` : `Chapter ${ch}`;
                 row.createSpan({ cls: 'structure-label', text: labelText });
-                row.createSpan({ cls: 'structure-count', text: legacyUi(`${count} scene${count !== 1 ? 's' : ''}`, `${count} scene${count !== 1 ? 's' : ''}`) });
+                row.createSpan({ cls: 'structure-count', text: tr("tpl.3b5a93b353", { p0: count, p1: count !== 1 ? 's' : '' }) });
 
                 // Edit label button
                 const editBtn = row.createEl('button', {
@@ -1679,7 +1679,7 @@ export class TimelineView extends ItemView {
      */
     private openTimeEditModal(scene: Scene): void {
         const modal = new Modal(this.app);
-        modal.titleEl.setText(legacyUi(`Time & Order — ${scene.title || 'Untitled'}`, `Time & Order — ${scene.title || 'Untitled'}`));
+        modal.titleEl.setText(tr("tpl.27ea19b348", { p0: scene.title || legacyUi('Untitled', 'Untitled') }));
 
         let storyDate = scene.storyDate || '';
         let storyTime = scene.storyTime || '';
@@ -1815,7 +1815,7 @@ export class TimelineView extends ItemView {
             const leaf = this.app.workspace.getLeaf('tab');
             await leaf.openFile(file, { state: { mode: 'source', source: false } });
         } else {
-            new Notice(legacyUi(`Could not find file: ${scene.filePath}`, `Could not find file: ${scene.filePath}`));
+            new Notice(tr("tpl.f84439c762", { p0: scene.filePath }));
         }
     }
 

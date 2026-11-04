@@ -8,7 +8,7 @@
 
 import type { Character } from '../models/Character';
 import { RELATION_BASE_TYPE_BY_CATEGORY, getRoleDisplay } from '../models/Character';
-import { tr } from '../i18n';
+import { tr, displayRoles } from '../i18n';
 
 export type RelationshipType = 'ally' | 'enemy' | 'romantic' | 'family' | 'mentor' | 'other';
 
@@ -227,7 +227,7 @@ export class RelationshipMap {
                 nodeMap.set(key, {
                     id: key,
                     label: canonicalName,
-                    role: getRoleDisplay(char.role) || undefined,
+                    role: displayRoles(getRoleDisplay(char.role)) || undefined,
                     x: this.width / 2 + (Math.random() - 0.5) * this.width * 0.6,
                     y: this.height / 2 + (Math.random() - 0.5) * this.height * 0.6,
                     vx: 0,

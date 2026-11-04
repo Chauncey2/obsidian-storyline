@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-floating-promises, @typescript-eslint/no-misused-promises, @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-unused-vars -- Obsidian's API surface and several untyped third-party libraries force dynamic dispatch; floating promises are intentional in DOM/event handlers; matching enable at end of file */
 import * as obsidian from 'obsidian';
-import { tr, legacyUi } from '../i18n';
+import { tr, legacyUi, trValue, displayRoles } from '../i18n';
 import { SceneManager } from '../services/SceneManager';
 import { CharacterManager } from '../services/CharacterManager';
 import { renderViewSwitcher } from '../components/ViewSwitcher';
@@ -622,7 +622,7 @@ export class CharacterView extends ItemView {
 
         // Short description snippet — per-character tagline field selector, with auto fallback
         const taglineKey = char.tagline; // a field key like 'personality', 'occupation', etc.
-        const autoSnippet = char.personality || char.occupation || getRoleDisplay(char) || '';
+        const autoSnippet = char.personality || char.occupation || displayRoles(getRoleDisplay(char)) || '';
         // Issue #233 discussion — support custom (universal) fields as the
         // tagline source. Universal-field tagline keys are stored with the
         // `uf:` prefix so they never collide with built-in field keys.
@@ -663,9 +663,9 @@ export class CharacterView extends ItemView {
 
         const stats = card.createDiv('character-card-stats');
         if (total > 0) {
-            stats.createSpan({ text: legacyUi(`${povCount} POV`, `${povCount} POV`) });
+            stats.createSpan({ text: tr("tpl.8289e20df2", { p0: povCount }) });
             stats.createSpan({ cls: 'character-stat-sep', text: legacyUi('\u00b7', '\u00b7') });
-            stats.createSpan({ text: legacyUi(`${total} scenes`, `${total} scenes`) });
+            stats.createSpan({ text: tr("tpl.4a200d858d", { p0: total }) });
         } else {
             stats.createSpan({ cls: 'character-stat-none', text: tr('common.noScenesYet') });
         }
@@ -682,7 +682,7 @@ export class CharacterView extends ItemView {
         const bar = completeness.createDiv('character-completeness-bar');
         const fill = bar.createDiv('character-completeness-fill');
         fill.setCssStyles({ width: `${pct}%` });
-        completeness.createSpan({ cls: 'character-completeness-label', text: legacyUi(`${pct}% complete`, `${pct}% complete`) });
+        completeness.createSpan({ cls: 'character-completeness-label', text: tr("tpl.9907ca0728", { p0: pct }) });
 
         // Prop & location tags extracted from character fields
         const overrides = this.plugin.settings.tagTypeOverrides;
@@ -691,18 +691,18 @@ export class CharacterView extends ItemView {
         if (charLocTags.length > 0 || charProps.length > 0) {
             const propsRow = card.createDiv('character-card-props');
             charLocTags.forEach(p => {
-                const span = propsRow.createSpan({ cls: 'character-prop-tag character-loc-tag', text: legacyUi(`#${p}`, `#${p}`) });
+                const span = propsRow.createSpan({ cls: 'character-prop-tag character-loc-tag', text: tr("tpl.0b350d2d60", { p0: p }) });
                 if (overrides[p.toLowerCase()]) span.addClass('tag-overridden');
                 this.addTagContextMenu(span, p);
             });
             charProps.slice(0, 5).forEach(p => {
-                const span = propsRow.createSpan({ cls: 'character-prop-tag', text: legacyUi(`#${p}`, `#${p}`) });
+                const span = propsRow.createSpan({ cls: 'character-prop-tag', text: tr("tpl.0b350d2d60", { p0: p }) });
                 if (overrides[p.toLowerCase()]) span.addClass('tag-overridden');
                 this.addTagContextMenu(span, p);
             });
             const totalTags = charLocTags.length + charProps.length;
             if (totalTags > 5 + charLocTags.length) {
-                propsRow.createSpan({ cls: 'character-prop-more', text: legacyUi(`+${charProps.length - 5}`, `+${charProps.length - 5}`) });
+                propsRow.createSpan({ cls: 'character-prop-more', text: tr("tpl.d9989599e5", { p0: charProps.length - 5 }) });
             }
         }
 
@@ -854,7 +854,7 @@ export class CharacterView extends ItemView {
         }
 
         const stats = card.createDiv('character-card-stats');
-        stats.createSpan({ text: legacyUi(`${povCount} POV \u00b7 ${povCount + presentCount} scenes`, `${povCount} POV \u00b7 ${povCount + presentCount} scenes`) });
+        stats.createSpan({ text: tr("tpl.ef0023dd14", { p0: povCount, p1: povCount + presentCount }) });
 
         const btnRow = card.createDiv('character-unlinked-actions');
 
@@ -893,7 +893,7 @@ export class CharacterView extends ItemView {
             // Rebuild lookups so the alias is immediately recognised
             this.plugin.linkScanner.invalidateAll();
             this.plugin.linkScanner.rebuildLookups(this.plugin.settings.characterAliases);
-            new Notice(legacyUi(`"${aliasName}" linked to ${canonical}`, `"${aliasName}" linked to ${canonical}`));
+            new Notice(tr("tpl.1ff4aee79e", { p0: aliasName, p1: canonical }));
             if (this.rootContainer) this.renderView(this.rootContainer);
         });
         modal.open();
@@ -908,7 +908,7 @@ export class CharacterView extends ItemView {
             this.plugin.settings.ignoredCharacters.push(lower);
             await this.plugin.saveSettings();
         }
-        new Notice(legacyUi(`"${name}" ignored`, `"${name}" ignored`));
+        new Notice(tr("tpl.0ffd1f2c96", { p0: name }));
         if (this.rootContainer) this.renderView(this.rootContainer);
     }
 
@@ -1187,7 +1187,7 @@ export class CharacterView extends ItemView {
         obsidian.setIcon(chevron, isCollapsed ? 'chevron-right' : 'chevron-down');
         const icon = sectionHeader.createSpan('character-section-icon');
         obsidian.setIcon(icon, category.icon);
-        sectionHeader.createSpan({ text: category.title });
+        sectionHeader.createSpan({ text: trValue('sectionTitle', category.title) });
 
         // ── Hide/unhide entire category button ──
         const hideCatBtn = sectionHeader.createSpan({
@@ -1297,7 +1297,7 @@ export class CharacterView extends ItemView {
         if (hiddenFieldsInCat.length > 0) {
             const toggleEl = sectionBody.createDiv('hidden-fields-toggle');
             toggleEl.createEl('a', {
-                text: legacyUi(`Show ${hiddenFieldsInCat.length} hidden field${hiddenFieldsInCat.length > 1 ? 's' : ''}`, `Show ${hiddenFieldsInCat.length} hidden field${hiddenFieldsInCat.length > 1 ? 's' : ''}`),
+                text: tr("tpl.be838565ab", { p0: hiddenFieldsInCat.length, p1: hiddenFieldsInCat.length > 1 ? 's' : '' }),
                 cls: 'hidden-fields-toggle-link',
             });
             const hiddenContainer = sectionBody.createDiv('hidden-fields-container');
@@ -1332,7 +1332,7 @@ export class CharacterView extends ItemView {
         const toggleEl = parent.createDiv('hidden-fields-toggle');
         const count = hiddenCategoryList.length;
         toggleEl.createEl('a', {
-            text: legacyUi(`Show ${count} hidden categor${count > 1 ? 'ies' : 'y'}`, `Show ${count} hidden categor${count > 1 ? 'ies' : 'y'}`),
+            text: tr("tpl.ff02fd3d45", { p0: count, p1: count > 1 ? 'ies' : 'y' }),
             cls: 'hidden-fields-toggle-link',
         });
         const hiddenContainer = parent.createDiv('hidden-categories-container');
@@ -1369,7 +1369,7 @@ export class CharacterView extends ItemView {
         obsidian.setIcon(chevron, isCollapsed ? 'chevron-right' : 'chevron-down');
         const icon = sectionHeader.createSpan('character-section-icon');
         obsidian.setIcon(icon, category.icon);
-        sectionHeader.createSpan({ text: category.title });
+        sectionHeader.createSpan({ text: trValue('sectionTitle', category.title) });
 
         // Eye button to un-hide this category
         const showCatBtn = sectionHeader.createSpan({
@@ -1428,7 +1428,7 @@ export class CharacterView extends ItemView {
 
     private renderField(parent: HTMLElement, field: CharacterFieldDef, draft: Character, sectionTitle?: string, builtInKeys?: string[]): void {
         const row = parent.createDiv('character-field-row');
-        const labelEl = row.createEl('label', { cls: 'character-field-label', text: field.label });
+        const labelEl = row.createEl('label', { cls: 'character-field-label', text: trValue('fieldLabel', field.label) });
 
         // Up/down chevrons — reorder this built-in field within the section.
         if (sectionTitle && builtInKeys) {
@@ -1533,7 +1533,7 @@ export class CharacterView extends ItemView {
             });
             select.createEl('option', { text: legacyUi('Select role', 'Select role'), value: '' });
             for (const role of CHARACTER_ROLES) {
-                select.createEl('option', { text: role, value: role });
+                select.createEl('option', { text: trValue('characterRole', role), value: role });
             }
             select.createEl('option', { text: legacyUi('Custom role...', 'Custom role...'), value: customRoleValue });
             select.value = builtInRole || customRoleValue;
@@ -1577,7 +1577,7 @@ export class CharacterView extends ItemView {
         } else if (field.multiline) {
             const textarea = row.createEl('textarea', {
                 cls: 'character-field-textarea',
-                attr: { placeholder: field.placeholder, rows: '2' },
+                attr: { placeholder: field.placeholder ? trValue('fieldPlaceholder', field.placeholder) : field.placeholder, rows: '2' },
             });
             textarea.value = value;
             // Auto-grow: fit content, shrink back when empty
@@ -1598,7 +1598,7 @@ export class CharacterView extends ItemView {
             const input = row.createEl('input', {
                 cls: 'character-field-input',
                 type: 'text',
-                attr: { placeholder: field.placeholder },
+                attr: { placeholder: field.placeholder ? trValue('fieldPlaceholder', field.placeholder) : field.placeholder },
             });
             input.value = value;
             input.addEventListener('input', () => {
@@ -1631,7 +1631,7 @@ export class CharacterView extends ItemView {
         const names = Array.from(new Set([...entityNames, ...selected])).sort((a, b) => a.localeCompare(b));
         const select = row.createEl('select', {
             cls: 'character-field-input dropdown storyline-entity-select',
-            attr: { 'aria-label': field.label, size: field.multiSelect ? '4' : '1' },
+            attr: { 'aria-label': trValue('fieldLabel', field.label), size: field.multiSelect ? '4' : '1' },
         });
         select.multiple = !!field.multiSelect;
         for (const name of names) {
@@ -2016,7 +2016,7 @@ export class CharacterView extends ItemView {
                 });
                 roleInput.value = entry.role || '';
                 const dl = r.createEl('datalist', { attr: { id: roleListId } });
-                for (const opt of CHARACTER_ROLES) dl.createEl('option', { attr: { value: opt } });
+                for (const opt of CHARACTER_ROLES) dl.createEl('option', { text: trValue('characterRole', opt), attr: { value: opt } });
                 roleInput.addEventListener('input', () => {
                     entry.role = roleInput.value;
                     persist();
@@ -2161,20 +2161,20 @@ export class CharacterView extends ItemView {
                 const types = RELATION_TYPES_BY_CATEGORY[category.value];
                 if (types.length === 0) continue;
                 // createEl helpers (obsidianmd/prefer-create-el)
-                const group = select.createEl('optgroup', { attr: { label: category.label } });
+                const group = select.createEl('optgroup', { attr: { label: trValue('relationCategory', category.label) } });
                 for (const type of types) {
-                    const opt = group.createEl('option', { text: type, value: type });
+                    const opt = group.createEl('option', { text: trValue('relationType', type), value: type });
                     if (currentType === type) opt.selected = true;
                 }
             }
 
-            const customGroup = select.createEl('optgroup', { attr: { label: 'Custom' } });
+            const customGroup = select.createEl('optgroup', { attr: { label: trValue('relationCategory', 'Custom') } });
             const customOptions = getCustomRelationOptions();
             if (currentType && !customOptions.some(option => option.type === currentType)) {
                 customOptions.push({ type: currentType, label: currentType, category: 'custom' });
             }
             for (const option of customOptions) {
-                const opt = customGroup.createEl('option', { text: option.label, value: option.type });
+                const opt = customGroup.createEl('option', { text: trValue('relationType', option.label), value: option.type });
                 if (currentType === option.type) opt.selected = true;
             }
             customGroup.createEl('option', { text: legacyUi('New', 'New'), value: NEW_CUSTOM_TYPE_VALUE });
@@ -2214,7 +2214,7 @@ export class CharacterView extends ItemView {
                 customCategorySelect.setCssStyles({ display: 'none' });
                 for (const category of RELATION_CATEGORIES) {
                     const opt = customCategorySelect.createEl('option', {
-                        text: category.label,
+                        text: trValue('relationCategory', category.label),
                         value: category.value,
                     });
                     if (relation.category === category.value) opt.selected = true;
@@ -2495,7 +2495,7 @@ export class CharacterView extends ItemView {
 
                 const categorySelect = primaryRow.createEl('select', { cls: 'relation-history-input relation-history-category' });
                 for (const category of RELATION_CATEGORIES) {
-                    const option = categorySelect.createEl('option', { text: category.label, value: category.value });
+                    const option = categorySelect.createEl('option', { text: trValue('relationCategory', category.label), value: category.value });
                     if (entry.category === category.value) option.selected = true;
                 }
 
@@ -2806,7 +2806,7 @@ export class CharacterView extends ItemView {
         if (gallery.length < MAX_GALLERY) {
             const addBtn = header.createEl('button', {
                 cls: 'character-section-add-field-btn',
-                attr: { title: legacyUi(`Add image (${gallery.length}/${MAX_GALLERY})`, `Add image (${gallery.length}/${MAX_GALLERY})`), 'aria-label': 'Add gallery image' }
+                attr: { title: tr("tpl.74e19ab93b", { p0: gallery.length, p1: MAX_GALLERY }), 'aria-label': 'Add gallery image' }
             });
             obsidian.setIcon(addBtn, 'plus');
             addBtn.addEventListener('click', (e) => {
@@ -3017,7 +3017,7 @@ export class CharacterView extends ItemView {
             filled.setCssStyles({ width: `${percent}%` });
             progressSection.createSpan({
                 cls: 'character-progress-label',
-                text: legacyUi(`${completedScenes} of ${totalScenes} scenes written (${percent}%)`, `${completedScenes} of ${totalScenes} scenes written (${percent}%)`)
+                text: tr("tpl.816c28097e", { p0: completedScenes, p1: totalScenes, p2: percent })
             });
         }
 
@@ -3030,7 +3030,7 @@ export class CharacterView extends ItemView {
             if (totalPovScenes > 0) {
                 const distBox = container.createDiv('character-side-pov-dist');
                 distBox.createEl('p', {
-                    text: legacyUi(`${charPovPercent}% of all POV scenes`, `${charPovPercent}% of all POV scenes`)
+                    text: tr("tpl.f1841003d6", { p0: charPovPercent })
                 });
             }
         }
@@ -3048,8 +3048,8 @@ export class CharacterView extends ItemView {
                 const act = formatActChapterPrefix(scene.act, '??');
                 const seq = scene.sequence !== undefined ? String(scene.sequence).padStart(2, '0') : '??';
 
-                item.createSpan({ cls: 'scene-id', text: legacyUi(`[${act}-${seq}]`, `[${act}-${seq}]`) });
-                item.createSpan({ cls: 'scene-title', text: legacyUi(` ${scene.title}`, ` ${scene.title}`) });
+                item.createSpan({ cls: 'scene-id', text: tr("tpl.9279a8924e", { p0: act, p1: seq }) });
+                item.createSpan({ cls: 'scene-title', text: tr("tpl.07d23d27a7", { p0: scene.title }) });
 
                 if (isPov) {
                     item.createSpan({ cls: 'character-pov-badge', text: legacyUi('POV', 'POV') });
@@ -3092,7 +3092,7 @@ export class CharacterView extends ItemView {
                         const item = pgSection.createDiv('character-side-scene-item');
                         const icon = item.createSpan({ cls: 'scene-id' });
                         obsidian.setIcon(icon, 'grid-3x3');
-                        item.createSpan({ cls: 'scene-title', text: legacyUi(` ${rowLabel}`, ` ${rowLabel}`) });
+                        item.createSpan({ cls: 'scene-title', text: tr("tpl.07d23d27a7", { p0: rowLabel }) });
                     }
                 }
             }).catch(() => { /* non-fatal */ });
@@ -3143,7 +3143,7 @@ export class CharacterView extends ItemView {
             // Recover original casing from the alias key (stored lowercased).
             // Fall back to the lowercased key if no better source is available.
             li.createSpan({ text: aliasLower, cls: 'linked-alias-name' });
-            li.createSpan({ text: legacyUi(` → ${canonical}`, ` → ${canonical}`), cls: 'linked-alias-target' });
+            li.createSpan({ text: tr("tpl.7317bdb4c2", { p0: canonical }), cls: 'linked-alias-target' });
 
             const unlinkBtn = li.createEl('button', {
                 cls: 'linked-alias-unlink-btn',
@@ -3157,7 +3157,7 @@ export class CharacterView extends ItemView {
                 // Rebuild lookups so the alias is treated as standalone again
                 this.plugin.linkScanner.invalidateAll();
                 this.plugin.linkScanner.rebuildLookups(this.plugin.settings.characterAliases);
-                new Notice(legacyUi(`Unlinked "${aliasLower}"`, `Unlinked "${aliasLower}"`));
+                new Notice(tr("tpl.e8f1b57d06", { p0: aliasLower }));
                 if (this.rootContainer) this.renderView(this.rootContainer);
             });
         }
@@ -3330,7 +3330,7 @@ export class CharacterView extends ItemView {
                 await service.cascadeCharacterRename(oldName, newName);
                 await this.updateManualAliasTargets(oldName, newName);
                 this.originalCharacterName = newName;
-                new Notice(legacyUi(`Updated ${total} reference${total !== 1 ? 's' : ''} from "${oldName}" to "${newName}"`, `Updated ${total} reference${total !== 1 ? 's' : ''} from "${oldName}" to "${newName}"`));
+                new Notice(tr("tpl.175cdb7e1d", { p0: total, p1: total !== 1 ? 's' : '', p2: oldName, p3: newName }));
             },
             () => {
                 // User cancelled — revert the name back
@@ -3404,7 +3404,7 @@ export class CharacterView extends ItemView {
                             this.selectedCharacter = char.filePath;
                             modal.close();
                             this.renderView(this.rootContainer!);
-                            new Notice(legacyUi(`Character "${name.trim()}" created`, `Character "${name.trim()}" created`));
+                            new Notice(tr("tpl.f39db148af", { p0: name.trim() }));
                         } catch (e) {
                             new Notice(String(e));
                         }
@@ -3422,7 +3422,7 @@ export class CharacterView extends ItemView {
             );
             this.selectedCharacter = char.filePath;
             this.renderView(this.rootContainer!);
-            new Notice(legacyUi(`Character profile created for "${name}"`, `Character profile created for "${name}"`));
+            new Notice(tr("tpl.41be978bb9", { p0: name }));
         } catch (e) {
             new Notice(String(e));
         }
@@ -3432,7 +3432,7 @@ export class CharacterView extends ItemView {
         const modal = new Modal(this.app);
         modal.titleEl.setText(legacyUi('Delete character', 'Delete character'));
         modal.contentEl.createEl('p', {
-            text: legacyUi(`Are you sure you want to delete "${character.name}"? The file will be moved to trash.`, `Are you sure you want to delete "${character.name}"? The file will be moved to trash.`)
+            text: tr("tpl.114e6f5bdc", { p0: character.name })
         });
 
         new Setting(modal.contentEl)
@@ -3453,7 +3453,7 @@ export class CharacterView extends ItemView {
                         this.selectedCharacter = null;
                         modal.close();
                         this.renderView(this.rootContainer!);
-                        new Notice(legacyUi(`"${character.name}" deleted`, `"${character.name}" deleted`));
+                        new Notice(tr("tpl.ffad5618e7", { p0: character.name }));
                     });
             })
             .addButton(btn => {
@@ -3485,7 +3485,7 @@ export class CharacterView extends ItemView {
             const leaf = this.app.workspace.getLeaf('tab');
             await leaf.openFile(file, { state: { mode: 'source', source: false } });
         } else {
-            new Notice(legacyUi(`Could not find file: ${scene.filePath}`, `Could not find file: ${scene.filePath}`));
+            new Notice(tr("tpl.f84439c762", { p0: scene.filePath }));
         }
     }
 
@@ -3528,7 +3528,7 @@ export class CharacterView extends ItemView {
             const okDiv = section.createDiv('character-gap-ok');
             const okIcon = okDiv.createSpan();
             obsidian.setIcon(okIcon, 'check-circle');
-            okDiv.createSpan({ text: legacyUi(` ${character} appears regularly throughout the story`, ` ${character} appears regularly throughout the story`) });
+            okDiv.createSpan({ text: tr("tpl.46275250e2", { p0: character }) });
             return;
         }
 
@@ -3548,21 +3548,21 @@ export class CharacterView extends ItemView {
             const gapDiv = section.createDiv('character-gap-item');
             const gapIcon = gapDiv.createSpan();
             obsidian.setIcon(gapIcon, 'alert-triangle');
-            gapDiv.createSpan({ text: legacyUi(` Absent for first ${scenesBefore} scenes (appears first in scene ${firstCharSeq})`, ` Absent for first ${scenesBefore} scenes (appears first in scene ${firstCharSeq})`) });
+            gapDiv.createSpan({ text: tr("tpl.cc6c828fc7", { p0: scenesBefore, p1: firstCharSeq }) });
         }
 
         gaps.forEach(gap => {
             const gapDiv = section.createDiv('character-gap-item');
             const gapIcon = gapDiv.createSpan();
             obsidian.setIcon(gapIcon, 'alert-triangle');
-            gapDiv.createSpan({ text: legacyUi(` Gone for ${gap.missedCount} scenes between "${gap.from.title}" and "${gap.to.title}"`, ` Gone for ${gap.missedCount} scenes between "${gap.from.title}" and "${gap.to.title}"`) });
+            gapDiv.createSpan({ text: tr("tpl.3db810f972", { p0: gap.missedCount, p1: gap.from.title, p2: gap.to.title }) });
         });
 
         if (scenesAfter >= GAP_THRESHOLD) {
             const gapDiv = section.createDiv('character-gap-item');
             const gapIcon = gapDiv.createSpan();
             obsidian.setIcon(gapIcon, 'alert-triangle');
-            gapDiv.createSpan({ text: legacyUi(` Absent for last ${scenesAfter} scenes (last appears at scene ${lastCharSeq})`, ` Absent for last ${scenesAfter} scenes (last appears at scene ${lastCharSeq})`) });
+            gapDiv.createSpan({ text: tr("tpl.acfe6b5ac0", { p0: scenesAfter, p1: lastCharSeq }) });
         }
     }
 
@@ -3755,18 +3755,18 @@ export class CharacterView extends ItemView {
 
             if (allBooks) {
                 menu.addItem(item =>
-                    item.setTitle(legacyUi(`Restrict to "${currentBook}" only`, `Restrict to "${currentBook}" only`))
+                    item.setTitle(tr("tpl.88781b830a", { p0: currentBook }))
                         .setIcon('book-marked')
                         .onClick(() => this.setCharacterBooks(char, [currentBook])));
             } else if (inBook) {
                 menu.addItem(item =>
-                    item.setTitle(legacyUi(`Remove from "${currentBook}"`, `Remove from "${currentBook}"`))
+                    item.setTitle(tr("tpl.a26274f388", { p0: currentBook }))
                         .setIcon('book-x')
                         .onClick(() => this.setCharacterBooks(char,
                             (char.books || []).filter(b => b.toLowerCase() !== lower))));
             } else {
                 menu.addItem(item =>
-                    item.setTitle(legacyUi(`Add to "${currentBook}"`, `Add to "${currentBook}"`))
+                    item.setTitle(tr("tpl.018ad523fd", { p0: currentBook }))
                         .setIcon('book-plus')
                         .onClick(() => this.setCharacterBooks(char,
                             [...(char.books || []), currentBook])));
@@ -3784,20 +3784,20 @@ export class CharacterView extends ItemView {
     private async promoteCharacterToSeries(char: Character, seriesCharFolder: string): Promise<void> {
         try {
             await this.characterManager.moveCharacter(char, seriesCharFolder);
-            new Notice(legacyUi(`"${char.name}" promoted to series`, `"${char.name}" promoted to series`));
+            new Notice(tr("tpl.9750377fd1", { p0: char.name }));
             await this.plugin.refreshOpenViews();
         } catch (err) {
-            new Notice(legacyUi(`Could not promote: ${(err as Error).message}`, `Could not promote: ${(err as Error).message}`));
+            new Notice(tr("tpl.58d1d54d4c", { p0: (err as Error).message }));
         }
     }
 
     private async demoteCharacterToProject(char: Character, projectCharFolder: string): Promise<void> {
         try {
             await this.characterManager.moveCharacter(char, projectCharFolder);
-            new Notice(legacyUi(`"${char.name}" demoted to project`, `"${char.name}" demoted to project`));
+            new Notice(tr("tpl.37f13de11d", { p0: char.name }));
             await this.plugin.refreshOpenViews();
         } catch (err) {
-            new Notice(legacyUi(`Could not demote: ${(err as Error).message}`, `Could not demote: ${(err as Error).message}`));
+            new Notice(tr("tpl.53a6af30eb", { p0: (err as Error).message }));
         }
     }
 
@@ -3818,7 +3818,7 @@ export class CharacterView extends ItemView {
             await this.characterManager.saveCharacter(updated);
             await this.plugin.refreshOpenViews();
         } catch (err) {
-            new Notice(legacyUi(`Could not update book membership: ${(err as Error).message}`, `Could not update book membership: ${(err as Error).message}`));
+            new Notice(tr("tpl.92ccbd42df", { p0: (err as Error).message }));
         }
     }
 
@@ -3841,11 +3841,11 @@ export class CharacterView extends ItemView {
             ];
 
             const menu = new obsidian.Menu();
-            menu.addItem(item => item.setTitle(legacyUi(`#${tagName}`, `#${tagName}`)).setDisabled(true));
+            menu.addItem(item => item.setTitle(tr("tpl.0b350d2d60", { p0: tagName })).setDisabled(true));
             menu.addSeparator();
             for (const t of types) {
                 menu.addItem(item => {
-                    item.setTitle(t.label)
+                    item.setTitle(trValue('fieldLabel', t.label))
                         .setIcon(t.icon)
                         .setChecked(t.value !== null && current === t.value)
                         .onClick(async () => {
@@ -4077,10 +4077,10 @@ class LinkCharacterModal extends Modal {
     onOpen(): void {
         const { contentEl } = this;
         contentEl.empty();
-        contentEl.createEl('h3', { text: legacyUi(`Link "${this.aliasName}" to\u2026`, `Link "${this.aliasName}" to\u2026`) });
+        contentEl.createEl('h3', { text: tr("tpl.a68072ba15", { p0: this.aliasName }) });
         contentEl.createEl('p', {
             cls: 'setting-item-description',
-            text: legacyUi(`Choose which character "${this.aliasName}" refers to. This alias will be remembered and the name will no longer appear as a separate character.`, `Choose which character "${this.aliasName}" refers to. This alias will be remembered and the name will no longer appear as a separate character.`),
+            text: tr("tpl.aa0f4ae2f4", { p0: this.aliasName }),
         });
 
         const list = contentEl.createDiv('link-character-list');
@@ -4089,7 +4089,7 @@ class LinkCharacterModal extends Modal {
             const row = list.createDiv('link-character-row');
             row.createSpan({ text: char.name, cls: 'link-character-name' });
             if (char.nickname) {
-                row.createSpan({ text: legacyUi(` (${char.nickname})`, ` (${char.nickname})`), cls: 'link-character-nickname' });
+                row.createSpan({ text: tr("tpl.d82d77bfd7", { p0: char.nickname }), cls: 'link-character-nickname' });
             }
             row.addEventListener('click', () => {
                 this.onSelect(char.name);

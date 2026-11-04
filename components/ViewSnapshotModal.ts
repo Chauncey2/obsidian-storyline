@@ -1,4 +1,4 @@
-import { legacyUi } from '../i18n';
+import { tr, legacyUi } from '../i18n';
 /* eslint-disable @typescript-eslint/no-misused-promises, no-empty -- Obsidian's API surface and several untyped third-party libraries force dynamic dispatch; floating promises are intentional in DOM/event handlers; matching enable at end of file */
 import * as obsidian from 'obsidian';
 import type { ViewSnapshotService, ViewSnapshotMeta } from '../services/ViewSnapshotService';
@@ -35,7 +35,7 @@ class ManageSnapshotsModal extends Modal {
         newDiv.setAttribute('aria-label', 'New snapshot');
         newDiv.addEventListener('click', async () => {
             const snap = await this.service.createSnapshot(`Snapshot ${await this.service.getNextId()}`);
-            new Notice(legacyUi(`Created snapshot #${snap.id}`, `Created snapshot #${snap.id}`));
+            new Notice(tr("tpl.9ec6aa962f", { p0: snap.id }));
             await this.renderList();
         });
 
@@ -88,7 +88,7 @@ class ManageSnapshotsModal extends Modal {
             loadDiv.addEventListener('click', async () => {
                 const ok = await this.service.restoreSnapshot(meta.id);
                 if (ok) {
-                    new Notice(legacyUi(`Loaded snapshot #${meta.id} "${meta.name}".`, `Loaded snapshot #${meta.id} "${meta.name}".`));
+                    new Notice(tr("tpl.1fb70ec121", { p0: meta.id, p1: meta.name }));
                     this.close();
                 } else {
                     new Notice(legacyUi('Failed to load snapshot.', 'Failed to load snapshot.'));
@@ -106,7 +106,7 @@ class ManageSnapshotsModal extends Modal {
         obsidian.setIcon(deleteDiv, 'trash-2');
         deleteDiv.addEventListener('click', async () => {
             await this.service.deleteSnapshot(meta.id);
-            new Notice(legacyUi(`Deleted snapshot #${meta.id}.`, `Deleted snapshot #${meta.id}.`));
+            new Notice(tr("tpl.ccf74d01a2", { p0: meta.id }));
             await this.renderList();
         });
     }

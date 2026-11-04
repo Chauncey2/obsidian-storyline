@@ -1,4 +1,4 @@
-import { legacyUi } from '../i18n';
+import { tr, legacyUi } from '../i18n';
 /* eslint-disable @typescript-eslint/no-floating-promises -- Obsidian's API surface and several untyped third-party libraries force dynamic dispatch; floating promises are intentional in DOM/event handlers; matching enable at end of file */
 import { Setting, Notice } from 'obsidian';
 import * as obsidian from 'obsidian';
@@ -95,7 +95,7 @@ export class FiltersComponent {
             { value: 'modified', label: 'Modified' },
         ];
         sortOptions.forEach(opt => {
-            const option = sortSelect.createEl('option', { text: opt.label, value: opt.value });
+            const option = sortSelect.createEl('option', { text: legacyUi(opt.label, opt.label), value: opt.value });
             if (opt.value === this.currentSort.field) option.selected = true;
         });
         sortSelect.addEventListener('change', () => {
@@ -128,7 +128,7 @@ export class FiltersComponent {
         for (const mode of arcModes) {
             const btn = arcFilterContainer.createEl('button', {
                 cls: `story-line-arc-filter-btn${(this.currentFilter.arcAnchorFilter || 'all') === mode.value ? ' is-active' : ''}`,
-                text: mode.label,
+                text: legacyUi(mode.label, mode.label),
             });
             btn.addEventListener('click', () => {
                 this.currentFilter.arcAnchorFilter = mode.value === 'all' ? undefined : mode.value;
@@ -148,7 +148,7 @@ export class FiltersComponent {
         for (const mode of activeModes) {
             const btn = activeFilterContainer.createEl('button', {
                 cls: `story-line-active-filter-btn${(this.currentFilter.activeState || 'active') === mode.value ? ' is-active' : ''}`,
-                text: mode.label,
+                text: legacyUi(mode.label, mode.label),
             });
             btn.addEventListener('click', () => {
                 this.currentFilter.activeState = mode.value === 'active' ? undefined : mode.value;
@@ -242,7 +242,7 @@ export class FiltersComponent {
             chapterValues.forEach(chapter => {
                 const chip = chapterContainer.createEl('button', {
                     cls: 'story-line-chip',
-                    text: legacyUi(`Chapter ${chapter}`, `Chapter ${chapter}`),
+                    text: tr("tpl.f67d0dcd8d", { p0: chapter }),
                 });
                 if (this.currentFilter.chapter?.map(String).includes(chapter)) chip.addClass('active');
                 chip.addEventListener('click', () => {
@@ -451,7 +451,7 @@ export class FiltersComponent {
                     this.sceneManager.addFilterPreset(preset);
                     nameInput.remove();
                     this.render(); // re‑render to show new preset chip
-                    new Notice(legacyUi(`Filter preset "${name}" saved`, `Filter preset "${name}" saved`));
+                    new Notice(tr("tpl.a211b2ace8", { p0: name }));
                 };
                 nameInput.addEventListener('keydown', (e) => {
                     if (e.key === 'Enter') doSave();
@@ -473,7 +473,7 @@ export class FiltersComponent {
                     this.currentFilter = cloneSceneFilter(preset.filter);
                     this.render();
                     this.emitChange();
-                    new Notice(legacyUi(`Applied preset "${preset.name}"`, `Applied preset "${preset.name}"`));
+                    new Notice(tr("tpl.7b236f0290", { p0: preset.name }));
                 });
                 chip.addEventListener('contextmenu', (e) => {
                     e.preventDefault();
@@ -482,7 +482,7 @@ export class FiltersComponent {
                     if (deletingActivePreset) this.currentFilter = {};
                     this.render();
                     this.emitChange();
-                    new Notice(legacyUi(`Deleted preset "${preset.name}"`, `Deleted preset "${preset.name}"`));
+                    new Notice(tr("tpl.b700e800d1", { p0: preset.name }));
                 });
             });
         }

@@ -1,4 +1,4 @@
-import { legacyUi } from '../i18n';
+import { tr, legacyUi } from '../i18n';
 import { App, Modal, Notice, Setting, setIcon } from 'obsidian';
 import type { CodexVisualGroup } from '../settings';
 
@@ -103,7 +103,7 @@ export function openCodexVisualGroupManager(
     onDone: () => void,
 ): void {
     const modal = new Modal(app);
-    modal.titleEl.setText(legacyUi(`Visual groups - ${categoryLabel}`, `Visual groups - ${categoryLabel}`));
+    modal.titleEl.setText(tr("tpl.bfd9a36bf0", { p0: categoryLabel }));
     let draggedGroupId: string | null = null;
     let draggedRow: HTMLElement | null = null;
     let dropTargetRow: HTMLElement | null = null;
@@ -119,7 +119,7 @@ export function openCodexVisualGroupManager(
         modal.contentEl.addClass('codex-category-manager');
         modal.contentEl.createEl('p', {
             cls: 'setting-item-description',
-            text: legacyUi(`Create named display groups for ${categoryLabel.toLowerCase()}. Groups only change the codex view and do not modify entry files.`, `Create named display groups for ${categoryLabel.toLowerCase()}. Groups only change the codex view and do not modify entry files.`),
+            text: tr("tpl.a14caf8b45", { p0: categoryLabel.toLowerCase() }),
         });
 
         const groups = getCodexVisualGroups(store, categoryKey);
@@ -189,7 +189,7 @@ export function openCodexVisualGroupManager(
                 });
                 row.createSpan({
                     cls: 'codex-visual-group-count',
-                    text: legacyUi(`${group.entryPaths.length} entr${group.entryPaths.length === 1 ? 'y' : 'ies'}`, `${group.entryPaths.length} entr${group.entryPaths.length === 1 ? 'y' : 'ies'}`),
+                    text: tr("tpl.877a6a9458", { p0: group.entryPaths.length }),
                 });
                 const deleteBtn = row.createEl('button', {
                     cls: 'codex-category-delete-btn clickable-icon',

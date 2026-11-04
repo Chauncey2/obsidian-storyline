@@ -1,4 +1,4 @@
-import { legacyUi } from '../i18n';
+import { tr, legacyUi, trValue } from '../i18n';
 /* eslint-disable @typescript-eslint/no-floating-promises, @typescript-eslint/no-misused-promises, @typescript-eslint/no-unused-vars -- Obsidian's API surface and several untyped third-party libraries force dynamic dispatch; floating promises are intentional in DOM/event handlers; matching enable at end of file */
 import { Modal, App, Notice } from 'obsidian';
 import * as obsidian from 'obsidian';
@@ -180,7 +180,7 @@ export class InspectorComponent {
                 // Cascade rename: update setup_scenes / payoff_scenes in other scenes
                 const updated = await this.plugin.cascadeRename.cascadeSceneTitleRename(oldTitle, val);
                 if (updated > 0) {
-                    new Notice(legacyUi(`Updated ${updated} setup/payoff link${updated !== 1 ? 's' : ''}`, `Updated ${updated} setup/payoff link${updated !== 1 ? 's' : ''}`));
+                    new Notice(tr("tpl.04b4d6eab5", { p0: updated, p1: updated !== 1 ? 's' : '' }));
                 }
             }
         });
@@ -732,7 +732,7 @@ export class InspectorComponent {
         deleteBtn.addEventListener('click', () => {
             openConfirmModal(this.plugin.app, {
                 title: legacyUi('Delete Scene', 'Delete Scene'),
-                message: `Delete scene "${scene.title || 'Untitled'}"?`,
+                message: `Delete scene "${scene.title || legacyUi('Untitled', 'Untitled')}"?`,
                 confirmLabel: 'Delete',
                 onConfirm: () => {
                     this.onDelete(scene);
@@ -1042,7 +1042,7 @@ export class InspectorComponent {
                 const warn = section.createDiv('inspector-sp-warning');
                 const warnIcon = warn.createSpan();
                 obsidian.setIcon(warnIcon, 'alert-triangle');
-                warn.createSpan({ text: legacyUi(` Missing payoff target: ${dangling.join(', ')}`, ` Missing payoff target: ${dangling.join(', ')}`) });
+                warn.createSpan({ text: tr("tpl.13ed2ad27c", { p0: dangling.join(', ') }) });
             }
         }
     }
@@ -1071,7 +1071,7 @@ export class InspectorComponent {
             });
             const iconEl = labelRow.createSpan();
             obsidian.setIcon(iconEl, catDef.icon);
-            labelRow.createSpan({ cls: 'inspector-label', text: legacyUi(`${catDef.label}:`, `${catDef.label}:`) });
+            labelRow.createSpan({ cls: 'inspector-label', text: tr("tpl.f947fae294", { p0: catDef.label }) });
 
             const pillContainer = section.createDiv('inspector-chip-list');
 
@@ -1215,7 +1215,7 @@ export class InspectorComponent {
         }
         for (const t of types) {
             menu.addItem(item => {
-                item.setTitle(t.label)
+                item.setTitle(trValue('fieldLabel', t.label))
                     .setIcon(t.icon)
                     .setChecked(t.value !== null && current === t.value)
                     .onClick(async () => {
@@ -1385,7 +1385,7 @@ export class InspectorComponent {
     }
 
     private stripRedundantNotesHeadings(content: string, scene: Scene): string {
-        const title = (scene.title || 'Untitled').trim();
+        const title = (scene.title || legacyUi('Untitled', 'Untitled')).trim();
         const lines = content.replace(/^\uFEFF/, '').split(/\r?\n/);
         let index = 0;
         while (index < lines.length && lines[index].trim() === '') index++;
@@ -1448,7 +1448,7 @@ export class InspectorComponent {
                 info.createSpan({ cls: 'inspector-snapshot-label', text: snap.label });
                 const dateStr = snap.timestamp.split('T')[0];
                 const wcStr = snap.wordcount ? ` · ${snap.wordcount}w` : '';
-                info.createSpan({ cls: 'inspector-snapshot-meta', text: legacyUi(`${dateStr}${wcStr}`, `${dateStr}${wcStr}`) });
+                info.createSpan({ cls: 'inspector-snapshot-meta', text: tr("tpl.bde3f1f2b2", { p0: dateStr, p1: wcStr }) });
 
                 const btns = row.createDiv('inspector-snapshot-btns');
 
